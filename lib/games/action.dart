@@ -71,9 +71,9 @@ class _ActionGameState extends State<ActionGame>
     }
   }
 
-  bool get racing => widget.id == 0 || widget.id == 3;
-  bool get field => [1, 5, 6, 7].contains(widget.id);
-  bool get ring => [4, 10, 14].contains(widget.id);
+  bool get racing => widget.id == 0;
+  bool get field => [5, 6].contains(widget.id);
+  bool get ring => widget.id == 10;
   Offset normal(Offset o) {
     final d = o.distance;
     return d == 0 ? Offset.zero : o / d;
@@ -213,7 +213,7 @@ class _ActionGameState extends State<ActionGame>
         players[0] -= n * .009;
         players[1] += n * .009;
       }
-      final radius = widget.id == 14 ? max(.12, .43 - time * .007) : .43;
+      final radius = .43;
       for (var p = 0; p < 2; p++) {
         final relative = players[p] - const Offset(.5, .5);
         if (relative.distance > radius) {
@@ -560,11 +560,9 @@ class ArenaPainter extends CustomPainter {
         ..color = Colors.white24
         ..strokeWidth = 2,
     );
-    if ([4, 10, 14].contains(id)) {
+    if (id == 10) {
       final radius =
-          id == 14
-              ? max(.12, .43 - time * .007)
-              : .43; // Physics uses normalized arena coordinates, so render the same ellipse.
+          .43; // Physics uses normalized arena coordinates, so render the same ellipse.
       c.drawOval(
         Rect.fromCenter(
           center: at(const Offset(.5, .5)),
@@ -574,8 +572,8 @@ class ArenaPainter extends CustomPainter {
         brush..color = const Color(0xFF283861),
       );
     }
-    if ([4, 10, 14].contains(id)) {
-      final radius = id == 14 ? max(.12, .43 - time * .007) : .43;
+    if (id == 10) {
+      final radius = .43;
       final ring = Rect.fromCenter(
         center: at(const Offset(.5, .5)),
         width: radius * 2 * s.width,
@@ -596,7 +594,7 @@ class ArenaPainter extends CustomPainter {
           ..color = Colors.white.withValues(alpha: .15),
       );
     }
-    if ([1, 6, 7].contains(id)) {
+    if (id == 6) {
       final lines =
           Paint()
             ..color = Colors.white.withValues(alpha: .18)
@@ -614,7 +612,7 @@ class ArenaPainter extends CustomPainter {
         c.drawCircle(at(Offset(.5, y)), unit * .09, lines);
       }
     }
-    if (id == 0 || id == 3) {
+    if (id == 0) {
       for (final x in [s.width * .025, s.width * .975]) {
         c.drawLine(
           Offset(x, 0),
@@ -742,8 +740,8 @@ class ArenaPainter extends CustomPainter {
         }
       }
     }
-    if ([1, 5, 6, 7].contains(id)) {
-      GameSprites.ball(c, at(ball), unit * .022, football: id == 1 || id == 7);
+    if ([5, 6].contains(id)) {
+      GameSprites.ball(c, at(ball), unit * .022, football: false);
       for (final y in [0.0, s.height - 5]) {
         c.drawRect(
           Rect.fromLTWH(s.width * .3, y, s.width * .4, 5),
@@ -759,7 +757,7 @@ class ArenaPainter extends CustomPainter {
           brush..color = Colors.orange.withValues(alpha: .12),
         );
         GameSprites.bomb(c, at(shot.p), unit * .035, time);
-      } else if (id == 0 || id == 3) {
+      } else if (id == 0) {
         GameSprites.car(
           c,
           at(shot.p),

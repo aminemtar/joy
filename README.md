@@ -1,10 +1,10 @@
 # JOY — one screen, two rivals
 
-An offline Flutter mini-game collection for two people sharing one Android phone, iPhone or tablet. Includes 30 playable prototypes, a filterable lobby, random quick play, five-round tournaments, player names, persistent win totals, and optional vibration. Action games use simultaneous pointers; board and question games use pass-and-play.
+36 offline mini-games for two people sharing an Android phone, iPhone or tablet. Includes a filterable illustrated lobby, random quick play, five-round tournaments, player names, persistent win totals, and optional vibration. Real-time games support simultaneous touch; strategy and word games use alternating turns.
 
 Tested with Flutter 3.47.8 / Dart 3.13.7. Use the current stable Flutter SDK.
 
-## Run on your Mac
+## Run
 
 ```bash
 git clone https://github.com/aminemtar/joy.git
@@ -13,57 +13,69 @@ flutter pub get
 flutter run
 ```
 
-If already cloned, run `git pull origin main` first. Android needs Android Studio/Android SDK. iOS needs macOS, Xcode and an installed simulator or signed physical device. This repository includes Android, iOS and web runners. For a browser preview: `flutter run -d chrome`. Touch hardware is recommended for simultaneous multiplayer: a mouse only provides one pointer.
+If already cloned, run `git pull origin main` first. Android requires Android Studio/SDK. iOS requires macOS, Xcode and a simulator or a signed physical device. For a browser preview: `flutter run -d chrome`. A mouse provides only one pointer, so touch hardware is recommended for simultaneous multiplayer.
 
-## The 30 games
+## The 36 concepts
 
-| # | Game | Controls / win condition |
+| # | Game | Core interaction and objective |
 |---|---|---|
-| 1 | Neon Rally | Hold the left/right part of your half to steer; follow the gold racing line for speed. Ten checkpoints or survive your rival. |
-| 2 | Car Football | Drag a car in your half; bump the ball into the opposite goal. Five goals. |
-| 3 | Parking Duel | Drag to the highlighted bays in your half. Five bays. |
-| 4 | Traffic Dodge | Hold left/right to avoid approaching traffic. Last survivor. |
-| 5 | Bumper Cars | Drag and push the rival outside the arena. |
-| 6 | Ping Pong | Drag a paddle horizontally. Five goals. |
-| 7 | Air Hockey | Drag a striker in your half. Five goals. |
-| 8 | Mini Football | Drag your player to kick the ball. Five goals. |
-| 9 | Basket Shots | Tap your half when the moving ball aligns with the target. Five baskets. |
-| 10 | Mini Golf | Drag back from the ball and release. Three holes. |
-| 11 | Sumo Ring | Drag your wrestler to push the rival out. |
-| 12 | Tank Battle | Drag to move, FIRE to shoot toward the rival. Five hits. |
-| 13 | Snake Duel | Direction buttons; avoid walls and both trails. Last survivor. |
-| 14 | Bomber Arena | Drag and drop timed bombs. Avoid all blasts, including your own. |
-| 15 | Platform Survival | Drag on a shrinking platform. Last survivor. |
-| 16 | Sliding Puzzle | Alternate legal moves in a shuffled, solvable board. Completing it wins. |
-| 17 | Block Duel | Claim cells; completing a full row/column scores. Most points on a full board wins. |
-| 18 | Maze Race | Alternate adjacent-cell moves around walls to reach the opposite corner. |
-| 19 | Connect Four | Tap a column to drop a disc. Four in any direction. |
-| 20 | Tic Tac Toe | Alternate turns. Three in a row. |
-| 21 | Picture Pairs | Reveal matching illustrated symbols. Most pairs wins; matches retain the turn. |
-| 22 | Spot the Difference | Compare two symbol rows and identify the changed position. Five correct answers. |
-| 23 | Find the Object | Select the requested symbol. Five correct answers. |
-| 24 | Sequence Memory | Memorize four colors before they hide; identify the last color. Five correct answers. |
-| 25 | Follow the Cup | Watch five animated cup swaps and find the hidden diamond. Five correct answers. |
-| 26 | Riddle Duel | Multiple-choice riddles. Five correct answers. |
-| 27 | Math Sprint | Random addition/multiplication questions. Five correct answers. |
-| 28 | Reaction Duel | Both players wait for NOW. Early taps award the rival a point. First to five. |
-| 29 | Word Scramble | Identify the scrambled word. Five correct answers. |
-| 30 | Rock Paper Scissors | Secret choices, then pass the phone. Five winning hands. |
+| 1 | Neon Rally | Steer along a moving racing line to gain checkpoint progress while avoiding traffic. |
+| 2 | Treasure Auction | Secret bids, limited coins and six changing-value treasures; maximize gems. |
+| 3 | Parking Duel | Drag the car into changing parking bays. First to five bays. |
+| 4 | Traffic Control | Schedule perpendicular traffic flows through two intersections; clear cars without collisions. |
+| 5 | Stack Tower | Drop moving blocks; cut away overhang and preserve enough overlap to survive. |
+| 6 | Ping Pong | Horizontal paddle deflection across the full baseline. Five points. |
+| 7 | Air Hockey | Move a circular striker in two dimensions; score through a narrow goal. |
+| 8 | Penalty Shootout | Flick shots while the opposing player actively drags the keeper. Roles alternate. |
+| 9 | Basket Shots | Time taps to align a moving basketball with the hoop. |
+| 10 | Mini Golf | Pull back and release to putt; use wall bounces and controlled speed. |
+| 11 | Sumo Ring | Push the rival outside a fixed ring while keeping your body inside. |
+| 12 | Tank Battle | Move and fire traveling projectiles to land five hits. |
+| 13 | Snake Duel | Steer a growing trail around food, walls and the opponent. |
+| 14 | Bomber Arena | Place delayed area blasts; escape both your own and your rival's bombs. |
+| 15 | Gap Jumpers | Jump over scrolling gaps, land before jumping again, and outlast the rival. |
+| 16 | Sliding Puzzle | Move numbered tiles into a single empty space to restore their order. |
+| 17 | Reversi | Bracket discs in any direction to capture territory; legal-move and pass rules apply. |
+| 18 | Maze Race | Navigate adjacent grid cells around walls toward the opposite corner. |
+| 19 | Connect Four | Drop discs under gravity to create a line of four. |
+| 20 | Tic Tac Toe | Claim free squares to create a line of three. |
+| 21 | Picture Pairs | Remember hidden artwork, reveal pairs, and retain the turn on a match. |
+| 22 | Spot the Difference | Compare two illustrated scenes; tap the changed tile. |
+| 23 | Hidden Objects | Search a crowded 25-object collection for the single target illustration. |
+| 24 | Simon Echo | Watch and reproduce the complete flashing-pad sequence; pattern lengths increase. |
+| 25 | Follow the Cup | Visually track an object through animated cup swaps. |
+| 26 | Riddle Duel | Solve wordplay and logic clues. |
+| 27 | Math Sprint | Solve generated arithmetic expressions. |
+| 28 | Reaction Duel | Tap after a random signal; premature taps award the opponent a point. |
+| 29 | Word Scramble | Assemble the word from individual selectable letter tiles. |
+| 30 | Rock Paper Scissors | Make secret cyclic hand choices and reveal the winning matchup. |
+| 31 | Crossword Duel | Fill Across/Down clues on a genuine intersecting grid; confirmed letters lock into crossings. |
+| 32 | Word Search | Drag straight lines across an eight-direction letter grid, including backwards words. |
+| 33 | Dots and Boxes | Join neighboring dots, close squares and earn extra turns. |
+| 34 | Battleship Duel | Fire at coordinates on a hidden fleet grid; sink all enemy hull cells. |
+| 35 | Code Breaker | Use exact/misplaced peg feedback to deduce a repeating-color secret. |
+| 36 | Minesweeper Duel | Use neighbor counts, flood reveals and flags to find safe cells; two mine hits eliminate a player. |
 
-## Structure
+Sharing a renderer or scoreboard does not select rules: `game_factory.dart` explicitly routes each concept to its engine. Crossword, word search, Reversi, fleet placement, mine reveals, code feedback, tower trimming, traffic collisions and box closure have independent state/rule implementations. The superseded football/pushing reskins are no longer catalog entries.
 
-- `assets/art/app_icon.png`: JOY master icon, also exported to all Android/iOS/web runner sizes.
-- `assets/art/game_atlas.png`: 30 bundled 3D game illustrations. See `assets/art/README.md` for the generation prompt and atlas layout.
-- `lib/game_art.dart`: shared atlas loading and tile rendering.
-- `lib/games/sprites.dart`: custom vector gameplay artwork.
-- `lib/catalog.dart`: game names, families and instructions.
-- `lib/main.dart`: responsive lobby, setup, persistence, navigation and tournament results.
-- `lib/games/action.dart`: ticker-driven arenas, multi-touch input, collisions, timers and lifecycle pause. The engine uses Flutter CustomPainter without an additional game framework.
-- `lib/games/puzzle.dart`: turn-based boards, legal moves, matching and win detection.
-- `lib/games/brain.dart`: question generation, memory challenges, animated cups and reaction timing.
-- `test/joy_test.dart`: catalog, navigation, winning-board cases and opening/disposal checks across all 30 games.
+## Card flipping
 
-## Checks
+Picture Pairs uses a 440 ms perspective rotation with separate front/back faces, patterned beveled backs, illustrated fronts and matched-card highlights. The cards never show a mirrored front. Input locks while the second pair is being resolved; unmatched faces remain visible for 1.1 seconds before flipping back. Reduced-motion system settings remove the flip duration.
+
+## Structure and artwork
+
+- `lib/catalog.dart`, `lib/game_factory.dart`: catalog, instructions and explicit engine routing.
+- `lib/games/action.dart`: racing, parking, paddle sports, golf, sumo, tanks, snake and bombs.
+- `lib/games/arcade.dart`, `arcade_models.dart`: traffic scheduling, tower trimming, flick/keeper shootouts and jumping.
+- `lib/games/puzzle.dart`, `flip_card.dart`: sliding tiles, maze, line games and animated picture matching.
+- `lib/games/strategy.dart`, `strategy_models.dart`: auctions, Reversi, dots/boxes, fleets, code deduction and mines.
+- `lib/games/words.dart`, `word_models.dart`: four crossword packs, generated word search and letter assembly.
+- `lib/games/observation.dart`: scene comparison, object search and full-sequence Simon playback.
+- `lib/games/brain.dart`: riddles, arithmetic, cup tracking, reaction and secret hand choices.
+- `lib/games/sprites.dart`: resolution-independent gameplay artwork.
+- `assets/art/`: bundled atlases and master app icon. Generation prompts and layout details are in its README.
+
+## Validation
 
 ```bash
 dart format --output=none --set-exit-if-changed lib test
@@ -72,8 +84,8 @@ flutter test
 flutter build web --no-tree-shake-icons
 ```
 
-GitHub Actions runs these checks on pushes and pull requests. The web check retains the full icon font to avoid a const-finder error encountered with this SDK’s icon tree shaker.
+Tests cover rule outcomes, valid crossword crossings, generated search paths, duplicate-color deduction, safe first mine reveals, perspective animation, simultaneous touch, lifecycle pause and opening/disposal of all 36 games at phone size. GitHub Actions runs formatting, analysis, tests and a web build. The web build retains the full icon font to avoid an SDK const-finder error encountered with icon tree shaking.
 
-## Current scope
+## Scope
 
-This is a first playable version, not a store-ready release. The lobby and introductions use 30 custom 3D illustrations, with the same artwork on Picture Pairs cards. Action games use custom vector cars, tanks, wrestlers, balls, bombs and targets. A few text-based brain challenges still use emoji symbols; Picture Pairs uses illustrations rather than photographs. Several sports share a physics foundation, and arena games share pushing mechanics. Riddles and word lists are intentionally small. Menus and questions are currently English only. No sound pack, AI opponents, four-player mode, online/LAN multiplayer, ads, accounts or paid content. Device testing and balancing on actual Android/iOS hardware remain necessary before release. Native release signing is not configured; no credentials belong in this repository.
+This is a playable collection requiring device testing and balancing before store release. Menus, clues and questions are English. Crossword packs, riddles and scramble vocabulary are finite. The illustrated memory game uses artwork rather than photographs. No sound pack, AI opponents, four-player mode, online/LAN multiplayer, ads, accounts, paid content or release signing is configured.

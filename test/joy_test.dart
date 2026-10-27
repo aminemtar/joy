@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:joy/catalog.dart';
 import 'package:joy/main.dart';
 import 'package:joy/games/puzzle.dart';
-import 'package:joy/games/brain.dart';
+import 'package:joy/game_factory.dart';
 import 'package:joy/games/action.dart';
 
 void main() {
@@ -21,10 +21,18 @@ void main() {
     image.dispose();
     codec.dispose();
   });
-  test('30 distinct games spanning the requested categories', () {
-    expect(games.length, 30);
-    expect(games.map((g) => g.name).toSet().length, 30);
-    expect(games.where((g) => g.family == Family.action).length, 15);
+  test('Expansion illustrations contain eight square tiles', () async {
+    final bytes = await rootBundle.load('assets/art/strategy_atlas.png');
+    final codec = await ui.instantiateImageCodec(bytes.buffer.asUint8List());
+    final image = (await codec.getNextFrame()).image;
+    expect(image.width / 4, image.height / 2);
+    image.dispose();
+    codec.dispose();
+  });
+  test('36 games route to the intended concept engines', () {
+    expect(games.length, 36);
+    expect(games.map((g) => g.name).toSet().length, 36);
+    expect(games.where((g) => g.family == Family.action).length, 10);
   });
   testWidgets('Lobby opens game instructions before gameplay', (tester) async {
     tester.view.physicalSize = const Size(360, 740);
@@ -122,29 +130,16 @@ void main() {
     expect(find.text('Resume'), findsNothing);
     expect(tester.takeException(), isNull);
   });
-  for (var id = 0; id < 30; id++) {
+  for (var id = 0; id < games.length; id++) {
     testWidgets('Game $id renders and disposes cleanly', (tester) async {
-      tester.view.physicalSize = const Size(900, 1600);
+      tester.view.physicalSize = const Size(360, 740);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body:
-                id < 15
-                    ? ActionGame(id: id, onFinish: (_) {}, haptics: false)
-                    : id <= 20
-                    ? PuzzleGame(
-                      id: id,
-                      names: const ['A', 'B'],
-                      onFinish: (_) {},
-                    )
-                    : BrainGame(
-                      id: id,
-                      names: const ['A', 'B'],
-                      onFinish: (_) {},
-                    ),
+            body: buildGame(id: id, names: const ['A', 'B'], onFinish: (_) {}),
           ),
         ),
       );

@@ -100,50 +100,6 @@ class _BrainGameState extends State<BrainGame> {
         options = List.generate(4, (i) => '${result + (i - answer) * 2}');
       }
     }
-    if (id == 28) {
-      const words = [
-        'PLANET',
-        'ROCKET',
-        'PUZZLE',
-        'FRIEND',
-        'MUSIC',
-        'OCEAN',
-        'BRIDGE',
-        'SILVER',
-      ];
-      final list = List.of(words)..shuffle(rng);
-      options = list.take(4).toList();
-      final letters = options[answer].split('')..shuffle(rng);
-      prompt = letters.join('  ');
-    }
-    if (id == 22) {
-      options = ['💎', '🍒', '🚀', '🌙']..shuffle(rng);
-      prompt = 'Find this object: ${options[answer]}';
-    }
-    if (id == 21) {
-      final symbols = ['🐳', '🍋', '🎸', '🦊'];
-      final original = List.generate(4, (_) => symbols[rng.nextInt(4)]);
-      final changed = List.of(original);
-      changed[answer] = symbols[(symbols.indexOf(original[answer]) + 1) % 4];
-      prompt =
-          '${original.join('   ')}\n\n${changed.join('   ')}\n\nWhich position changed?';
-      options = ['1', '2', '3', '4'];
-    }
-    if (id == 23) {
-      options = ['🔵', '🟡', '🔴', '🟣'];
-      final seq = List.generate(4, (_) => rng.nextInt(4));
-      answer = seq.last;
-      prompt =
-          'Remember the LAST color:\n${seq.map((i) => options[i]).join('  ')}';
-      timer = Timer(const Duration(seconds: 3), () {
-        if (mounted) {
-          setState(() {
-            hidden = true;
-            prompt = 'What was the last color?';
-          });
-        }
-      });
-    }
     if (id == 24) {
       cups.setAll(0, [0, 1, 2]);
       cupStep = 0;
@@ -187,7 +143,7 @@ class _BrainGameState extends State<BrainGame> {
   }
 
   void choose(int i) async {
-    if (locked || finished || widget.id == 23 && !hidden) return;
+    if (locked || finished) return;
     if (widget.id == 29) {
       if (secret == null) {
         secret = i;
@@ -335,10 +291,7 @@ class _BrainGameState extends State<BrainGame> {
                 SizedBox(
                   width: (MediaQuery.sizeOf(context).width - 52) / 2,
                   child: FilledButton.tonal(
-                    onPressed:
-                        locked || widget.id == 23 && !hidden
-                            ? null
-                            : () => choose(i),
+                    onPressed: locked ? null : () => choose(i),
                     style: FilledButton.styleFrom(
                       minimumSize: const Size(0, 70),
                     ),

@@ -1,7 +1,8 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import '../game_art.dart';
+import 'flip_card.dart';
+import 'game_stage.dart';
 
 class PuzzleGame extends StatefulWidget {
   final int id;
@@ -88,7 +89,7 @@ class _PuzzleGameState extends State<PuzzleGame> {
       setState(() => open.add(index));
       if (open.length == 2) {
         locked = true;
-        await Future<void>.delayed(const Duration(milliseconds: 750));
+        await Future<void>.delayed(const Duration(milliseconds: 1100));
         if (!mounted) return;
         setState(() {
           if (board[open[0]] == board[open[1]]) {
@@ -98,8 +99,10 @@ class _PuzzleGameState extends State<PuzzleGame> {
             turn = 1 - turn;
           }
           open.clear();
-          locked = false;
         });
+        await Future<void>.delayed(const Duration(milliseconds: 440));
+        if (!mounted) return;
+        setState(() => locked = false);
         if (matched.length == 16) {
           end(
             score[0] == score[1]
@@ -153,53 +156,35 @@ class _PuzzleGameState extends State<PuzzleGame> {
       }
       if (board[target] != 0) return;
       board[target] = turn + 1;
-      if (widget.id == 16) {
-        final r = target ~/ 3, c = target % 3;
-        bool row = true, col = true;
-        for (var k = 0; k < 3; k++) {
-          row &= board[r * 3 + k] != 0;
-          col &= board[k * 3 + c] != 0;
-        }
-        score[turn] += (row ? 1 : 0) + (col ? 1 : 0);
-      } else {
-        final w = width, needed = widget.id == 18 ? 4 : 3;
-        for (final d in [
-          [0, 1],
-          [1, 0],
-          [1, 1],
-          [1, -1],
-        ]) {
-          var count = 1;
-          for (final sign in [-1, 1]) {
-            for (var step = 1; step < needed; step++) {
-              final r = target ~/ w + d[0] * step * sign,
-                  c = target % w + d[1] * step * sign;
-              if (r < 0 ||
-                  r >= board.length ~/ w ||
-                  c < 0 ||
-                  c >= w ||
-                  board[r * w + c] != turn + 1) {
-                break;
-              }
-              count++;
+      final w = width, needed = widget.id == 18 ? 4 : 3;
+      for (final d in [
+        [0, 1],
+        [1, 0],
+        [1, 1],
+        [1, -1],
+      ]) {
+        var count = 1;
+        for (final sign in [-1, 1]) {
+          for (var step = 1; step < needed; step++) {
+            final r = target ~/ w + d[0] * step * sign,
+                c = target % w + d[1] * step * sign;
+            if (r < 0 ||
+                r >= board.length ~/ w ||
+                c < 0 ||
+                c >= w ||
+                board[r * w + c] != turn + 1) {
+              break;
             }
+            count++;
           }
-          if (count >= needed) {
-            end(turn);
-            return;
-          }
+        }
+        if (count >= needed) {
+          end(turn);
+          return;
         }
       }
       if (!board.contains(0)) {
-        end(
-          widget.id == 16
-              ? (score[0] == score[1]
-                  ? -1
-                  : score[0] > score[1]
-                  ? 0
-                  : 1)
-              : -1,
-        );
+        end(-1);
         return;
       }
       turn = 1 - turn;
@@ -207,108 +192,142 @@ class _PuzzleGameState extends State<PuzzleGame> {
   }
 
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      Padding(
-        padding: const EdgeInsets.all(16),
-        child: Text(
-          '${widget.names[turn]}’s turn   •   ${score[0]} : ${score[1]}',
-          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-        ),
-      ),
-      Expanded(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 520),
-            child: GridView.builder(
-              shrinkWrap: true,
-              padding: const EdgeInsets.all(16),
-              itemCount: board.length,
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: width,
-                crossAxisSpacing: 6,
-                mainAxisSpacing: 6,
+  Widget build(BuildContext context) {
+    if (widget.id == 20) {
+      return GameStage(
+        names: widget.names,
+        scores: score,
+        turn: turn,
+        message:
+            locked
+                ? 'Remember the revealed pair…'
+                : 'Find a matching pair • ${matched.length ~/ 2} / 8',
+        child: Column(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: LinearProgressIndicator(
+                value: matched.length / 16,
+                minHeight: 6,
+                color: Colors.amber,
+                backgroundColor: Colors.white10,
               ),
-              itemBuilder: (c, i) {
-                String label = '';
-                Color color = const Color(0xFF1C294A);
-                if (widget.id == 15) {
-                  label = board[i] == 0 ? '' : '${board[i]}';
-                } else if (widget.id == 20) {
-                  label = '?';
-                  if (matched.contains(i)) color = const Color(0xFF334C79);
-                } else if (widget.id == 17) {
-                  label =
-                      walls.contains(i)
-                          ? '▪'
-                          : i == pos[0]
-                          ? '🔵'
-                          : i == pos[1]
-                          ? '🔴'
-                          : i == 0 || i == 35
-                          ? '🏁'
-                          : '';
-                  if (walls.contains(i)) color = Colors.black;
-                } else {
-                  label =
-                      board[i] == 0
-                          ? ''
-                          : widget.id == 19
-                          ? (board[i] == 1 ? '✕' : '○')
-                          : '●';
-                  if (board[i] != 0) {
-                    color =
-                        board[i] == 1
-                            ? const Color(0xFF507CFF)
-                            : const Color(0xFFFF6F83);
+            ),
+            const SizedBox(height: 22),
+            boardGrid(
+              16,
+              4,
+              (i) => FlipMatchCard(
+                key: ValueKey('memory-$i'),
+                index: i,
+                faceUp: matched.contains(i) || open.contains(i),
+                matched: matched.contains(i),
+                enabled:
+                    !locked &&
+                    !over &&
+                    !open.contains(i) &&
+                    !matched.contains(i),
+                artId: const [0, 5, 8, 11, 12, 19, 22, 29][board[i] - 1],
+                onTap: () => play(i),
+              ),
+              spacing: 12,
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Match a pair to keep your turn.\nUnmatched cards turn back over.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white54),
+            ),
+          ],
+        ),
+      );
+    }
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text(
+            '${widget.names[turn]}’s turn   •   ${score[0]} : ${score[1]}',
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
+        ),
+        Expanded(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 520),
+              child: GridView.builder(
+                shrinkWrap: true,
+                padding: const EdgeInsets.all(16),
+                itemCount: board.length,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: width,
+                  crossAxisSpacing: widget.id == 20 ? 10 : 6,
+                  mainAxisSpacing: widget.id == 20 ? 10 : 6,
+                ),
+                itemBuilder: (c, i) {
+                  String label = '';
+                  Color color = const Color(0xFF1C294A);
+                  if (widget.id == 15) {
+                    label = board[i] == 0 ? '' : '${board[i]}';
+                  } else if (widget.id == 20) {
+                    label = '?';
+                    if (matched.contains(i)) color = const Color(0xFF334C79);
+                  } else if (widget.id == 17) {
+                    label =
+                        walls.contains(i)
+                            ? '▪'
+                            : i == pos[0]
+                            ? '🔵'
+                            : i == pos[1]
+                            ? '🔴'
+                            : i == 0 || i == 35
+                            ? '🏁'
+                            : '';
+                    if (walls.contains(i)) color = Colors.black;
+                  } else {
+                    label =
+                        board[i] == 0
+                            ? ''
+                            : widget.id == 19
+                            ? (board[i] == 1 ? '✕' : '○')
+                            : '●';
+                    if (board[i] != 0) {
+                      color =
+                          board[i] == 1
+                              ? const Color(0xFF507CFF)
+                              : const Color(0xFFFF6F83);
+                    }
                   }
-                }
-                return Material(
-                  color: color,
-                  borderRadius: BorderRadius.circular(12),
-                  child: InkWell(
-                    onTap: () => play(i),
+                  return Material(
+                    color: color,
                     borderRadius: BorderRadius.circular(12),
-                    child: Center(
-                      child:
-                          widget.id == 20 &&
-                                  (matched.contains(i) || open.contains(i))
-                              ? GameArt(
-                                id:
-                                    const [
-                                      0,
-                                      5,
-                                      8,
-                                      11,
-                                      12,
-                                      19,
-                                      22,
-                                      29,
-                                    ][board[i] - 1],
-                                size: 90,
-                              )
-                              : Text(
-                                label,
-                                style: const TextStyle(
-                                  fontSize: 26,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                    child: InkWell(
+                      onTap: () => play(i),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Center(
+                        child: Text(
+                          label,
+                          style: const TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
         ),
-      ),
-      const Padding(
-        padding: EdgeInsets.all(16),
-        child: Text(
-          'Pass-and-play • Take turns on the same board',
-          style: TextStyle(color: Colors.white54),
+        const Padding(
+          padding: EdgeInsets.all(16),
+          child: Text(
+            'Pass-and-play • Take turns on the same board',
+            style: TextStyle(color: Colors.white54),
+          ),
         ),
-      ),
-    ],
-  );
+      ],
+    );
+  }
 }

@@ -4,10 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'catalog.dart';
+import 'game_factory.dart';
 import 'game_art.dart';
-import 'games/action.dart';
-import 'games/puzzle.dart';
-import 'games/brain.dart';
 
 void main() => runApp(const JoyApp());
 const blue = Color(0xFF507CFF), coral = Color(0xFFFF6F83);
@@ -247,7 +245,9 @@ class _LobbyState extends State<Lobby> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          const Text('30 games • No Wi-Fi • No accounts'),
+                          const Text(
+                            '36 different games • Offline • Two rivals',
+                          ),
                           const SizedBox(height: 20),
                           Wrap(
                             spacing: 12,
@@ -262,8 +262,10 @@ class _LobbyState extends State<Lobby> {
                               ),
                               FilledButton(
                                 onPressed: () {
-                                  final q = List.generate(30, (i) => i)
-                                    ..shuffle();
+                                  final q = List.generate(
+                                    games.length,
+                                    (i) => i,
+                                  )..shuffle();
                                   _play(q.take(5).toList());
                                 },
                                 child: const Text('5-round cup'),
@@ -301,6 +303,9 @@ class _LobbyState extends State<Lobby> {
                             'Puzzles',
                             'Memory',
                             'Brain',
+                            'Words',
+                            'Strategy',
+                            'Arcade',
                           ])
                             Padding(
                               padding: const EdgeInsets.only(right: 8),
@@ -472,23 +477,12 @@ class _MatchScreenState extends State<MatchScreen> {
                   ),
                 ),
               )
-              : switch (g.family) {
-                Family.action => ActionGame(
-                  id: widget.id,
-                  onFinish: finish,
-                  haptics: widget.haptics,
-                ),
-                Family.puzzle => PuzzleGame(
-                  id: widget.id,
-                  onFinish: finish,
-                  names: widget.names,
-                ),
-                Family.brain => BrainGame(
-                  id: widget.id,
-                  onFinish: finish,
-                  names: widget.names,
-                ),
-              },
+              : buildGame(
+                id: widget.id,
+                names: widget.names,
+                onFinish: finish,
+                haptics: widget.haptics,
+              ),
     );
   }
 }
