@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import '../game_art.dart';
 
 class PuzzleGame extends StatefulWidget {
   final int id;
@@ -234,20 +235,7 @@ class _PuzzleGameState extends State<PuzzleGame> {
                 if (widget.id == 15) {
                   label = board[i] == 0 ? '' : '${board[i]}';
                 } else if (widget.id == 20) {
-                  label =
-                      matched.contains(i) || open.contains(i)
-                          ? [
-                            '',
-                            '🍒',
-                            '🐳',
-                            '🍋',
-                            '🚀',
-                            '🎸',
-                            '🦊',
-                            '🌙',
-                            '💎',
-                          ][board[i]]
-                          : '?';
+                  label = '?';
                   if (matched.contains(i)) color = const Color(0xFF334C79);
                 } else if (widget.id == 17) {
                   label =
@@ -282,13 +270,30 @@ class _PuzzleGameState extends State<PuzzleGame> {
                     onTap: () => play(i),
                     borderRadius: BorderRadius.circular(12),
                     child: Center(
-                      child: Text(
-                        label,
-                        style: const TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child:
+                          widget.id == 20 &&
+                                  (matched.contains(i) || open.contains(i))
+                              ? GameArt(
+                                id:
+                                    const [
+                                      0,
+                                      5,
+                                      8,
+                                      11,
+                                      12,
+                                      19,
+                                      22,
+                                      29,
+                                    ][board[i] - 1],
+                                size: 90,
+                              )
+                              : Text(
+                                label,
+                                style: const TextStyle(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                     ),
                   ),
                 );

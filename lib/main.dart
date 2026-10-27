@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'catalog.dart';
+import 'game_art.dart';
 import 'games/action.dart';
 import 'games/puzzle.dart';
 import 'games/brain.dart';
@@ -192,6 +193,16 @@ class _LobbyState extends State<Lobby> {
                   children: [
                     Row(
                       children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: Image.asset(
+                            'assets/art/app_icon.png',
+                            width: 44,
+                            height: 44,
+                            cacheWidth: 128,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
                         const Text(
                           'JOY',
                           style: TextStyle(
@@ -316,6 +327,7 @@ class _LobbyState extends State<Lobby> {
                         final entry = filtered[i];
                         final g = entry.value;
                         return Card(
+                          color: const Color(0xFF111C37),
                           clipBehavior: Clip.antiAlias,
                           child: InkWell(
                             onTap: () => _play([entry.key]),
@@ -329,10 +341,7 @@ class _LobbyState extends State<Lobby> {
                                     tag: 'game-${entry.key}',
                                     child: Material(
                                       color: Colors.transparent,
-                                      child: Text(
-                                        g.icon,
-                                        style: const TextStyle(fontSize: 34),
-                                      ),
+                                      child: GameArt(id: entry.key, size: 110),
                                     ),
                                   ),
                                   const Spacer(),
@@ -364,7 +373,7 @@ class _LobbyState extends State<Lobby> {
                         ),
                         mainAxisSpacing: 10,
                         crossAxisSpacing: 10,
-                        mainAxisExtent: 180,
+                        mainAxisExtent: 240,
                       ),
                     ),
               ),
@@ -439,10 +448,7 @@ class _MatchScreenState extends State<MatchScreen> {
                         tag: 'game-${widget.id}',
                         child: Material(
                           color: Colors.transparent,
-                          child: Text(
-                            g.icon,
-                            style: const TextStyle(fontSize: 84),
-                          ),
+                          child: GameArt(id: widget.id, size: 200),
                         ),
                       ),
                       const SizedBox(height: 20),

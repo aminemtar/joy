@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'sprites.dart';
 
 class ActionGame extends StatefulWidget {
   final int id;
@@ -537,13 +538,6 @@ class ArenaPainter extends CustomPainter {
     required this.food,
   });
   final brush = Paint();
-  void text(Canvas c, String s, Offset p, double size) {
-    final tp = TextPainter(
-      text: TextSpan(text: s, style: TextStyle(fontSize: size)),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    tp.paint(c, p - Offset(tp.width / 2, tp.height / 2));
-  }
 
   @override
   void paint(Canvas c, Size s) {
@@ -580,7 +574,56 @@ class ArenaPainter extends CustomPainter {
         brush..color = const Color(0xFF283861),
       );
     }
+    if ([4, 10, 14].contains(id)) {
+      final radius = id == 14 ? max(.12, .43 - time * .007) : .43;
+      final ring = Rect.fromCenter(
+        center: at(const Offset(.5, .5)),
+        width: radius * 2 * s.width,
+        height: radius * 2 * s.height,
+      );
+      c.drawOval(
+        ring,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 7
+          ..color = const Color(0xFF6387D3),
+      );
+      c.drawOval(
+        ring.deflate(10),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5
+          ..color = Colors.white.withValues(alpha: .15),
+      );
+    }
+    if ([1, 6, 7].contains(id)) {
+      final lines =
+          Paint()
+            ..color = Colors.white.withValues(alpha: .18)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2;
+      c.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(10, 10, s.width - 20, s.height - 20),
+          const Radius.circular(18),
+        ),
+        lines,
+      );
+      c.drawCircle(at(const Offset(.5, .5)), unit * .16, lines);
+      for (final y in [.2, .8]) {
+        c.drawCircle(at(Offset(.5, y)), unit * .09, lines);
+      }
+    }
     if (id == 0 || id == 3) {
+      for (final x in [s.width * .025, s.width * .975]) {
+        c.drawLine(
+          Offset(x, 0),
+          Offset(x, s.height),
+          Paint()
+            ..color = const Color(0xFF6387D3)
+            ..strokeWidth = 4,
+        );
+      }
       for (var p = 0; p < 2; p++) {
         for (var lane = 1; lane < 4; lane++) {
           for (var y = 0.0; y < .44; y += .08) {
@@ -626,11 +669,11 @@ class ArenaPainter extends CustomPainter {
           );
         }
       }
-      text(
+      GameSprites.orb(
         c,
-        '🍎',
         Offset((food.x + .5) * s.width / 20, (food.y + .5) * s.height / 20),
-        unit / 20,
+        unit / 42,
+        const Color(0xFFFFC16D),
       );
       return;
     }
@@ -642,16 +685,7 @@ class ArenaPainter extends CustomPainter {
           unit * .05,
           brush..color = color.withValues(alpha: .3),
         );
-        text(
-          c,
-          id == 2
-              ? '🅿️'
-              : id == 8
-              ? '🏀'
-              : '⛳',
-          at(targets[p]),
-          unit * .075,
-        );
+        GameSprites.goal(c, at(targets[p]), unit * .04, id, color);
       }
       if (id == 5) {
         c.drawRRect(
@@ -665,35 +699,51 @@ class ArenaPainter extends CustomPainter {
           ),
           brush..color = color,
         );
+        c.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromCenter(
+              center: at(players[p]) - const Offset(0, 3),
+              width: s.width * .18,
+              height: 3,
+            ),
+            const Radius.circular(2),
+          ),
+          Paint()..color = Colors.white.withValues(alpha: .5),
+        );
       } else {
-        c.drawCircle(
-          at(players[p]),
-          unit * .055,
-          brush..color = color.withValues(alpha: .12),
-        );
-        c.drawCircle(at(players[p]), unit * .04, brush..color = color);
-        text(
-          c,
-          [0, 1, 2, 3, 4].contains(id)
-              ? '🚗'
-              : id == 11
-              ? '🎯'
-              : id == 10
-              ? '💪'
-              : id == 7
-              ? '⚽'
-              : id == 8
-              ? '🏀'
-              : id == 9
-              ? '●'
-              : '',
-          at(players[p]),
-          unit * .06,
-        );
+        final center = at(players[p]), r = unit * .04;
+        if (id <= 4) {
+          GameSprites.car(c, center, r, color, reverse: p == 1);
+        } else if (id == 11) {
+          final direction = at(players[1 - p]) - center;
+          GameSprites.tank(
+            c,
+            center,
+            r,
+            color,
+            atan2(direction.dy, direction.dx) + pi / 2,
+          );
+        } else if (id == 10) {
+          GameSprites.wrestler(c, center, r, color);
+        } else if (id == 8) {
+          GameSprites.ball(c, center, r, basketball: true);
+        } else if (id == 9) {
+          GameSprites.ball(c, center, r * .65);
+        } else {
+          GameSprites.orb(c, center, r, color);
+          c.drawCircle(
+            center,
+            r * .5,
+            Paint()
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 2
+              ..color = Colors.white.withValues(alpha: .55),
+          );
+        }
       }
     }
     if ([1, 5, 6, 7].contains(id)) {
-      c.drawCircle(at(ball), unit * .022, brush..color = Colors.white);
+      GameSprites.ball(c, at(ball), unit * .022, football: id == 1 || id == 7);
       for (final y in [0.0, s.height - 5]) {
         c.drawRect(
           Rect.fromLTWH(s.width * .3, y, s.width * .4, 5),
@@ -708,9 +758,15 @@ class ArenaPainter extends CustomPainter {
           unit * .16 * (1 - shot.life / 2),
           brush..color = Colors.orange.withValues(alpha: .12),
         );
-        text(c, '💣', at(shot.p), unit * .06);
+        GameSprites.bomb(c, at(shot.p), unit * .035, time);
       } else if (id == 0 || id == 3) {
-        text(c, '🚕', at(shot.p), unit * .07);
+        GameSprites.car(
+          c,
+          at(shot.p),
+          unit * .04,
+          const Color(0xFFFFC16D),
+          reverse: shot.owner == 0,
+        );
       } else {
         c.drawCircle(at(shot.p), unit * .012, brush..color = Colors.amber);
       }

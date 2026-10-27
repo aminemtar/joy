@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,6 +10,17 @@ import 'package:joy/games/brain.dart';
 import 'package:joy/games/action.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  test('Bundled artwork contains thirty equal square tiles', () async {
+    final bytes = await rootBundle.load('assets/art/game_atlas.png');
+    final codec = await ui.instantiateImageCodec(bytes.buffer.asUint8List());
+    final image = (await codec.getNextFrame()).image;
+    expect(image.width % 5, 0);
+    expect(image.height % 6, 0);
+    expect(image.width ~/ 5, image.height ~/ 6);
+    image.dispose();
+    codec.dispose();
+  });
   test('30 distinct games spanning the requested categories', () {
     expect(games.length, 30);
     expect(games.map((g) => g.name).toSet().length, 30);

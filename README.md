@@ -52,6 +52,10 @@ If already cloned, run `git pull origin main` first. Android needs Android Studi
 
 ## Structure
 
+- `assets/art/app_icon.png`: JOY master icon, also exported to all Android/iOS/web runner sizes.
+- `assets/art/game_atlas.png`: 30 bundled 3D game illustrations. See `assets/art/README.md` for the generation prompt and atlas layout.
+- `lib/game_art.dart`: shared atlas loading and tile rendering.
+- `lib/games/sprites.dart`: custom vector gameplay artwork.
 - `lib/catalog.dart`: game names, families and instructions.
 - `lib/main.dart`: responsive lobby, setup, persistence, navigation and tournament results.
 - `lib/games/action.dart`: ticker-driven arenas, multi-touch input, collisions, timers and lifecycle pause. The engine uses Flutter CustomPainter without an additional game framework.
@@ -72,4 +76,4 @@ GitHub Actions runs these checks on pushes and pull requests. The web check reta
 
 ## Current scope
 
-This is a first playable version, not a store-ready release. Graphics use Flutter-drawn arenas and platform emoji; Picture Pairs uses symbols rather than photographs. Several sports share a physics foundation, and arena games share pushing mechanics. Riddles and word lists are intentionally small. Menus and questions are currently English only. No sound pack, AI opponents, four-player mode, online/LAN multiplayer, ads, accounts or paid content. Device testing and balancing on actual Android/iOS hardware remain necessary before release. Native release signing is not configured; no credentials belong in this repository.
+This is a first playable version, not a store-ready release. The lobby and introductions use 30 custom 3D illustrations, with the same artwork on Picture Pairs cards. Action games use custom vector cars, tanks, wrestlers, balls, bombs and targets. A few text-based brain challenges still use emoji symbols; Picture Pairs uses illustrations rather than photographs. Several sports share a physics foundation, and arena games share pushing mechanics. Riddles and word lists are intentionally small. Menus and questions are currently English only. No sound pack, AI opponents, four-player mode, online/LAN multiplayer, ads, accounts or paid content. Device testing and balancing on actual Android/iOS hardware remain necessary before release. Native release signing is not configured; no credentials belong in this repository.
