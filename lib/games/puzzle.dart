@@ -1,3 +1,4 @@
+import '../sound.dart';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -86,6 +87,7 @@ class _PuzzleGameState extends State<PuzzleGame> {
     if (locked || over) return;
     if (widget.id == 20) {
       if (matched.contains(index) || open.contains(index)) return;
+      JoySounds.instance.play(SoundEffect.flip);
       setState(() => open.add(index));
       if (open.length == 2) {
         locked = true;
@@ -94,8 +96,10 @@ class _PuzzleGameState extends State<PuzzleGame> {
         setState(() {
           if (board[open[0]] == board[open[1]]) {
             matched.addAll(open);
+            JoySounds.instance.play(SoundEffect.correct);
             score[turn]++;
           } else {
+            JoySounds.instance.play(SoundEffect.wrong);
             turn = 1 - turn;
           }
           open.clear();
@@ -119,6 +123,7 @@ class _PuzzleGameState extends State<PuzzleGame> {
       if (widget.id == 15) {
         final gap = board.indexOf(0);
         if (!_adj(gap, index, 3)) return;
+        JoySounds.instance.play(SoundEffect.tap);
         board[gap] = board[index];
         board[index] = 0;
         if (_solved()) {
@@ -134,6 +139,7 @@ class _PuzzleGameState extends State<PuzzleGame> {
             !_adj(pos[turn], index, 6)) {
           return;
         }
+        JoySounds.instance.play(SoundEffect.tap);
         pos[turn] = index;
         if (index == (turn == 0 ? 35 : 0)) {
           end(turn);
@@ -155,6 +161,7 @@ class _PuzzleGameState extends State<PuzzleGame> {
         if (target < 0) return;
       }
       if (board[target] != 0) return;
+      JoySounds.instance.play(SoundEffect.tap);
       board[target] = turn + 1;
       final w = width, needed = widget.id == 18 ? 4 : 3;
       for (final d in [

@@ -1,3 +1,4 @@
+import '../sound.dart';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'game_stage.dart';
@@ -71,6 +72,7 @@ class _StrategyGameState extends State<StrategyGame> {
     if (done) return;
     setState(() {
       if (secretBid == null) {
+        JoySounds.instance.play(SoundEffect.tap);
         secretBid = bid;
         turn = 1;
         bid = 0;
@@ -84,6 +86,9 @@ class _StrategyGameState extends State<StrategyGame> {
                   : first > bid
                   ? 0
                   : 1;
+      JoySounds.instance.play(
+        winner >= 0 ? SoundEffect.correct : SoundEffect.tap,
+      );
       if (winner >= 0) {
         score[winner] += value;
         coins[winner] -= winner == 0 ? first : bid;
@@ -108,6 +113,7 @@ class _StrategyGameState extends State<StrategyGame> {
       switch (widget.id) {
         case 16:
           if (!reversi.play(cell, turn + 1)) return;
+          JoySounds.instance.play(SoundEffect.flip);
           score[0] = reversi.cells.where((v) => v == 1).length;
           score[1] = reversi.cells.where((v) => v == 2).length;
           turn = 1 - turn;
@@ -120,6 +126,9 @@ class _StrategyGameState extends State<StrategyGame> {
         case 32:
           final gained = dots.play(cell, turn + 1);
           if (gained < 0) return;
+          JoySounds.instance.play(
+            gained > 0 ? SoundEffect.correct : SoundEffect.tap,
+          );
           score[turn] += gained;
           if (!dots.owners.contains(0)) {
             end();
@@ -131,6 +140,7 @@ class _StrategyGameState extends State<StrategyGame> {
           final enemy = fleets[1 - turn];
           if (enemy.shots.contains(cell)) return;
           final hit = enemy.fire(cell);
+          JoySounds.instance.play(hit ? SoundEffect.hit : SoundEffect.tap);
           if (hit) score[turn]++;
           notice = hit ? 'Hit!' : 'Splash — missed.';
           if (enemy.sunk) {
@@ -153,6 +163,9 @@ class _StrategyGameState extends State<StrategyGame> {
             return;
           }
           final result = mines.reveal(cell);
+          JoySounds.instance.play(
+            result < 0 ? SoundEffect.wrong : SoundEffect.tap,
+          );
           if (result < 0) {
             lives[turn]--;
             notice = 'Mine! ${lives[turn]} shields remain.';
@@ -178,6 +191,9 @@ class _StrategyGameState extends State<StrategyGame> {
     if (guess.length != 4 || done) return;
     setState(() {
       final feedback = evaluateCode(secrets[turn], guess);
+      JoySounds.instance.play(
+        feedback.exact == 4 ? SoundEffect.correct : SoundEffect.tap,
+      );
       attempts[turn]++;
       history[turn].add(
         '${guess.map((i) => i + 1).join(' ')}   •   ${feedback.exact} exact / ${feedback.misplaced} misplaced',

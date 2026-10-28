@@ -62,6 +62,14 @@ Sharing a renderer or scoreboard does not select rules: `game_factory.dart` expl
 
 Picture Pairs uses a 440 ms perspective rotation with separate front/back faces, patterned beveled backs, illustrated fronts and matched-card highlights. The cards never show a mirrored front. Input locks while the second pair is being resolved; unmatched faces remain visible for 1.1 seconds before flipping back. Reduced-motion system settings remove the flip duration.
 
+## Sound effects
+
+Fifteen original synthesized arcade cues are bundled for offline play: taps, flips, correct/missed moves, impacts, jumps, shots, countdown/start cues, win/draw fanfares and four Simon Echo tones. Use the speaker button in the lobby or match toolbar to mute instantly. Settings also provide a volume slider; both preferences persist locally.
+
+The sound service throttles repeated contacts and serializes native resource changes. Result music replaces pending gameplay cues. Muting, leaving a match or backgrounding stops playback. Effects mix with other apps and respect device silent mode where supported. No background music loop is added.
+
+`assets/audio/README.md` documents the cues; `python tool/build_sound_effects.py` regenerates them without third-party sound files. `lib/sound.dart` contains playback, preference and lifecycle handling, and `test/sound_test.dart` checks the audio files and service behavior. After pulling this update, stop any running debug app and launch it again so the new native audio plugin is registered.
+
 ## Structure and artwork
 
 - `lib/catalog.dart`, `lib/game_factory.dart`: catalog, instructions and explicit engine routing.
@@ -88,4 +96,4 @@ Tests cover rule outcomes, valid crossword crossings, generated search paths, du
 
 ## Scope
 
-This is a playable collection requiring device testing and balancing before store release. Menus, clues and questions are English. Crossword packs, riddles and scramble vocabulary are finite. The illustrated memory game uses artwork rather than photographs. No sound pack, AI opponents, four-player mode, online/LAN multiplayer, ads, accounts, paid content or release signing is configured.
+This is a playable collection requiring device testing and balancing before store release. Menus, clues and questions are English. Crossword packs, riddles and scramble vocabulary are finite. The illustrated memory game uses artwork rather than photographs. No AI opponents, four-player mode, online/LAN multiplayer, ads, accounts, paid content or release signing is configured.

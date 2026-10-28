@@ -1,3 +1,4 @@
+import '../sound.dart';
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
@@ -89,6 +90,14 @@ class _ObservationGameState extends State<ObservationGame> {
       });
       return;
     }
+    JoySounds.instance.play(
+      [
+        SoundEffect.noteBlue,
+        SoundEffect.noteCoral,
+        SoundEffect.noteGold,
+        SoundEffect.notePurple,
+      ][sequence[sequenceIndex]],
+    );
     setState(() => lit = sequence[sequenceIndex]);
     timer = Timer(const Duration(milliseconds: 450), () {
       if (!mounted) return;
@@ -111,6 +120,7 @@ class _ObservationGameState extends State<ObservationGame> {
 
   void resolve(bool correct) {
     locked = true;
+    JoySounds.instance.play(correct ? SoundEffect.correct : SoundEffect.wrong);
     if (correct) score[turn] += widget.id == 23 ? sequence.length : 1;
     message = correct ? 'Correct!' : 'Miss — turn passes';
     if (widget.id != 23 && score[turn] >= 5) {
@@ -139,6 +149,14 @@ class _ObservationGameState extends State<ObservationGame> {
           resolve(false);
           return;
         }
+        JoySounds.instance.play(
+          [
+            SoundEffect.noteBlue,
+            SoundEffect.noteCoral,
+            SoundEffect.noteGold,
+            SoundEffect.notePurple,
+          ][i],
+        );
         input++;
         lit = i;
         message = '$input / ${sequence.length}';

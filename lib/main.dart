@@ -6,8 +6,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'catalog.dart';
 import 'game_factory.dart';
 import 'game_art.dart';
+import 'sound.dart';
 
-void main() => runApp(const JoyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await JoySounds.instance.initialize();
+  runApp(const JoyApp());
+}
+
 const blue = Color(0xFF507CFF), coral = Color(0xFFFF6F83);
 
 class JoyApp extends StatelessWidget {
@@ -71,6 +77,7 @@ class _LobbyState extends State<Lobby> {
   Future<void> _play(List<int> queue) async {
     if (busy) return;
     busy = true;
+    JoySounds.instance.play(SoundEffect.tap);
     final points = [0, 0];
     for (final id in queue) {
       if (!mounted) break;
@@ -91,6 +98,13 @@ class _LobbyState extends State<Lobby> {
     }
     busy = false;
     if (queue.length > 1 && mounted) {
+      JoySounds.instance.celebrate(
+        points[0] == points[1]
+            ? -1
+            : points[0] > points[1]
+            ? 0
+            : 1,
+      );
       showDialog<void>(
         context: context,
         builder:
@@ -101,12 +115,14 @@ class _LobbyState extends State<Lobby> {
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(c),
+                  onPressed: () {
+                    Navigator.pop(c);
+                  },
                   child: const Text('Done'),
                 ),
               ],
             ),
-      );
+      ).whenComplete(JoySounds.instance.stop);
     }
   }
 
@@ -117,54 +133,91 @@ class _LobbyState extends State<Lobby> {
       builder:
           (c) => StatefulBuilder(
             builder:
-                (c, update) => Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    24,
-                    24,
-                    24,
-                    24 + MediaQuery.viewInsetsOf(c).bottom,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'Make it your party',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      for (var i = 0; i < 2; i++)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: TextFormField(
-                            initialValue: names[i],
-                            maxLength: 16,
-                            decoration: InputDecoration(
-                              labelText: 'Player ${i + 1}',
-                            ),
-                            onChanged: (v) {
-                              names[i] =
-                                  v.trim().isEmpty
-                                      ? 'Player ${i + 1}'
-                                      : v.trim();
-                            },
+                (c, update) => SingleChildScrollView(
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      24,
+                      24,
+                      24,
+                      24 + MediaQuery.viewInsetsOf(c).bottom,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'Make it your party',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      SwitchListTile(
-                        title: const Text('Vibration'),
-                        value: haptics,
-                        onChanged: (v) => update(() => haptics = v),
-                      ),
-                      FilledButton(
-                        onPressed: () {
-                          _save();
-                          setState(() {});
-                          Navigator.pop(c);
-                        },
-                        child: const Text('Save'),
-                      ),
-                    ],
+                        for (var i = 0; i < 2; i++)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: TextFormField(
+                              initialValue: names[i],
+                              maxLength: 16,
+                              decoration: InputDecoration(
+                                labelText: 'Player ${i + 1}',
+                              ),
+                              onChanged: (v) {
+                                names[i] =
+                                    v.trim().isEmpty
+                                        ? 'Player ${i + 1}'
+                                        : v.trim();
+                              },
+                            ),
+                          ),
+                        SwitchListTile(
+                          title: const Text('Sound effects'),
+                          subtitle: const Text(
+                            'Play actions and victory celebrations',
+                          ),
+                          value: JoySounds.instance.enabled,
+                          onChanged: (value) {
+                            JoySounds.instance.setEnabled(value);
+                            update(() {});
+                          },
+                        ),
+                        Row(
+                          children: [
+                            const Icon(Icons.volume_down_rounded),
+                            Expanded(
+                              child: Slider(
+                                label:
+                                    '${(JoySounds.instance.volume * 100).round()}%',
+                                value: JoySounds.instance.volume,
+                                onChanged:
+                                    JoySounds.instance.enabled
+                                        ? (v) {
+                                          JoySounds.instance.setVolume(v);
+                                          update(() {});
+                                        }
+                                        : null,
+                                onChangeEnd:
+                                    (_) => JoySounds.instance.play(
+                                      SoundEffect.tap,
+                                    ),
+                              ),
+                            ),
+                            const Icon(Icons.volume_up_rounded),
+                          ],
+                        ),
+                        SwitchListTile(
+                          title: const Text('Vibration'),
+                          value: haptics,
+                          onChanged: (v) => update(() => haptics = v),
+                        ),
+                        FilledButton(
+                          onPressed: () {
+                            _save();
+                            setState(() {});
+                            Navigator.pop(c);
+                          },
+                          child: const Text('Save'),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
           ),
@@ -210,6 +263,25 @@ class _LobbyState extends State<Lobby> {
                           ),
                         ),
                         const Spacer(),
+                        ListenableBuilder(
+                          listenable: JoySounds.instance,
+                          builder:
+                              (context, child) => IconButton(
+                                tooltip:
+                                    JoySounds.instance.enabled
+                                        ? 'Mute sound effects'
+                                        : 'Enable sound effects',
+                                onPressed:
+                                    () => JoySounds.instance.setEnabled(
+                                      !JoySounds.instance.enabled,
+                                    ),
+                                icon: Icon(
+                                  JoySounds.instance.enabled
+                                      ? Icons.volume_up_rounded
+                                      : Icons.volume_off_rounded,
+                                ),
+                              ),
+                        ),
                         IconButton(
                           onPressed: _settings,
                           icon: const Icon(Icons.tune_rounded),
@@ -312,7 +384,10 @@ class _LobbyState extends State<Lobby> {
                               child: ChoiceChip(
                                 label: Text(c),
                                 selected: category == c,
-                                onSelected: (_) => setState(() => category = c),
+                                onSelected: (_) {
+                                  JoySounds.instance.play(SoundEffect.tap);
+                                  setState(() => category = c);
+                                },
                               ),
                             ),
                         ],
@@ -406,9 +481,16 @@ class MatchScreen extends StatefulWidget {
 
 class _MatchScreenState extends State<MatchScreen> {
   bool started = false, done = false;
+  @override
+  void dispose() {
+    JoySounds.instance.stop();
+    super.dispose();
+  }
+
   void finish(int winner) {
     if (done || !mounted) return;
     done = true;
+    JoySounds.instance.celebrate(winner);
     showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -440,7 +522,30 @@ class _MatchScreenState extends State<MatchScreen> {
   Widget build(BuildContext context) {
     final g = games[widget.id];
     return Scaffold(
-      appBar: AppBar(title: Text(g.name)),
+      appBar: AppBar(
+        title: Text(g.name),
+        actions: [
+          ListenableBuilder(
+            listenable: JoySounds.instance,
+            builder:
+                (context, child) => IconButton(
+                  tooltip:
+                      JoySounds.instance.enabled
+                          ? 'Mute sound effects'
+                          : 'Enable sound effects',
+                  onPressed:
+                      () => JoySounds.instance.setEnabled(
+                        !JoySounds.instance.enabled,
+                      ),
+                  icon: Icon(
+                    JoySounds.instance.enabled
+                        ? Icons.volume_up_rounded
+                        : Icons.volume_off_rounded,
+                  ),
+                ),
+          ),
+        ],
+      ),
       body:
           !started
               ? Center(
@@ -469,7 +574,14 @@ class _MatchScreenState extends State<MatchScreen> {
                       ),
                       const SizedBox(height: 32),
                       FilledButton.icon(
-                        onPressed: () => setState(() => started = true),
+                        onPressed: () {
+                          JoySounds.instance.play(
+                            [Family.action, Family.arcade].contains(g.family)
+                                ? SoundEffect.tap
+                                : SoundEffect.start,
+                          );
+                          setState(() => started = true);
+                        },
                         icon: const Icon(Icons.play_arrow),
                         label: const Text('Let’s play'),
                       ),

@@ -1,3 +1,4 @@
+import '../sound.dart';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -54,6 +55,7 @@ class _ActionGameState extends State<ActionGame>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    JoySounds.instance.play(SoundEffect.tick);
     ticker = createTicker(tick)..start();
   }
 
@@ -89,6 +91,7 @@ class _ActionGameState extends State<ActionGame>
   }
 
   void point(int p, [int goal = 5]) {
+    JoySounds.instance.play(SoundEffect.correct);
     score[p]++;
     if (widget.haptics) HapticFeedback.lightImpact();
     if (score[p] >= goal) finish(p);
@@ -100,7 +103,13 @@ class _ActionGameState extends State<ActionGame>
     last = now;
     if (paused || over || area.isEmpty) return;
     if (countdown > 0) {
+      final before = countdown.ceil();
       setState(() => countdown -= dt);
+      if (countdown.ceil() != before) {
+        JoySounds.instance.play(
+          countdown <= 0 ? SoundEffect.start : SoundEffect.tick,
+        );
+      }
       return;
     }
     time += dt;
@@ -169,6 +178,7 @@ class _ActionGameState extends State<ActionGame>
         if (d.distance < (widget.id == 5 ? .1 : .075)) {
           if (widget.id == 5) {
             if ((p == 0 && ballV.dy > 0) || (p == 1 && ballV.dy < 0)) {
+              JoySounds.instance.play(SoundEffect.hit);
               ballV = Offset(
                 (ball.dx - players[p].dx) * 5,
                 p == 0 ? -.55 : .55,
@@ -176,6 +186,7 @@ class _ActionGameState extends State<ActionGame>
               ball = Offset(ball.dx, players[p].dy + (p == 0 ? -.06 : .06));
             }
           } else {
+            JoySounds.instance.play(SoundEffect.hit);
             ballV = normal(d) * .7;
             ball = players[p] + normal(d) * .08;
           }
@@ -209,6 +220,7 @@ class _ActionGameState extends State<ActionGame>
     if (ring) {
       final d = players[1] - players[0];
       if (d.distance < .10) {
+        JoySounds.instance.play(SoundEffect.hit);
         final n = normal(d.distance == 0 ? const Offset(1, 0) : d);
         players[0] -= n * .009;
         players[1] += n * .009;
@@ -303,6 +315,7 @@ class _ActionGameState extends State<ActionGame>
             snakes[p].insert(0, heads[p]);
             if (heads[p] == food) {
               score[p]++;
+              JoySounds.instance.play(SoundEffect.correct);
               final available = [
                 for (var x = 0; x < 20; x++)
                   for (var y = 0; y < 20; y++)
@@ -343,8 +356,9 @@ class _ActionGameState extends State<ActionGame>
       cooldown[p] = .45;
       if ((players[p].dx - targets[p].dx).abs() < .10) {
         point(p);
-      } else if (widget.haptics) {
-        HapticFeedback.lightImpact();
+      } else {
+        JoySounds.instance.play(SoundEffect.wrong);
+        if (widget.haptics) HapticFeedback.lightImpact();
       }
       return;
     }
@@ -383,6 +397,7 @@ class _ActionGameState extends State<ActionGame>
     if (widget.id == 9 && !paused) {
       velocity[p] = (players[p] - location(e)) * 2.5;
       final speed = velocity[p].distance;
+      if (speed > .01) JoySounds.instance.play(SoundEffect.hit);
       if (speed > 1.1) velocity[p] = normal(velocity[p]) * 1.1;
     }
   }
@@ -390,6 +405,7 @@ class _ActionGameState extends State<ActionGame>
   void fire(int p) {
     if (paused || over || countdown > 0 || cooldown[p] > 0) return;
     cooldown[p] = widget.id == 13 ? 1 : .5;
+    JoySounds.instance.play(SoundEffect.shoot);
     shots.add(
       Shot(
         players[p],

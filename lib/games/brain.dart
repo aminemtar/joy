@@ -1,3 +1,4 @@
+import '../sound.dart';
 import 'dart:async';
 import 'dart:math';
 
@@ -134,7 +135,8 @@ class _BrainGameState extends State<BrainGame> {
     }
   }
 
-  void winPoint(int p) {
+  void winPoint(int p, {bool playCue = true}) {
+    if (playCue) JoySounds.instance.play(SoundEffect.correct);
     score[p]++;
     if (score[p] >= 5) {
       finished = true;
@@ -146,6 +148,7 @@ class _BrainGameState extends State<BrainGame> {
     if (locked || finished) return;
     if (widget.id == 29) {
       if (secret == null) {
+        JoySounds.instance.play(SoundEffect.tap);
         secret = i;
         turn = 1;
         setState(() => prompt = 'Pass the phone to ${widget.names[1]}');
@@ -160,7 +163,11 @@ class _BrainGameState extends State<BrainGame> {
               : (a - i + 3) % 3 == 1
               ? 0
               : 1;
-      if (winner >= 0) winPoint(winner);
+      if (winner >= 0) {
+        winPoint(winner);
+      } else {
+        JoySounds.instance.play(SoundEffect.tap);
+      }
       setState(
         () =>
             feedback =
@@ -170,7 +177,11 @@ class _BrainGameState extends State<BrainGame> {
     } else {
       locked = true;
       final correct = i == answer;
-      if (correct) winPoint(turn);
+      if (correct) {
+        winPoint(turn);
+      } else {
+        JoySounds.instance.play(SoundEffect.wrong);
+      }
       setState(
         () => feedback = correct ? 'Correct!' : 'Answer: ${options[answer]}',
       );
@@ -185,7 +196,8 @@ class _BrainGameState extends State<BrainGame> {
     locked = true;
     timer?.cancel();
     final winner = ready ? p : 1 - p;
-    winPoint(winner);
+    if (!ready) JoySounds.instance.play(SoundEffect.wrong);
+    winPoint(winner, playCue: ready);
     setState(
       () =>
           prompt =

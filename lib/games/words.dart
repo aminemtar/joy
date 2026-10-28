@@ -1,3 +1,4 @@
+import '../sound.dart';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'game_stage.dart';
@@ -103,6 +104,7 @@ class _WordsGameState extends State<WordsGame> {
     final cells = crossword.clues[selected].cells;
     if (cursor >= cells.length) return;
     setState(() {
+      JoySounds.instance.play(SoundEffect.tap);
       entry[cells[cursor]] = value;
       cursor++;
       skipConfirmed();
@@ -113,10 +115,12 @@ class _WordsGameState extends State<WordsGame> {
     if (done || crossword.solved.contains(selected)) return;
     setState(() {
       if (crossword.check(selected, entry)) {
+        JoySounds.instance.play(SoundEffect.correct);
         crossword.confirm(selected);
         scores[turn] += crossword.clues[selected].word.length;
         message = 'Correct — crossing letters are now locked.';
       } else {
+        JoySounds.instance.play(SoundEffect.wrong);
         message = 'Not quite. Turn passes; crossing letters stay.';
       }
       entry.clear();
@@ -138,9 +142,11 @@ class _WordsGameState extends State<WordsGame> {
     if (picked.length != letters.length || done) return;
     setState(() {
       if (picked.map((i) => letters[i]).join() == word) {
+        JoySounds.instance.play(SoundEffect.correct);
         scores[turn]++;
         message = 'Correct!';
       } else {
+        JoySounds.instance.play(SoundEffect.wrong);
         message = 'The word was $word.';
       }
       if (scores[turn] >= 5) {
@@ -160,11 +166,13 @@ class _WordsGameState extends State<WordsGame> {
     setState(() {
       final match = search.match(selection, found);
       if (match != null) {
+        JoySounds.instance.play(SoundEffect.correct);
         found.add(match);
         marked.addAll(selection);
         scores[turn] += match.length;
         message = 'Found $match!';
       } else {
+        JoySounds.instance.play(SoundEffect.wrong);
         message = 'No new word on that line.';
       }
       selection = [];
@@ -448,7 +456,10 @@ class _WordsGameState extends State<WordsGame> {
                 onPressed:
                     picked.contains(i)
                         ? null
-                        : () => setState(() => picked.add(i)),
+                        : () {
+                          JoySounds.instance.play(SoundEffect.tap);
+                          setState(() => picked.add(i));
+                        },
                 child: Text(letters[i], style: const TextStyle(fontSize: 23)),
               ),
             ),

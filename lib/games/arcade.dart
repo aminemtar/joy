@@ -1,3 +1,4 @@
+import '../sound.dart';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -48,6 +49,7 @@ class _ArcadeGameState extends State<ArcadeGame>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    JoySounds.instance.play(SoundEffect.tick);
     ticker = createTicker(tick)..start();
   }
 
@@ -84,6 +86,9 @@ class _ArcadeGameState extends State<ArcadeGame>
     if (paused || done || countdown > 0) return;
     setState(() {
       final accuracy = tower.drop(movingLeft, turn);
+      JoySounds.instance.play(
+        accuracy == 0 ? SoundEffect.wrong : SoundEffect.hit,
+      );
       if (accuracy == 0) {
         finish(1 - turn);
       } else {
@@ -96,6 +101,7 @@ class _ArcadeGameState extends State<ArcadeGame>
 
   void jump(int player) {
     if (paused || done || countdown > 0 || height[player] > 0) return;
+    JoySounds.instance.play(SoundEffect.jump);
     setState(() => jumpVelocity[player] = 1.4);
   }
 
@@ -103,6 +109,7 @@ class _ArcadeGameState extends State<ArcadeGame>
   void resolveShot(bool goal) {
     if (!flying) return;
     flying = false;
+    JoySounds.instance.play(goal ? SoundEffect.correct : SoundEffect.wrong);
     if (goal) score[turn]++;
     notice = goal ? 'GOAL!' : 'Saved / off target';
     cooldown = 1.2;
@@ -115,7 +122,13 @@ class _ArcadeGameState extends State<ArcadeGame>
     previous = now;
     if (done || paused) return;
     if (countdown > 0) {
+      final before = countdown.ceil();
       setState(() => countdown -= dt);
+      if (countdown.ceil() != before) {
+        JoySounds.instance.play(
+          countdown <= 0 ? SoundEffect.start : SoundEffect.tick,
+        );
+      }
       return;
     }
     time += dt;
@@ -161,6 +174,7 @@ class _ArcadeGameState extends State<ArcadeGame>
       }
       for (final car in cars.where((c) => c.progress > 1.05)) {
         score[car.player]++;
+        JoySounds.instance.play(SoundEffect.correct);
       }
       cars.removeWhere((c) => c.progress > 1.05);
       if (score.any((s) => s >= 12) || time >= 60) finish();
@@ -254,6 +268,7 @@ class _ArcadeGameState extends State<ArcadeGame>
     ballVelocity = direction / direction.distance * 1.25;
     flightTime = 0;
     flying = true;
+    JoySounds.instance.play(SoundEffect.shoot);
     aim = null;
   }
 
@@ -324,7 +339,10 @@ class _ArcadeGameState extends State<ArcadeGame>
               ),
             ),
             FilledButton.tonal(
-              onPressed: () => setState(() => phase[p] = 1 - phase[p]),
+              onPressed: () {
+                JoySounds.instance.play(SoundEffect.tap);
+                setState(() => phase[p] = 1 - phase[p]);
+              },
               child: Text(
                 phase[p] == 0
                     ? 'East–west open • Switch to north–south'
