@@ -2,6 +2,7 @@ import '../sound.dart';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'game_stage.dart';
+import '../players.dart' show leadingPlayer;
 import 'word_models.dart';
 
 class WordsGame extends StatefulWidget {
@@ -19,7 +20,8 @@ class WordsGame extends StatefulWidget {
 }
 
 class _WordsGameState extends State<WordsGame> {
-  final random = Random(), scores = [0, 0];
+  final random = Random();
+  late final List<int> scores;
   int turn = 0, selected = 0, cursor = 0;
   bool done = false;
   String message = '';
@@ -52,6 +54,7 @@ class _WordsGameState extends State<WordsGame> {
   @override
   void initState() {
     super.initState();
+    scores = List.filled(widget.names.length, 0);
     crossword = CrosswordBoard(
       crosswordPacks[random.nextInt(crosswordPacks.length)],
     );
@@ -71,13 +74,7 @@ class _WordsGameState extends State<WordsGame> {
   void end() {
     if (done) return;
     done = true;
-    widget.onFinish(
-      scores[0] == scores[1]
-          ? -1
-          : scores[0] > scores[1]
-          ? 0
-          : 1,
-    );
+    widget.onFinish(leadingPlayer(scores));
   }
 
   void chooseClue(int index) {
@@ -124,7 +121,7 @@ class _WordsGameState extends State<WordsGame> {
         message = 'Not quite. Turn passes; crossing letters stay.';
       }
       entry.clear();
-      turn = 1 - turn;
+      turn = (turn + 1) % widget.names.length;
       if (crossword.solved.length == crossword.clues.length) {
         end();
         return;
@@ -153,7 +150,7 @@ class _WordsGameState extends State<WordsGame> {
         end();
         return;
       }
-      turn = 1 - turn;
+      turn = (turn + 1) % widget.names.length;
       newWord();
     });
   }
@@ -177,7 +174,7 @@ class _WordsGameState extends State<WordsGame> {
       }
       selection = [];
       start = null;
-      turn = 1 - turn;
+      turn = (turn + 1) % widget.names.length;
       if (found.length == WordSearchBoard.words.length) end();
     });
   }
@@ -190,81 +187,94 @@ class _WordsGameState extends State<WordsGame> {
     }
     return Column(
       children: [
-        boardGrid(49, 7, (i) {
-          if (!crossword.solution.containsKey(i)) return const SizedBox();
-          final confirmed = crossword.confirmed[i];
-          return gameTile(
-            selected: cells.contains(i),
-            color:
-                confirmed != null
-                    ? const Color(0xFF2D416C)
-                    : cells.contains(i)
-                    ? const Color(0xFF28365C)
-                    : const Color(0xFF1C294A),
-            onTap: () {
-              if (cells.contains(i) && confirmed == null) {
-                setState(() => cursor = cells.indexOf(i));
-              } else {
-                for (var n = 0; n < crossword.clues.length; n++) {
-                  if (crossword.clues[n].cells.contains(i) &&
-                      !crossword.solved.contains(n)) {
-                    chooseClue(n);
-                    break;
+        Center(
+          child: SizedBox(
+            width: 230,
+            child: boardGrid(49, 7, (i) {
+              if (!crossword.solution.containsKey(i)) return const SizedBox();
+              final confirmed = crossword.confirmed[i];
+              return gameTile(
+                selected: cells.contains(i),
+                color:
+                    confirmed != null
+                        ? const Color(0xFF2D416C)
+                        : cells.contains(i)
+                        ? const Color(0xFF28365C)
+                        : const Color(0xFF1C294A),
+                onTap: () {
+                  if (cells.contains(i) && confirmed == null) {
+                    setState(() => cursor = cells.indexOf(i));
+                  } else {
+                    for (var n = 0; n < crossword.clues.length; n++) {
+                      if (crossword.clues[n].cells.contains(i) &&
+                          !crossword.solved.contains(n)) {
+                        chooseClue(n);
+                        break;
+                      }
+                    }
                   }
-                }
-              }
-            },
-            child: Stack(
-              children: [
-                if (numbers.containsKey(i))
-                  Positioned(
-                    left: 3,
-                    top: 1,
-                    child: Text(
-                      '${numbers[i]}',
-                      style: const TextStyle(
-                        fontSize: 9,
-                        color: Colors.white60,
+                },
+                child: Stack(
+                  children: [
+                    if (numbers.containsKey(i))
+                      Positioned(
+                        left: 3,
+                        top: 1,
+                        child: Text(
+                          '${numbers[i]}',
+                          style: const TextStyle(
+                            fontSize: 9,
+                            color: Colors.white60,
+                          ),
+                        ),
+                      ),
+                    Center(
+                      child: Text(
+                        confirmed ?? entry[i] ?? '',
+                        style: const TextStyle(
+                          fontSize: 21,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                     ),
-                  ),
-                Center(
-                  child: Text(
-                    confirmed ?? entry[i] ?? '',
-                    style: const TextStyle(
-                      fontSize: 21,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
+                    if (cursor < cells.length && cells[cursor] == i)
+                      const Positioned(
+                        bottom: 4,
+                        left: 8,
+                        right: 8,
+                        child: ColoredBox(
+                          color: Colors.amber,
+                          child: SizedBox(height: 2),
+                        ),
+                      ),
+                  ],
                 ),
-                if (cursor < cells.length && cells[cursor] == i)
-                  const Positioned(
-                    bottom: 4,
-                    left: 8,
-                    right: 8,
-                    child: ColoredBox(
-                      color: Colors.amber,
-                      child: SizedBox(height: 2),
-                    ),
-                  ),
-              ],
-            ),
-          );
-        }, spacing: 3),
-        const SizedBox(height: 16),
-        Wrap(
-          spacing: 6,
-          children: [
+              );
+            }, spacing: 3),
+          ),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<int>(
+          initialValue: selected,
+          key: ValueKey(selected),
+          isExpanded: true,
+          decoration: const InputDecoration(
+            labelText: 'Choose a clue',
+            isDense: true,
+          ),
+          items: [
             for (var i = 0; i < crossword.clues.length; i++)
-              ChoiceChip(
-                label: Text(
+              DropdownMenuItem(
+                value: i,
+                enabled: !crossword.solved.contains(i),
+                child: Text(
                   '${i + 1} ${crossword.clues[i].across ? 'Across' : 'Down'}${crossword.solved.contains(i) ? ' ✓' : ''}',
                 ),
-                selected: selected == i,
-                onSelected:
-                    crossword.solved.contains(i) ? null : (_) => chooseClue(i),
               ),
           ],
+          onChanged: (i) {
+            if (i != null) chooseClue(i);
+          },
         ),
         const SizedBox(height: 8),
         Text(
@@ -282,8 +292,8 @@ class _WordsGameState extends State<WordsGame> {
                 children: [
                   for (final key in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''))
                     SizedBox(
-                      width: (box.maxWidth - 27) / 10,
-                      height: 40,
+                      width: (box.maxWidth - 18) / 7,
+                      height: 34,
                       child: FilledButton.tonal(
                         style: FilledButton.styleFrom(
                           padding: EdgeInsets.zero,

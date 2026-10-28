@@ -147,6 +147,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 33));
       }
       expect(tester.takeException(), isNull);
+      expect(find.byType(SingleChildScrollView), findsNothing);
       await tester.pumpWidget(const SizedBox());
       await tester.pump(const Duration(seconds: 5));
       expect(tester.takeException(), isNull);

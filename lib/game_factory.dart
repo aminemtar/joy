@@ -16,7 +16,12 @@ Widget buildGame({
   required ValueChanged<int> onFinish,
   bool haptics = false,
 }) => switch (games[id].family) {
-  Family.action => ActionGame(id: id, onFinish: onFinish, haptics: haptics),
+  Family.action => ActionGame(
+    id: id,
+    names: names,
+    onFinish: onFinish,
+    haptics: haptics,
+  ),
   Family.arcade => ArcadeGame(id: id, names: names, onFinish: onFinish),
   Family.brain => BrainGame(id: id, names: names, onFinish: onFinish),
   Family.observation => ObservationGame(

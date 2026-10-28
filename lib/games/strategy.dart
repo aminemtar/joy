@@ -2,6 +2,7 @@ import '../sound.dart';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'game_stage.dart';
+import '../players.dart' show leadingPlayer;
 import 'strategy_models.dart';
 
 class StrategyGame extends StatefulWidget {
@@ -19,17 +20,18 @@ class StrategyGame extends StatefulWidget {
 }
 
 class _StrategyGameState extends State<StrategyGame> {
-  final random = Random(), score = [0, 0], coins = [12, 12], lives = [2, 2];
+  final random = Random();
+  late final List<int> score, coins, lives, attempts;
+  final sealedBids = <int>[];
   int turn = 0, round = 1, bid = 0, value = 5;
-  int? secretBid;
   bool done = false, pass = false, flagMode = false;
   String notice = '';
   final reversi = ReversiBoard(), dots = DotsBoard();
   late final List<FleetBoard> fleets;
   late final MineBoard mines;
   late final List<List<int>> secrets;
-  final guess = <int>[], history = [<String>[], <String>[]];
-  final attempts = [0, 0];
+  final guess = <int>[];
+  late final List<List<String>> history;
   static const colors = [
     Color(0xFF507CFF),
     Color(0xFFFF6F83),
@@ -41,10 +43,15 @@ class _StrategyGameState extends State<StrategyGame> {
   @override
   void initState() {
     super.initState();
+    score = List.filled(widget.names.length, 0);
+    coins = List.filled(widget.names.length, 12);
+    lives = List.filled(widget.names.length, 2);
+    attempts = List.filled(widget.names.length, 0);
+    history = List.generate(widget.names.length, (_) => <String>[]);
     fleets = [FleetBoard(random), FleetBoard(random)];
     mines = MineBoard(random);
     secrets = List.generate(
-      2,
+      widget.names.length,
       (_) => List.generate(4, (_) => random.nextInt(6)),
     );
     value = 3 + random.nextInt(7);
@@ -55,48 +62,48 @@ class _StrategyGameState extends State<StrategyGame> {
     done = true;
     widget.onFinish(
       winner ??
-          (score[0] == score[1]
-              ? -1
-              : score[0] > score[1]
-              ? 0
-              : 1),
+          leadingPlayer(
+            score,
+            eligible:
+                widget.id == 35
+                    ? [
+                      for (var i = 0; i < lives.length; i++)
+                        if (lives[i] > 0) i,
+                    ]
+                    : null,
+          ),
     );
   }
 
   void nextTurn() {
-    turn = 1 - turn;
+    do {
+      turn = (turn + 1) % widget.names.length;
+    } while (widget.id == 35 && lives[turn] <= 0);
     pass = widget.id == 33;
   }
 
   void auction() {
-    if (done) return;
+    if (done || pass) return;
     setState(() {
-      if (secretBid == null) {
-        JoySounds.instance.play(SoundEffect.tap);
-        secretBid = bid;
-        turn = 1;
-        bid = 0;
+      sealedBids.add(bid);
+      bid = 0;
+      if (sealedBids.length < widget.names.length) {
+        turn++;
         pass = true;
+        JoySounds.instance.play(SoundEffect.tap);
         return;
       }
-      final first = secretBid!,
-          winner =
-              first == bid
-                  ? -1
-                  : first > bid
-                  ? 0
-                  : 1;
+      final winner = leadingPlayer(sealedBids);
       JoySounds.instance.play(
-        winner >= 0 ? SoundEffect.correct : SoundEffect.tap,
+        winner < 0 ? SoundEffect.tap : SoundEffect.correct,
       );
       if (winner >= 0) {
         score[winner] += value;
-        coins[winner] -= winner == 0 ? first : bid;
+        coins[winner] -= sealedBids[winner];
       }
       notice =
-          'Bids $first / $bid. ${winner < 0 ? 'Tie — treasure unclaimed' : '${widget.names[winner]} takes $value gems'}.';
-      secretBid = null;
-      bid = 0;
+          'Bids ${sealedBids.join(' / ')}. ${winner < 0 ? 'Tie — treasure unclaimed' : '${widget.names[winner]} takes $value gems'}.';
+      sealedBids.clear();
       turn = 0;
       if (round == 6) {
         end();
@@ -170,8 +177,15 @@ class _StrategyGameState extends State<StrategyGame> {
             lives[turn]--;
             notice = 'Mine! ${lives[turn]} shields remain.';
             if (lives[turn] == 0) {
-              end(1 - turn);
-              return;
+              final alive = [
+                for (var i = 0; i < lives.length; i++)
+                  if (lives[i] > 0) i,
+              ];
+              if (alive.length == 1) {
+                end(alive.single);
+                return;
+              }
+              notice = '${widget.names[turn]} is eliminated.';
             }
           } else {
             score[turn] += result;
@@ -216,7 +230,7 @@ class _StrategyGameState extends State<StrategyGame> {
         '$value GEM TREASURE',
         style: const TextStyle(fontSize: 25, fontWeight: FontWeight.w900),
       ),
-      Text('Auction $round of 6 • Coins: ${coins[0]} / ${coins[1]}'),
+      Text('Auction $round of 6 • Coins: ${coins.join(' / ')}'),
       const SizedBox(height: 24),
       Text('${widget.names[turn]}, place a secret bid'),
       Wrap(
@@ -384,7 +398,7 @@ class _StrategyGameState extends State<StrategyGame> {
     if (id == 34) {
       message = '${widget.names[turn]}: solve your code before your rival.';
     }
-    if (id == 35) message = 'Shields ${lives[0]} / ${lives[1]} • $notice';
+    if (id == 35) message = 'Shields ${lives.join(' / ')} • $notice';
     return GameStage(
       names: widget.names,
       scores: score,

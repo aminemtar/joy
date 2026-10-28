@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'flip_card.dart';
 import 'game_stage.dart';
+import '../players.dart' show leadingPlayer;
 
 class PuzzleGame extends StatefulWidget {
   final int id;
@@ -22,7 +23,7 @@ class PuzzleGame extends StatefulWidget {
 class _PuzzleGameState extends State<PuzzleGame> {
   late List<int> board;
   int turn = 0;
-  final score = [0, 0];
+  late final List<int> score;
   final open = <int>[];
   final matched = <int>{};
   bool locked = false, over = false;
@@ -32,6 +33,7 @@ class _PuzzleGameState extends State<PuzzleGame> {
   @override
   void initState() {
     super.initState();
+    score = List.filled(widget.names.length, 0);
     width =
         widget.id == 18
             ? 7
@@ -100,7 +102,7 @@ class _PuzzleGameState extends State<PuzzleGame> {
             score[turn]++;
           } else {
             JoySounds.instance.play(SoundEffect.wrong);
-            turn = 1 - turn;
+            turn = (turn + 1) % widget.names.length;
           }
           open.clear();
         });
@@ -108,13 +110,7 @@ class _PuzzleGameState extends State<PuzzleGame> {
         if (!mounted) return;
         setState(() => locked = false);
         if (matched.length == 16) {
-          end(
-            score[0] == score[1]
-                ? -1
-                : score[0] > score[1]
-                ? 0
-                : 1,
-          );
+          end(leadingPlayer(score));
         }
       }
       return;
@@ -130,7 +126,7 @@ class _PuzzleGameState extends State<PuzzleGame> {
           end(turn);
           return;
         }
-        turn = 1 - turn;
+        turn = (turn + 1) % widget.names.length;
         return;
       }
       if (widget.id == 17) {
@@ -145,7 +141,7 @@ class _PuzzleGameState extends State<PuzzleGame> {
           end(turn);
           return;
         }
-        turn = 1 - turn;
+        turn = (turn + 1) % widget.names.length;
         return;
       }
       var target = index;
@@ -194,7 +190,7 @@ class _PuzzleGameState extends State<PuzzleGame> {
         end(-1);
         return;
       }
-      turn = 1 - turn;
+      turn = (turn + 1) % widget.names.length;
     });
   }
 
@@ -249,92 +245,73 @@ class _PuzzleGameState extends State<PuzzleGame> {
         ),
       );
     }
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text(
-            '${widget.names[turn]}’s turn   •   ${score[0]} : ${score[1]}',
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-          ),
-        ),
-        Expanded(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 520),
-              child: GridView.builder(
-                shrinkWrap: true,
-                padding: const EdgeInsets.all(16),
-                itemCount: board.length,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: width,
-                  crossAxisSpacing: widget.id == 20 ? 10 : 6,
-                  mainAxisSpacing: widget.id == 20 ? 10 : 6,
-                ),
-                itemBuilder: (c, i) {
-                  String label = '';
-                  Color color = const Color(0xFF1C294A);
-                  if (widget.id == 15) {
-                    label = board[i] == 0 ? '' : '${board[i]}';
-                  } else if (widget.id == 20) {
-                    label = '?';
-                    if (matched.contains(i)) color = const Color(0xFF334C79);
-                  } else if (widget.id == 17) {
-                    label =
-                        walls.contains(i)
-                            ? '▪'
-                            : i == pos[0]
-                            ? '🔵'
-                            : i == pos[1]
-                            ? '🔴'
-                            : i == 0 || i == 35
-                            ? '🏁'
-                            : '';
-                    if (walls.contains(i)) color = Colors.black;
-                  } else {
-                    label =
-                        board[i] == 0
-                            ? ''
-                            : widget.id == 19
-                            ? (board[i] == 1 ? '✕' : '○')
-                            : '●';
-                    if (board[i] != 0) {
-                      color =
-                          board[i] == 1
-                              ? const Color(0xFF507CFF)
-                              : const Color(0xFFFF6F83);
-                    }
-                  }
-                  return Material(
-                    color: color,
-                    borderRadius: BorderRadius.circular(12),
-                    child: InkWell(
-                      onTap: () => play(i),
-                      borderRadius: BorderRadius.circular(12),
-                      child: Center(
-                        child: Text(
-                          label,
-                          style: const TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+    return GameStage(
+      names: widget.names,
+      scores: score,
+      turn: turn,
+      message: '${widget.names[turn]}’s turn',
+      child: Column(
+        children: [
+          boardGrid(board.length, width, (i) {
+            String label = '';
+            Color color = const Color(0xFF1C294A);
+            if (widget.id == 15) {
+              label = board[i] == 0 ? '' : '${board[i]}';
+            } else if (widget.id == 20) {
+              label = '?';
+              if (matched.contains(i)) color = const Color(0xFF334C79);
+            } else if (widget.id == 17) {
+              label =
+                  walls.contains(i)
+                      ? '▪'
+                      : i == pos[0]
+                      ? '🔵'
+                      : i == pos[1]
+                      ? '🔴'
+                      : i == 0 || i == 35
+                      ? '🏁'
+                      : '';
+              if (walls.contains(i)) color = Colors.black;
+            } else {
+              label =
+                  board[i] == 0
+                      ? ''
+                      : widget.id == 19
+                      ? (board[i] == 1 ? '✕' : '○')
+                      : '●';
+              if (board[i] != 0) {
+                color =
+                    board[i] == 1
+                        ? const Color(0xFF507CFF)
+                        : const Color(0xFFFF6F83);
+              }
+            }
+            return Material(
+              color: color,
+              borderRadius: BorderRadius.circular(12),
+              child: InkWell(
+                onTap: () => play(i),
+                borderRadius: BorderRadius.circular(12),
+                child: Center(
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
                     ),
-                  );
-                },
+                  ),
+                ),
               ),
-            ),
-          ),
-        ),
-        const Padding(
-          padding: EdgeInsets.all(16),
-          child: Text(
-            'Pass-and-play • Take turns on the same board',
+            );
+          }),
+          const SizedBox(height: 12),
+          const Text(
+            'Take turns on the same board',
+            textAlign: TextAlign.center,
             style: TextStyle(color: Colors.white54),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

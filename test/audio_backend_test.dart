@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:joy/sound.dart';
+import 'package:joy/music.dart';
 
 // Keep AudioPool and AudioPlayer real: fake only the OS bridge and cache path.
 // This executes the platform configuration that the old service fakes skipped.
@@ -22,7 +23,10 @@ class PlayerBridge extends Fake
     implements bridge.AudioplayersPlatformInterface {
   final streams = <String, StreamController<bridge.AudioEvent>>{};
   final contexts = <AudioContext>[], sources = <String>[];
-  int resumed = 0, disposed = 0;
+  PlayerBridge({this.expectedVolume = .6});
+  final double expectedVolume;
+  final releaseModes = <ReleaseMode>[];
+  int resumed = 0, disposed = 0, paused = 0;
   @override
   Future<void> create(String id) async {
     streams[id] = StreamController.broadcast();
@@ -56,10 +60,13 @@ class PlayerBridge extends Fake
   }
 
   @override
-  Future<void> setReleaseMode(String id, ReleaseMode mode) async {}
+  Future<void> setReleaseMode(String id, ReleaseMode mode) async {
+    releaseModes.add(mode);
+  }
+
   @override
   Future<void> setVolume(String id, double volume) async {
-    expect(volume, .6);
+    expect(volume, expectedVolume);
   }
 
   @override
@@ -71,6 +78,11 @@ class PlayerBridge extends Fake
   Future<int?> getDuration(String id) async => 900;
   @override
   Future<int?> getCurrentPosition(String id) async => 0;
+  @override
+  Future<void> pause(String id) async {
+    paused++;
+  }
+
   @override
   Future<void> stop(String id) async {}
   @override
@@ -133,6 +145,36 @@ void main() {
           bridge.AudioplayersPlatformInterface.instance = original;
           bridge.GlobalAudioplayersPlatformInterface.instance = originalGlobal;
         }
+      },
+    );
+  }
+  for (final platform in [TargetPlatform.iOS, TargetPlatform.android]) {
+    test(
+      'Real background player loops and reuses its source on $platform',
+      () async {
+        final original = bridge.AudioplayersPlatformInterface.instance;
+        final originalGlobal =
+            bridge.GlobalAudioplayersPlatformInterface.instance;
+        final player = PlayerBridge(expectedVolume: .22);
+        bridge.AudioplayersPlatformInterface.instance = player;
+        bridge.GlobalAudioplayersPlatformInterface.instance = GlobalBridge();
+        debugDefaultTargetPlatformOverride = platform;
+        final output = LoopMusicOutput(audioCache: BundledCache());
+        try {
+          await output.play(.22);
+          await output.pause();
+          await output.play(.22);
+          expect(player.sources, ['/test/audio/background.wav']);
+          expect(player.releaseModes, contains(ReleaseMode.loop));
+          expect(player.resumed, 2);
+          expect(player.paused, 1);
+        } finally {
+          await output.dispose();
+          debugDefaultTargetPlatformOverride = null;
+          bridge.AudioplayersPlatformInterface.instance = original;
+          bridge.GlobalAudioplayersPlatformInterface.instance = originalGlobal;
+        }
+        expect(player.disposed, 1);
       },
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-const playerColors = [Color(0xFF507CFF), Color(0xFFFF6F83)];
+export '../players.dart' show playerColors;
+import '../players.dart';
 
 class GameStage extends StatelessWidget {
   final List<String> names;
@@ -20,70 +21,89 @@ class GameStage extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     children: [
       Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-        child: Row(
-          children: [
-            for (var p = 0; p < 2; p++)
-              Expanded(
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 220),
-                  margin: EdgeInsets.only(
-                    left: p == 1 ? 6 : 0,
-                    right: p == 0 ? 6 : 0,
-                  ),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: playerColors[p].withValues(
-                      alpha: turn == p ? .22 : .07,
-                    ),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(
-                      color: turn == p ? playerColors[p] : Colors.white12,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          names[p],
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: playerColors[p],
-                            fontWeight: FontWeight.bold,
+        padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
+        child: LayoutBuilder(
+          builder: (context, box) {
+            final columns =
+                names.length > 2 && box.maxWidth < 520 ? 2 : names.length;
+            final width = (box.maxWidth - (columns - 1) * 6) / columns;
+            return Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (var p = 0; p < names.length; p++)
+                  SizedBox(
+                    width: width,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: playerColors[p].withValues(
+                          alpha: turn == p ? .22 : .07,
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: turn == p ? playerColors[p] : Colors.white12,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              names[p],
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: playerColors[p],
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
-                        ),
+                          Text(
+                            '${scores[p]}',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ],
                       ),
-                      Text(
-                        '${scores[p]}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 20,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-          ],
+              ],
+            );
+          },
         ),
       ),
       Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
         child: Text(
           message,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.white70, fontSize: 15),
+          style: const TextStyle(color: Colors.white70, fontSize: 13),
         ),
       ),
       Expanded(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 540),
-              child: child,
-            ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          child: LayoutBuilder(
+            builder: (context, box) {
+              final width = box.maxWidth.clamp(0.0, 540.0);
+              // Measure the content once at a known width, then scale the whole game
+              // into the remaining viewport. The canvas and its controls never scroll.
+              return SizedBox.expand(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.topCenter,
+                  child: SizedBox(width: width, child: child),
+                ),
+              );
+            },
           ),
         ),
       ),

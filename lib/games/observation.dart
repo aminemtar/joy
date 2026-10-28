@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../game_art.dart';
 import 'game_stage.dart';
+import '../players.dart' show leadingPlayer;
 
 class ObservationGame extends StatefulWidget {
   final int id;
@@ -20,7 +21,8 @@ class ObservationGame extends StatefulWidget {
 }
 
 class _ObservationGameState extends State<ObservationGame> {
-  final random = Random(), score = [0, 0];
+  final random = Random();
+  late final List<int> score;
   int turn = 0,
       target = 0,
       difference = 0,
@@ -42,6 +44,7 @@ class _ObservationGameState extends State<ObservationGame> {
   @override
   void initState() {
     super.initState();
+    score = List.filled(widget.names.length, 0);
     newRound();
   }
 
@@ -72,7 +75,10 @@ class _ObservationGameState extends State<ObservationGame> {
       difference = random.nextInt(25);
       left[difference] = target;
     } else {
-      sequence = List.generate(3 + round ~/ 2, (_) => random.nextInt(4));
+      sequence = List.generate(
+        3 + round ~/ widget.names.length,
+        (_) => random.nextInt(4),
+      );
       sequenceIndex = 0;
       watching = true;
       message = 'Watch the whole sequence';
@@ -109,13 +115,7 @@ class _ObservationGameState extends State<ObservationGame> {
 
   void end() {
     done = true;
-    widget.onFinish(
-      score[0] == score[1]
-          ? -1
-          : score[0] > score[1]
-          ? 0
-          : 1,
-    );
+    widget.onFinish(leadingPlayer(score));
   }
 
   void resolve(bool correct) {
@@ -128,14 +128,14 @@ class _ObservationGameState extends State<ObservationGame> {
       return;
     }
     round++;
-    if (widget.id == 23 && round == 8) {
+    if (widget.id == 23 && round == widget.names.length * 4) {
       end();
       return;
     }
     timer = Timer(const Duration(milliseconds: 900), () {
       if (!mounted || done) return;
       setState(() {
-        turn = 1 - turn;
+        turn = (turn + 1) % widget.names.length;
         newRound();
       });
     });
@@ -217,7 +217,7 @@ class _ObservationGameState extends State<ObservationGame> {
       content = Column(
         children: [
           Text(
-            'Memory round ${round + 1} / 8',
+            'Memory round ${round + 1} / ${widget.names.length * 4}',
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 20),

@@ -1,6 +1,6 @@
 # JOY — one screen, two rivals
 
-36 offline mini-games for two people sharing an Android phone, iPhone or tablet. Includes a filterable illustrated lobby, random quick play, five-round tournaments, player names, persistent win totals, and optional vibration. Real-time games support simultaneous touch; strategy and word games use alternating turns.
+36 offline mini-games for 2–4 people sharing an Android phone, iPhone or tablet. Includes a filterable illustrated lobby, random quick play, five-round tournaments, player names, persistent win totals, and optional vibration. Real-time games support simultaneous touch; strategy and word games use alternating turns.
 
 Tested with Flutter 3.47.8 / Dart 3.13.7. Use the current stable Flutter SDK.
 
@@ -14,6 +14,18 @@ flutter run
 ```
 
 If already cloned, run `git pull origin main` first. Android requires Android Studio/SDK. iOS requires macOS, Xcode and a simulator or a signed physical device. For a browser preview: `flutter run -d chrome`. A mouse provides only one pointer, so touch hardware is recommended for simultaneous multiplayer.
+
+## Opening and player choice
+
+The native launch surfaces use JOY’s navy background, followed by an animated logo, orbiting particles and a short loading transition. The splash can be skipped and respects reduced-motion settings.
+
+Choose **2 players**, **3 players** or **4 players** in the lobby. The selection, four player names and individual win totals are saved. The 16 group games use shared turns or individual reaction pads: Treasure Auction, Sliding Puzzle, Picture Pairs, Spot the Difference, Hidden Objects, Simon Echo, Follow the Cup, Riddle Duel, Math Sprint, Reaction Duel, Word Scramble, Crossword Duel, Word Search, Dots and Boxes, Code Breaker and Minesweeper Duel.
+
+The remaining 20 games are two-sided contests. With 3 or 4 players they run as an explicit **round-robin league**, including every unique pair (3 matches for 3 players, 6 for 4). Wins award 3 league points; draws award 1 point to each opponent. The standings select the game’s overall winner. The lobby labels group games as shared turns and the others as leagues. Three/four simultaneous controls are not claimed for those two-sided arenas.
+
+## Fixed play areas and paddle input
+
+Active gameplay has no scrolling parent. Boards and their controls are laid out together and scaled into the available viewport, with a compact clue selector and keyboard for crosswords. The lobby and settings may still scroll. Ping-pong uses a single horizontal drag path, preserves the initial finger grip, clamps the paddle inside its rails and fixes its vertical position. The frame loop no longer moves a held paddle toward a competing target.
 
 ## The 36 concepts
 
@@ -66,13 +78,16 @@ Picture Pairs uses a 440 ms perspective rotation with separate front/back faces,
 
 Fifteen original synthesized arcade cues are bundled for offline play: taps, flips, correct/missed moves, impacts, jumps, shots, countdown/start cues, win/draw fanfares and four Simon Echo tones. Use the speaker button in the lobby or match toolbar to mute instantly. Settings also provide a volume slider; both preferences persist locally.
 
-The sound service throttles repeated contacts and serializes native resource changes. Result music replaces pending gameplay cues. Muting, leaving a match or backgrounding stops playback. Effects mix with other apps and use Android media/game volume and iOS playback audio. No background music loop is added.
+The sound service throttles repeated contacts and serializes native resource changes. Result music replaces pending gameplay cues. Muting, leaving a match or backgrounding stops playback. Effects mix with other apps and use Android media/game volume and iOS playback audio. An original 20-second background-music loop starts with the app, continues between screens, and has its own mute/volume controls in Settings. It pauses when the app backgrounds and resumes on return. Browsers may require the first user interaction before allowing music playback.
 
 `assets/audio/README.md` documents the cues; `python tool/build_sound_effects.py` regenerates them without third-party sound files. `lib/sound.dart` contains playback, preference and lifecycle handling, and `test/sound_test.dart` checks the audio files and service behavior. After pulling this update, stop any running debug app and launch it again so the new native audio plugin is registered.
 
 ## Structure and artwork
 
 - `lib/catalog.dart`, `lib/game_factory.dart`: catalog, instructions and explicit engine routing.
+- `lib/players.dart`, `lib/party_league.dart`: group-turn compatibility, unique-pair fixtures and league standings.
+- `lib/music.dart`, `lib/splash.dart`: app-opening music and animated entry.
+- `tool/build_background_music.py`: regenerates the original music track with the Python standard library.
 - `lib/games/action.dart`: racing, parking, paddle sports, golf, sumo, tanks, snake and bombs.
 - `lib/games/arcade.dart`, `arcade_models.dart`: traffic scheduling, tower trimming, flick/keeper shootouts and jumping.
 - `lib/games/puzzle.dart`, `flip_card.dart`: sliding tiles, maze, line games and animated picture matching.
@@ -96,6 +111,6 @@ Tests cover rule outcomes, valid crossword crossings, generated search paths, du
 
 ## Scope
 
-This is a playable collection requiring device testing and balancing before store release. Menus, clues and questions are English. Crossword packs, riddles and scramble vocabulary are finite. The illustrated memory game uses artwork rather than photographs. No AI opponents, four-player mode, online/LAN multiplayer, ads, accounts, paid content or release signing is configured.
+This is a playable collection requiring device testing and balancing before store release. Menus, clues and questions are English. Crossword packs, riddles and scramble vocabulary are finite. The illustrated memory game uses artwork rather than photographs. No AI opponents, online/LAN multiplayer, ads, accounts, paid content or release signing is configured.
 
 Use **Settings → Test sound** to check playback. This shows plugin or asset errors instead of silently hiding them. If enabling sound after setting volume to zero, JOY restores a 60% app volume. Device media volume and connected audio outputs still apply.

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'game_stage.dart';
 
 class BrainGame extends StatefulWidget {
   final int id;
@@ -20,7 +21,7 @@ class BrainGame extends StatefulWidget {
 
 class _BrainGameState extends State<BrainGame> {
   final rng = Random();
-  final score = [0, 0];
+  late final List<int> score;
   int turn = 0, answer = 0, round = 0;
   String prompt = '', feedback = '';
   List<String> options = [];
@@ -45,6 +46,7 @@ class _BrainGameState extends State<BrainGame> {
   @override
   void initState() {
     super.initState();
+    score = List.filled(widget.names.length, 0);
     next();
   }
 
@@ -185,7 +187,7 @@ class _BrainGameState extends State<BrainGame> {
       setState(
         () => feedback = correct ? 'Correct!' : 'Answer: ${options[answer]}',
       );
-      turn = 1 - turn;
+      turn = (turn + 1) % widget.names.length;
     }
     await Future<void>.delayed(const Duration(milliseconds: 1100));
     if (mounted && !finished) setState(next);
@@ -195,128 +197,108 @@ class _BrainGameState extends State<BrainGame> {
     if (locked || finished) return;
     locked = true;
     timer?.cancel();
-    final winner = ready ? p : 1 - p;
-    if (!ready) JoySounds.instance.play(SoundEffect.wrong);
-    winPoint(winner, playCue: ready);
-    setState(
-      () =>
-          prompt =
-              ready
-                  ? '${widget.names[winner]} was faster!'
-                  : 'Too early! Point to ${widget.names[winner]}',
-    );
+    if (ready) {
+      winPoint(p);
+      setState(() => prompt = '${widget.names[p]} was faster!');
+    } else if (widget.names.length == 2) {
+      final winner = 1 - p;
+      JoySounds.instance.play(SoundEffect.wrong);
+      winPoint(winner, playCue: false);
+      setState(() => prompt = 'Too early! Point to ${widget.names[winner]}');
+    } else {
+      JoySounds.instance.play(SoundEffect.wrong);
+      score[p]--;
+      setState(() => prompt = 'Too early, ${widget.names[p]}! One point lost.');
+    }
     await Future<void>.delayed(const Duration(milliseconds: 1200));
     if (mounted && !finished) setState(next);
   }
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.all(20),
+  Widget build(BuildContext context) => GameStage(
+    names: widget.names,
+    scores: score,
+    turn: widget.id == 27 ? -1 : turn,
+    message:
+        widget.id == 27
+            ? 'Wait for the signal'
+            : '${widget.names[turn]}’s turn',
     child: Column(
       children: [
-        Text(
-          '${widget.names[0]}  ${score[0]} : ${score[1]}  ${widget.names[1]}',
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-        ),
         const SizedBox(height: 12),
-        if (widget.id != 27)
-          Text(
-            '${widget.names[turn]}’s turn',
-            style: const TextStyle(color: Colors.white60),
+        Text(
+          prompt,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: widget.id == 27 ? 38 : 25,
+            fontWeight: FontWeight.w700,
+            color: ready ? Colors.amber : Colors.white,
           ),
-        Expanded(
-          child: Center(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  Text(
-                    prompt,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: widget.id == 27 ? 38 : 25,
-                      fontWeight: FontWeight.w700,
-                      color: ready ? Colors.amber : Colors.white,
-                    ),
+        ),
+        if (widget.id == 24)
+          SizedBox(
+            height: 120,
+            child: LayoutBuilder(
+              builder:
+                  (c, size) => Stack(
+                    children: [
+                      for (var i = 0; i < 3; i++)
+                        AnimatedPositioned(
+                          key: ValueKey(i),
+                          duration: const Duration(milliseconds: 450),
+                          left: cups.indexOf(i) * size.maxWidth / 3,
+                          top: 20,
+                          width: size.maxWidth / 3,
+                          child: Text(
+                            cupRevealed && i == 0 ? '💎' : '🥤',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 48),
+                          ),
+                        ),
+                    ],
                   ),
-                  if (widget.id == 24)
-                    SizedBox(
-                      height: 100,
-                      child: LayoutBuilder(
-                        builder:
-                            (c, size) => Stack(
-                              children: [
-                                for (var i = 0; i < 3; i++)
-                                  AnimatedPositioned(
-                                    key: ValueKey(i),
-                                    duration: const Duration(milliseconds: 450),
-                                    left: cups.indexOf(i) * size.maxWidth / 3,
-                                    top: 20,
-                                    width: size.maxWidth / 3,
-                                    child: Text(
-                                      cupRevealed && i == 0 ? '💎' : '🥤',
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(fontSize: 48),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                      ),
-                    ),
-                  const SizedBox(height: 20),
-                  Text(
-                    feedback,
-                    style: const TextStyle(color: Colors.amber, fontSize: 20),
-                  ),
-                ],
-              ),
             ),
           ),
+        const SizedBox(height: 22),
+        Text(
+          feedback,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.amber, fontSize: 20),
         ),
+        const SizedBox(height: 22),
         if (widget.id == 27)
-          Row(
-            children: [
-              for (var p = 0; p < 2; p++)
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(6),
-                    child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        backgroundColor:
-                            p == 0
-                                ? const Color(0xFF507CFF)
-                                : const Color(0xFFFF6F83),
-                        minimumSize: const Size(0, 120),
-                      ),
-                      onPressed: () => react(p),
-                      child: Text(widget.names[p]),
-                    ),
-                  ),
-                ),
-            ],
+          boardGrid(
+            widget.names.length,
+            2,
+            (p) => FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: playerColors[p]),
+              onPressed: () => react(p),
+              child: Text(widget.names[p], textAlign: TextAlign.center),
+            ),
           )
         else
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              for (var i = 0; i < options.length; i++)
-                SizedBox(
-                  width: (MediaQuery.sizeOf(context).width - 52) / 2,
-                  child: FilledButton.tonal(
-                    onPressed: locked ? null : () => choose(i),
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size(0, 70),
-                    ),
-                    child: Text(
-                      options[i],
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 19),
-                    ),
-                  ),
+          LayoutBuilder(
+            builder:
+                (c, box) => Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    for (var i = 0; i < options.length; i++)
+                      SizedBox(
+                        width: (box.maxWidth - 10) / 2,
+                        height: 76,
+                        child: FilledButton.tonal(
+                          onPressed: locked ? null : () => choose(i),
+                          child: Text(
+                            options[i],
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 19),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-            ],
           ),
-        const SizedBox(height: 20),
       ],
     ),
   );

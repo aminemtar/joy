@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,17 +8,29 @@ import 'catalog.dart';
 import 'game_factory.dart';
 import 'game_art.dart';
 import 'sound.dart';
+import 'music.dart';
+import 'splash.dart';
+import 'players.dart';
+import 'party_league.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await JoySounds.instance.initialize();
+  await JoyMusic.instance.initialize();
+  unawaited(JoyMusic.instance.resume());
   runApp(const JoyApp());
 }
 
 const blue = Color(0xFF507CFF), coral = Color(0xFFFF6F83);
 
-class JoyApp extends StatelessWidget {
+class JoyApp extends StatefulWidget {
   const JoyApp({super.key});
+  @override
+  State<JoyApp> createState() => _JoyAppState();
+}
+
+class _JoyAppState extends State<JoyApp> {
+  bool splash = true;
   @override
   Widget build(BuildContext context) => MaterialApp(
     debugShowCheckedModeBanner: false,
@@ -31,7 +44,19 @@ class JoyApp extends StatelessWidget {
       ),
       useMaterial3: true,
     ),
-    home: const Lobby(),
+    home: AnimatedSwitcher(
+      duration: const Duration(milliseconds: 350),
+      child:
+          splash
+              ? JoySplash(
+                key: const ValueKey('splash'),
+                onFinished: () {
+                  unawaited(JoyMusic.instance.resume());
+                  setState(() => splash = false);
+                },
+              )
+              : const Lobby(key: ValueKey('lobby')),
+    ),
   );
 }
 
@@ -43,8 +68,9 @@ class Lobby extends StatefulWidget {
 
 class _LobbyState extends State<Lobby> {
   String category = 'All';
-  final names = ['Blue', 'Coral'];
-  final wins = [0, 0];
+  final names = ['Blue', 'Coral', 'Amber', 'Violet'];
+  int playerCount = 2;
+  final wins = [0, 0, 0, 0];
   bool haptics = true;
   bool busy = false;
   @override
@@ -57,20 +83,22 @@ class _LobbyState extends State<Lobby> {
     final p = await SharedPreferences.getInstance();
     if (!mounted) return;
     setState(() {
-      for (var i = 0; i < 2; i++) {
+      for (var i = 0; i < 4; i++) {
         names[i] = p.getString('name$i') ?? names[i];
         wins[i] = p.getInt('wins$i') ?? 0;
       }
+      playerCount = (p.getInt('playerCount') ?? 2).clamp(2, 4);
       haptics = p.getBool('haptics') ?? true;
     });
   }
 
   Future<void> _save() async {
     final p = await SharedPreferences.getInstance();
-    for (var i = 0; i < 2; i++) {
+    for (var i = 0; i < 4; i++) {
       await p.setString('name$i', names[i]);
       await p.setInt('wins$i', wins[i]);
     }
+    await p.setInt('playerCount', playerCount);
     await p.setBool('haptics', haptics);
   }
 
@@ -78,14 +106,31 @@ class _LobbyState extends State<Lobby> {
     if (busy) return;
     busy = true;
     JoySounds.instance.play(SoundEffect.tap);
-    final points = [0, 0];
+    final participants = names.take(playerCount).toList();
+    final points = List.filled(playerCount, 0);
+    unawaited(JoyMusic.instance.resume());
     for (final id in queue) {
       if (!mounted) break;
       final winner = await Navigator.of(context).push<int>(
         MaterialPageRoute(
           builder:
               (_) =>
-                  MatchScreen(id: id, names: List.of(names), haptics: haptics),
+                  participants.length > 2 && !supportsGroupTurns(id)
+                      ? PartyLeagueScreen(
+                        gameId: id,
+                        names: participants,
+                        duelBuilder:
+                            (pair) => MatchScreen(
+                              id: id,
+                              names: pair,
+                              haptics: haptics,
+                            ),
+                      )
+                      : MatchScreen(
+                        id: id,
+                        names: participants,
+                        haptics: haptics,
+                      ),
         ),
       );
       if (winner == null) break;
@@ -98,20 +143,17 @@ class _LobbyState extends State<Lobby> {
     }
     busy = false;
     if (queue.length > 1 && mounted) {
-      JoySounds.instance.celebrate(
-        points[0] == points[1]
-            ? -1
-            : points[0] > points[1]
-            ? 0
-            : 1,
-      );
+      JoySounds.instance.celebrate(leadingPlayer(points));
       showDialog<void>(
         context: context,
         builder:
             (c) => AlertDialog(
               title: const Text('Tournament results'),
               content: Text(
-                '${names[0]}  ${points[0]} — ${points[1]}  ${names[1]}',
+                [
+                  for (var i = 0; i < participants.length; i++)
+                    '${participants[i]}: ${points[i]}',
+                ].join('\n'),
               ),
               actions: [
                 TextButton(
@@ -153,7 +195,7 @@ class _LobbyState extends State<Lobby> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        for (var i = 0; i < 2; i++)
+                        for (var i = 0; i < playerCount; i++)
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 8),
                             child: TextFormField(
@@ -170,6 +212,40 @@ class _LobbyState extends State<Lobby> {
                               },
                             ),
                           ),
+                        ListenableBuilder(
+                          listenable: JoyMusic.instance,
+                          builder:
+                              (c, child) => Column(
+                                children: [
+                                  SwitchListTile(
+                                    title: const Text('Background music'),
+                                    subtitle: const Text(
+                                      'Original arcade loop',
+                                    ),
+                                    value: JoyMusic.instance.enabled,
+                                    onChanged:
+                                        (v) => JoyMusic.instance.setEnabled(v),
+                                  ),
+                                  Slider(
+                                    value: JoyMusic.instance.volume,
+                                    label:
+                                        'Music ${(JoyMusic.instance.volume * 100).round()}%',
+                                    onChanged:
+                                        JoyMusic.instance.enabled
+                                            ? (v) =>
+                                                JoyMusic.instance.setVolume(v)
+                                            : null,
+                                  ),
+                                  if (JoyMusic.instance.error != null)
+                                    Text(
+                                      JoyMusic.instance.error!,
+                                      style: const TextStyle(
+                                        color: Colors.orangeAccent,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                        ),
                         SwitchListTile(
                           title: const Text('Sound effects'),
                           subtitle: const Text(
@@ -367,9 +443,7 @@ class _LobbyState extends State<Lobby> {
                             ),
                           ),
                           const SizedBox(height: 12),
-                          const Text(
-                            '36 different games • Offline • Two rivals',
-                          ),
+                          const Text('36 games • Offline • 2–4 players'),
                           const SizedBox(height: 20),
                           Wrap(
                             spacing: 12,
@@ -398,18 +472,33 @@ class _LobbyState extends State<Lobby> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    Row(
+                    const Text(
+                      'PLAYERS',
+                      style: TextStyle(color: Colors.white54, letterSpacing: 2),
+                    ),
+                    const SizedBox(height: 10),
+                    SegmentedButton<int>(
+                      segments: const [
+                        ButtonSegment(value: 2, label: Text('2 players')),
+                        ButtonSegment(value: 3, label: Text('3 players')),
+                        ButtonSegment(value: 4, label: Text('4 players')),
+                      ],
+                      selected: {playerCount},
+                      onSelectionChanged: (v) {
+                        setState(() => playerCount = v.single);
+                        _save();
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 8,
                       children: [
-                        Expanded(
-                          child: Text(
-                            '${names[0]}  •  ${wins[0]} wins',
-                            style: const TextStyle(color: blue),
+                        for (var i = 0; i < playerCount; i++)
+                          Text(
+                            '${names[i]} • ${wins[i]} wins',
+                            style: TextStyle(color: playerColors[i]),
                           ),
-                        ),
-                        Text(
-                          '${names[1]}  •  ${wins[1]} wins',
-                          style: const TextStyle(color: coral),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 20),
@@ -484,7 +573,9 @@ class _LobbyState extends State<Lobby> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    g.category,
+                                    playerCount == 2
+                                        ? g.category
+                                        : '${playerCount}P ${supportsGroupTurns(entry.key) ? 'shared turns' : 'league'}',
                                     style: const TextStyle(
                                       color: Colors.white54,
                                       fontSize: 12,
@@ -549,9 +640,7 @@ class _MatchScreenState extends State<MatchScreen> {
             canPop: false,
             child: AlertDialog(
               title: Text(
-                winner < 0
-                    ? 'A perfect draw!'
-                    : '${widget.names[winner]} wins!',
+                winner < 0 ? 'Match tied!' : '${widget.names[winner]} wins!',
               ),
               content: const Text('Ready for another rivalry?'),
               actions: [
@@ -612,14 +701,34 @@ class _MatchScreenState extends State<MatchScreen> {
                         ),
                       ),
                       const SizedBox(height: 20),
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 12,
+                        runSpacing: 8,
+                        children: [
+                          for (var i = 0; i < widget.names.length; i++)
+                            Chip(
+                              label: Text(widget.names[i]),
+                              avatar: CircleAvatar(
+                                backgroundColor: playerColors[i],
+                                radius: 8,
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
                       Text(
-                        g.rules,
+                        widget.id == 27 && widget.names.length > 2
+                            ? 'Tap your own pad after NOW. An early tap loses one point. First to five wins.'
+                            : widget.id == 23
+                            ? 'Repeat the entire pattern. Four rounds per player; longest-memory score wins.'
+                            : g.rules,
                         textAlign: TextAlign.center,
                         style: const TextStyle(fontSize: 22),
                       ),
                       const SizedBox(height: 16),
-                      const Text(
-                        'Two players • Shared screen • Offline',
+                      Text(
+                        '${widget.names.length} players • Shared screen • Offline',
                         style: TextStyle(color: Colors.white60),
                       ),
                       const SizedBox(height: 32),

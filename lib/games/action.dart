@@ -8,6 +8,7 @@ import 'sprites.dart';
 
 class ActionGame extends StatefulWidget {
   final int id;
+  final List<String> names;
   final bool haptics;
   final ValueChanged<int> onFinish;
   const ActionGame({
@@ -15,6 +16,7 @@ class ActionGame extends StatefulWidget {
     required this.id,
     required this.onFinish,
     required this.haptics,
+    this.names = const ['Blue', 'Coral'],
   });
   @override
   State<ActionGame> createState() => _ActionGameState();
@@ -37,6 +39,7 @@ class _ActionGameState extends State<ActionGame>
   final velocity = [Offset.zero, Offset.zero];
   final steer = [0.0, 0.0];
   final pointers = <int, int>{};
+  final paddleGrip = <int, double>{};
   final strokes = [0, 0];
   final progress = [0.0, 0.0];
   final aims = <int, Offset>{};
@@ -55,6 +58,10 @@ class _ActionGameState extends State<ActionGame>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    if (widget.id == 5) {
+      players[0] = const Offset(.5, .87);
+      players[1] = const Offset(.5, .13);
+    }
     JoySounds.instance.play(SoundEffect.tick);
     ticker = createTicker(tick)..start();
   }
@@ -117,7 +124,11 @@ class _ActionGameState extends State<ActionGame>
     for (var p = 0; p < 2; p++) {
       cooldown[p] = max(0, cooldown[p] - dt);
     }
-    if (!racing && widget.id != 8 && widget.id != 9 && widget.id != 12) {
+    if (!racing &&
+        widget.id != 5 &&
+        widget.id != 8 &&
+        widget.id != 9 &&
+        widget.id != 12) {
       for (final entry in aims.entries) {
         final p = entry.key;
         final delta = entry.value - players[p];
@@ -351,6 +362,10 @@ class _ActionGameState extends State<ActionGame>
     final p = v.dy > .5 ? 0 : 1;
     if (pointers.containsValue(p)) return;
     pointers[e.pointer] = p;
+    if (widget.id == 5) {
+      paddleGrip[p] = players[p].dx - v.dx;
+      return;
+    }
     if (widget.id == 8) {
       if (cooldown[p] > 0) return;
       cooldown[p] = .45;
@@ -373,6 +388,13 @@ class _ActionGameState extends State<ActionGame>
     final p = pointers[e.pointer];
     if (p == null || paused || over || countdown > 0) return;
     final v = location(e);
+    if (widget.id == 5) {
+      players[p] = Offset(
+        (v.dx + (paddleGrip[p] ?? 0)).clamp(.10, .90),
+        p == 0 ? .87 : .13,
+      );
+      return;
+    }
     if (racing) {
       steer[p] = v.dx < .5 ? -1 : 1;
     } else if (widget.id != 8 && widget.id != 9 && widget.id != 12) {
@@ -385,7 +407,6 @@ class _ActionGameState extends State<ActionGame>
                 clamped.dy.clamp(p == 0 ? .55 : .05, p == 0 ? .95 : .45),
               );
       aims[p] = dest;
-      if (widget.id == 5) players[p] = Offset(dest.dx, p == 0 ? .87 : .13);
     }
   }
 
@@ -394,6 +415,7 @@ class _ActionGameState extends State<ActionGame>
     if (p == null) return;
     steer[p] = 0;
     aims.remove(p);
+    paddleGrip.remove(p);
     if (widget.id == 9 && !paused) {
       velocity[p] = (players[p] - location(e)) * 2.5;
       final speed = velocity[p].distance;
@@ -452,7 +474,7 @@ class _ActionGameState extends State<ActionGame>
                 )
               else
                 Text(
-                  p == 0 ? 'BLUE • ${score[0]}' : 'CORAL • ${score[1]}',
+                  '${widget.names[p]} • ${score[p]}',
                   style: TextStyle(
                     color:
                         p == 0
