@@ -1,4 +1,5 @@
 import '../sound.dart';
+import '../party_data.dart';
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
@@ -76,7 +77,12 @@ class _ObservationGameState extends State<ObservationGame> {
       left[difference] = target;
     } else {
       sequence = List.generate(
-        3 + round ~/ widget.names.length,
+        (MatchOptions.read(context)?.difficulty == Difficulty.easy
+                ? 2
+                : MatchOptions.read(context)?.difficulty == Difficulty.hard
+                ? 4
+                : 3) +
+            round ~/ widget.names.length,
         (_) => random.nextInt(4),
       );
       sequenceIndex = 0;
@@ -105,12 +111,22 @@ class _ObservationGameState extends State<ObservationGame> {
       ][sequence[sequenceIndex]],
     );
     setState(() => lit = sequence[sequenceIndex]);
-    timer = Timer(const Duration(milliseconds: 450), () {
-      if (!mounted) return;
-      setState(() => lit = -1);
-      sequenceIndex++;
-      timer = Timer(const Duration(milliseconds: 200), flash);
-    });
+    timer = Timer(
+      Duration(
+        milliseconds:
+            MatchOptions.read(context)?.difficulty == Difficulty.easy
+                ? 650
+                : MatchOptions.read(context)?.difficulty == Difficulty.hard
+                ? 300
+                : 450,
+      ),
+      () {
+        if (!mounted) return;
+        setState(() => lit = -1);
+        sequenceIndex++;
+        timer = Timer(const Duration(milliseconds: 200), flash);
+      },
+    );
   }
 
   void end() {

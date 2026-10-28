@@ -49,6 +49,8 @@ void main() {
       scrollable: find.byType(Scrollable).first,
     );
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Neon Rally'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Neon Rally'));
     await tester.pumpAndSettle();
     expect(find.text('Let’s play'), findsOneWidget);

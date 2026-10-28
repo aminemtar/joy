@@ -12,6 +12,7 @@ abstract final class JoyTheme {
 
   static ThemeData get dark => ThemeData(
     useMaterial3: true,
+    fontFamily: 'Roboto',
     brightness: Brightness.dark,
     scaffoldBackgroundColor: background,
     colorScheme: ColorScheme.fromSeed(
@@ -35,6 +36,7 @@ abstract final class JoyTheme {
       surfaceTintColor: Colors.transparent,
       centerTitle: false,
       titleTextStyle: TextStyle(
+        fontFamily: 'Roboto',
         color: ink,
         fontSize: 21,
         fontWeight: FontWeight.w800,
@@ -46,7 +48,11 @@ abstract final class JoyTheme {
         foregroundColor: Colors.white,
         minimumSize: const Size(48, 52),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-        textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+        textStyle: const TextStyle(
+          fontFamily: 'Roboto',
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     ),
@@ -66,7 +72,11 @@ abstract final class JoyTheme {
       selectedColor: accent.withValues(alpha: .20),
       side: const BorderSide(color: border),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      labelStyle: const TextStyle(color: ink, fontWeight: FontWeight.w600),
+      labelStyle: const TextStyle(
+        fontFamily: 'Roboto',
+        color: ink,
+        fontWeight: FontWeight.w600,
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
       showCheckmark: false,
     ),

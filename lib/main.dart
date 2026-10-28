@@ -14,9 +14,14 @@ import 'players.dart';
 import 'party_league.dart';
 import 'joy_theme.dart';
 import 'lobby_widgets.dart';
+import 'party_data.dart';
+import 'party_screens.dart';
+import 'tutorial.dart';
+import 'result_share.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await PartyData.instance.initialize();
   await JoySounds.instance.initialize();
   await JoyMusic.instance.initialize();
   unawaited(JoyMusic.instance.resume());
@@ -38,6 +43,26 @@ class _JoyAppState extends State<JoyApp> {
     debugShowCheckedModeBanner: false,
     title: 'JOY',
     theme: JoyTheme.dark,
+    builder:
+        (context, child) => ListenableBuilder(
+          listenable: PartyData.instance,
+          builder: (context, _) {
+            final media = MediaQuery.of(context);
+            return MediaQuery(
+              data: media.copyWith(
+                disableAnimations:
+                    media.disableAnimations || PartyData.instance.reducedMotion,
+                textScaler: TextScaler.linear(
+                  max(
+                    media.textScaler.scale(1),
+                    PartyData.instance.largeText ? 1.15 : 1.0,
+                  ),
+                ),
+              ),
+              child: child!,
+            );
+          },
+        ),
     home: AnimatedSwitcher(
       duration: const Duration(milliseconds: 350),
       child:
@@ -61,7 +86,10 @@ class Lobby extends StatefulWidget {
 }
 
 class _LobbyState extends State<Lobby> {
-  String category = 'All';
+  String category = 'All', libraryFilter = 'All games';
+  String search = '';
+  bool practice = false;
+  final data = PartyData.instance;
   final names = ['Blue', 'Coral', 'Amber', 'Violet'];
   int playerCount = 2;
   final wins = [0, 0, 0, 0];
@@ -75,6 +103,7 @@ class _LobbyState extends State<Lobby> {
 
   Future<void> _load() async {
     final p = await SharedPreferences.getInstance();
+    await data.initialize();
     if (!mounted) return;
     setState(() {
       for (var i = 0; i < 4; i++) {
@@ -96,69 +125,174 @@ class _LobbyState extends State<Lobby> {
     await p.setBool('haptics', haptics);
   }
 
-  Future<void> _play(List<int> queue) async {
-    if (busy) return;
+  Future<void> _partyBuilder() async {
+    final plan = await Navigator.of(context).push<PartyPlan>(
+      MaterialPageRoute(builder: (_) => PartyBuilder(players: playerCount)),
+    );
+    if (plan == null || !mounted) return;
+    setState(() {
+      playerCount = plan.players;
+      practice = false;
+    });
+    await _save();
+    if (!mounted) return;
+    await _play(partyPlaylist(plan.categories, plan.rounds));
+  }
+
+  Future<void> _play(List<int> playlist) async {
+    if (busy || playlist.isEmpty) return;
     busy = true;
+    final queue = List<int>.of(playlist);
+    final solo = practice;
+    final participants =
+        solo ? [names[0], 'Computer'] : names.take(playerCount).toList();
+    final points = List.filled(participants.length, 0);
+    final completed = <MatchRecord>[];
     JoySounds.instance.play(SoundEffect.tap);
-    final participants = names.take(playerCount).toList();
-    final points = List.filled(playerCount, 0);
     unawaited(JoyMusic.instance.resume());
-    for (final id in queue) {
-      if (!mounted) break;
-      final winner = await Navigator.of(context).push<int>(
-        MaterialPageRoute(
-          builder:
-              (_) =>
-                  participants.length > 2 && !supportsGroupTurns(id)
-                      ? PartyLeagueScreen(
-                        gameId: id,
-                        names: participants,
-                        duelBuilder:
-                            (pair) => MatchScreen(
-                              id: id,
-                              names: pair,
-                              haptics: haptics,
-                            ),
-                      )
-                      : MatchScreen(
-                        id: id,
-                        names: participants,
-                        haptics: haptics,
-                      ),
-        ),
-      );
-      if (winner == null) break;
-      if (winner >= 0) {
-        points[winner]++;
-        wins[winner]++;
-        await _save();
+    Future<void> accept(MatchRecord record, {bool persist = true}) async {
+      completed.add(record);
+      if (record.winner >= 0) {
+        points[record.winner]++;
+        if (!solo || record.winner == 0) wins[record.winner]++;
       }
+      if (persist) await data.record(record);
+      await _save();
       if (mounted) setState(() {});
     }
-    busy = false;
-    if (queue.length > 1 && mounted) {
+
+    try {
+      for (var round = 0; round < queue.length; round++) {
+        final id = queue[round];
+        if (!mounted) break;
+        if (solo && !practiceGames.contains(id)) continue;
+        await data.opened(id);
+        if (!mounted) break;
+        final league = participants.length > 2 && !supportsGroupTurns(id);
+        final started = DateTime.now();
+        final winner = await Navigator.of(context).push<int>(
+          MaterialPageRoute(
+            builder:
+                (_) =>
+                    league
+                        ? PartyLeagueScreen(
+                          gameId: id,
+                          names: participants,
+                          duelBuilder:
+                              (pair) => MatchScreen(
+                                id: id,
+                                names: pair,
+                                haptics: haptics,
+                                allowRematch: false,
+                              ),
+                        )
+                        : MatchScreen(
+                          id: id,
+                          names: participants,
+                          haptics: haptics,
+                          computer: solo,
+                          onResult: (r) => accept(r),
+                          onNextGame:
+                              playlist.length == 1
+                                  ? () {
+                                    final pool =
+                                        solo
+                                            ? practiceGames.toList()
+                                            : List.generate(
+                                              games.length,
+                                              (i) => i,
+                                            );
+                                    pool.remove(id);
+                                    queue.add(
+                                      pool[Random().nextInt(pool.length)],
+                                    );
+                                  }
+                                  : null,
+                        ),
+          ),
+        );
+        if (winner == null) break;
+        if (league) {
+          await accept(
+            MatchRecord(
+              game: id,
+              names: List.of(participants),
+              winner: winner,
+              seconds: DateTime.now().difference(started).inSeconds,
+              date: DateTime.now(),
+            ),
+            persist: false,
+          );
+        }
+      }
+    } finally {
+      busy = false;
+    }
+    if (completed.isNotEmpty &&
+        (playlist.length > 1 || completed.length > 1) &&
+        mounted) {
       JoySounds.instance.celebrate(leadingPlayer(points));
-      showDialog<void>(
+      final awards = partyAwards(completed, participants);
+      bool sharing = false;
+      await showDialog<void>(
         context: context,
         builder:
-            (c) => AlertDialog(
-              title: const Text('Tournament results'),
-              content: Text(
-                [
-                  for (var i = 0; i < participants.length; i++)
-                    '${participants[i]}: ${points[i]}',
-                ].join('\n'),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(c);
-                  },
-                  child: const Text('Done'),
-                ),
-              ],
+            (c) => StatefulBuilder(
+              builder:
+                  (c, update) => AlertDialog(
+                    title: const Text('Party results'),
+                    content: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          for (var i = 0; i < participants.length; i++)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 14),
+                              child: Text(
+                                '${participants[i]} • ${points[i]} wins\n${awards[i] ?? ''}',
+                                style: const TextStyle(height: 1.5),
+                              ),
+                            ),
+                          Text(
+                            '${completed.length} completed matches',
+                            style: const TextStyle(color: JoyTheme.muted),
+                          ),
+                        ],
+                      ),
+                    ),
+                    actions: [
+                      TextButton.icon(
+                        onPressed:
+                            sharing
+                                ? null
+                                : () async {
+                                  update(() => sharing = true);
+                                  final message = await shareScorecard(
+                                    'Party results',
+                                    participants,
+                                    points,
+                                    awards: awards,
+                                  );
+                                  if (c.mounted) {
+                                    update(() => sharing = false);
+                                    ScaffoldMessenger.of(c).showSnackBar(
+                                      SnackBar(content: Text(message)),
+                                    );
+                                  }
+                                },
+                        icon: const Icon(Icons.ios_share_rounded),
+                        label: const Text('Share scorecard'),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.pop(c),
+                        child: const Text('Done'),
+                      ),
+                    ],
+                  ),
             ),
-      ).whenComplete(JoySounds.instance.stop);
+      );
+      JoySounds.instance.stop();
     }
   }
 
@@ -206,6 +340,69 @@ class _LobbyState extends State<Lobby> {
                               },
                             ),
                           ),
+                        for (var i = 0; i < playerCount; i++)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    '${names[i]} avatar',
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                DropdownButton<int>(
+                                  value: data.avatars[i],
+                                  items: [
+                                    for (
+                                      var a = 0;
+                                      a < profileAvatars.length;
+                                      a++
+                                    )
+                                      DropdownMenuItem(
+                                        value: a,
+                                        child: Text(profileAvatars[a]),
+                                      ),
+                                  ],
+                                  onChanged: (v) {
+                                    if (v != null) {
+                                      update(() => data.avatars[i] = v);
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        SwitchListTile(
+                          title: const Text('Reduced motion'),
+                          subtitle: const Text(
+                            'Simpler transitions and static tutorials',
+                          ),
+                          value: data.reducedMotion,
+                          onChanged: (v) {
+                            update(() => data.reducedMotion = v);
+                            data.saveOptions();
+                          },
+                        ),
+                        SwitchListTile(
+                          title: const Text('Larger text'),
+                          value: data.largeText,
+                          onChanged: (v) {
+                            update(() => data.largeText = v);
+                            data.saveOptions();
+                          },
+                        ),
+                        SwitchListTile(
+                          title: const Text('Player symbols'),
+                          subtitle: const Text(
+                            'P1–P4 labels and distinct board symbols',
+                          ),
+                          value: data.colorSymbols,
+                          onChanged: (v) {
+                            update(() => data.colorSymbols = v);
+                            data.saveOptions();
+                          },
+                        ),
                         ListenableBuilder(
                           listenable: JoyMusic.instance,
                           builder:
@@ -331,6 +528,7 @@ class _LobbyState extends State<Lobby> {
                         FilledButton(
                           onPressed: () {
                             _save();
+                            data.saveOptions();
                             setState(() {});
                             Navigator.pop(c);
                           },
@@ -350,8 +548,25 @@ class _LobbyState extends State<Lobby> {
         games
             .asMap()
             .entries
-            .where((e) => category == 'All' || e.value.category == category)
+            .where(
+              (e) =>
+                  (category == 'All' || e.value.category == category) &&
+                  (!practice || practiceGames.contains(e.key)) &&
+                  (libraryFilter != 'Favorites' ||
+                      data.favorites.contains(e.key)) &&
+                  (libraryFilter != 'Recent' || data.recent.contains(e.key)) &&
+                  (search.isEmpty ||
+                      e.value.name.toLowerCase().contains(
+                        search.toLowerCase(),
+                      )),
+            )
             .toList();
+    if (libraryFilter == 'Recent') {
+      filtered.sort(
+        (a, b) =>
+            data.recent.indexOf(a.key).compareTo(data.recent.indexOf(b.key)),
+      );
+    }
     return Scaffold(
       body: SafeArea(
         child: CustomScrollView(
@@ -470,20 +685,21 @@ class _LobbyState extends State<Lobby> {
                             children: [
                               FilledButton.icon(
                                 onPressed:
-                                    () =>
-                                        _play([Random().nextInt(games.length)]),
+                                    () => _play([
+                                      practice
+                                          ? practiceGames.elementAt(
+                                            Random().nextInt(
+                                              practiceGames.length,
+                                            ),
+                                          )
+                                          : Random().nextInt(games.length),
+                                    ]),
                                 icon: const Icon(Icons.shuffle),
                                 label: const Text('Surprise me'),
                               ),
                               OutlinedButton(
-                                onPressed: () {
-                                  final q = List.generate(
-                                    games.length,
-                                    (i) => i,
-                                  )..shuffle();
-                                  _play(q.take(5).toList());
-                                },
-                                child: const Text('5-round cup'),
+                                onPressed: practice ? null : _partyBuilder,
+                                child: const Text('Party mode'),
                               ),
                             ],
                           ),
@@ -495,12 +711,46 @@ class _LobbyState extends State<Lobby> {
                       count: playerCount,
                       names: names,
                       wins: wins,
+                      avatars: data.avatars,
                       onEdit: _settings,
                       onChanged: (value) {
                         JoySounds.instance.play(SoundEffect.tap);
                         setState(() => playerCount = value);
                         _save();
                       },
+                    ),
+                    const SizedBox(height: 16),
+                    JoyPanel(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
+                      child: SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Computer practice'),
+                        subtitle: const Text(
+                          'Ping Pong, Tic Tac Toe, Connect Four & RPS',
+                        ),
+                        value: practice,
+                        onChanged:
+                            (v) => setState(() {
+                              practice = v;
+                              category = 'All';
+                              libraryFilter = 'All games';
+                            }),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextButton.icon(
+                      onPressed:
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute<void>(
+                              builder: (_) => const HistoryScreen(),
+                            ),
+                          ),
+                      icon: const Icon(Icons.history_rounded),
+                      label: const Text('Match history'),
                     ),
                     const SizedBox(height: 28),
                     Row(
@@ -521,6 +771,27 @@ class _LobbyState extends State<Lobby> {
                             fontSize: 12,
                           ),
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    TextField(
+                      decoration: const InputDecoration(
+                        hintText: 'Search games',
+                        prefixIcon: Icon(Icons.search_rounded),
+                      ),
+                      onChanged: (v) => setState(() => search = v),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        for (final f in ['All games', 'Favorites', 'Recent'])
+                          ChoiceChip(
+                            label: Text(f),
+                            selected: libraryFilter == f,
+                            onSelected:
+                                (_) => setState(() => libraryFilter = f),
+                          ),
                       ],
                     ),
                     const SizedBox(height: 14),
@@ -559,6 +830,16 @@ class _LobbyState extends State<Lobby> {
                 ),
               ),
             ),
+            if (filtered.isEmpty)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Text(
+                    'No games here yet. Try another filter, save a favorite, or play your first game.',
+                    style: TextStyle(color: JoyTheme.muted),
+                  ),
+                ),
+              ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
               sliver: SliverLayoutBuilder(
@@ -583,18 +864,46 @@ class _LobbyState extends State<Lobby> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Hero(
-                                    tag: 'game-${entry.key}',
-                                    child: Material(
-                                      color: Colors.transparent,
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(20),
-                                        child: GameArt(
-                                          id: entry.key,
-                                          size: 110,
+                                  Stack(
+                                    children: [
+                                      Center(
+                                        child: Hero(
+                                          tag: 'game-${entry.key}',
+                                          child: Material(
+                                            color: Colors.transparent,
+                                            child: ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                              child: GameArt(
+                                                id: entry.key,
+                                                size: 100,
+                                              ),
+                                            ),
+                                          ),
                                         ),
                                       ),
-                                    ),
+                                      Align(
+                                        alignment: Alignment.topRight,
+                                        child: IconButton.filledTonal(
+                                          tooltip:
+                                              data.favorites.contains(entry.key)
+                                                  ? 'Remove favorite'
+                                                  : 'Add favorite',
+                                          onPressed: () async {
+                                            await data.toggleFavorite(
+                                              entry.key,
+                                            );
+                                            if (mounted) setState(() {});
+                                          },
+                                          icon: Icon(
+                                            data.favorites.contains(entry.key)
+                                                ? Icons.favorite_rounded
+                                                : Icons.favorite_border_rounded,
+                                            size: 18,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                   const Spacer(),
                                   Text(
@@ -630,7 +939,7 @@ class _LobbyState extends State<Lobby> {
                         ),
                         mainAxisSpacing: 10,
                         crossAxisSpacing: 10,
-                        mainAxisExtent: 250,
+                        mainAxisExtent: 260,
                       ),
                     ),
               ),
@@ -646,49 +955,193 @@ class MatchScreen extends StatefulWidget {
   final int id;
   final List<String> names;
   final bool haptics;
+  final bool computer, allowRematch;
+  final Future<void> Function(MatchRecord)? onResult;
+  final VoidCallback? onNextGame;
   const MatchScreen({
     super.key,
     required this.id,
     required this.names,
     required this.haptics,
+    this.computer = false,
+    this.allowRematch = true,
+    this.onResult,
+    this.onNextGame,
   });
   @override
   State<MatchScreen> createState() => _MatchScreenState();
 }
 
-class _MatchScreenState extends State<MatchScreen> {
-  bool started = false, done = false;
+class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
+  bool started = false,
+      done = false,
+      clockPaused = false,
+      backgrounded = false,
+      tutorialBusy = false;
+  int attempt = 0, elapsed = 0, remaining = 0;
+  List<int> liveScores = [];
+  Timer? roundTimer;
+  Difficulty difficulty = PartyData.instance.difficulty;
+  int roundSeconds = PartyData.instance.roundSeconds;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    backgrounded = state != AppLifecycleState.resumed;
+  }
+
+  Future<void> tutorial() async {
+    if (tutorialBusy) return;
+    tutorialBusy = true;
+    await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => GameTutorial(id: widget.id)),
+    );
+    await PartyData.instance.tutorialSeen(widget.id);
+    tutorialBusy = false;
+  }
+
+  Future<void> start() async {
+    if (tutorialBusy) return;
+    if (!PartyData.instance.seen.contains(widget.id)) {
+      await tutorial();
+    }
+    if (!mounted) return;
+    JoySounds.instance.play(SoundEffect.start);
+    roundTimer?.cancel();
+    setState(() {
+      started = true;
+      done = false;
+      attempt++;
+      elapsed = 0;
+      clockPaused = false;
+      liveScores = List.filled(widget.names.length, 0);
+      remaining = timedGames.contains(widget.id) ? roundSeconds : 0;
+    });
+    roundTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted || done || backgrounded || clockPaused) return;
+      setState(() {
+        elapsed++;
+        if (remaining > 0) remaining--;
+      });
+      if (roundSeconds > 0 &&
+          timedGames.contains(widget.id) &&
+          remaining == 0) {
+        finish(leadingPlayer(liveScores));
+      }
+    });
+  }
+
   @override
   void dispose() {
+    roundTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     JoySounds.instance.stop();
     super.dispose();
   }
 
-  void finish(int winner) {
+  void finish(int winner) async {
     if (done || !mounted) return;
-    done = true;
+    setState(() => done = true);
+    roundTimer?.cancel();
     JoySounds.instance.celebrate(winner);
-    showDialog<void>(
+    final record = MatchRecord(
+      game: widget.id,
+      names: List.of(widget.names),
+      winner: winner,
+      seconds: elapsed,
+      date: DateTime.now(),
+      practice: widget.computer,
+    );
+    if (widget.onResult != null) {
+      await widget.onResult!(record);
+    } else {
+      await PartyData.instance.record(record);
+    }
+    if (!mounted) return;
+    bool sharing = false;
+    await showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder:
-          (c) => PopScope(
-            canPop: false,
-            child: AlertDialog(
-              title: Text(
-                winner < 0 ? 'Match tied!' : '${widget.names[winner]} wins!',
-              ),
-              content: const Text('Ready for another rivalry?'),
-              actions: [
-                FilledButton(
-                  onPressed: () {
-                    Navigator.pop(c);
-                    Navigator.pop(context, winner);
-                  },
-                  child: const Text('Continue'),
+          (c) => StatefulBuilder(
+            builder:
+                (c, update) => PopScope(
+                  canPop: false,
+                  child: AlertDialog(
+                    title: Text(
+                      winner < 0
+                          ? 'Match tied!'
+                          : '${widget.names[winner]} wins!',
+                    ),
+                    content: Text(
+                      '${games[widget.id].name} • ${elapsed}s\nReady for another rivalry?',
+                    ),
+                    actions: [
+                      TextButton.icon(
+                        onPressed:
+                            sharing
+                                ? null
+                                : () async {
+                                  update(() => sharing = true);
+                                  final message = await shareScorecard(
+                                    '${games[widget.id].name} • match wins',
+                                    widget.names,
+                                    [
+                                      for (
+                                        var i = 0;
+                                        i < widget.names.length;
+                                        i++
+                                      )
+                                        winner == i ? 1 : 0,
+                                    ],
+                                  );
+                                  if (c.mounted) {
+                                    update(() => sharing = false);
+                                    ScaffoldMessenger.of(c).showSnackBar(
+                                      SnackBar(content: Text(message)),
+                                    );
+                                  }
+                                },
+                        icon: const Icon(Icons.ios_share_rounded),
+                        label: const Text('Share scorecard'),
+                      ),
+                      if (widget.allowRematch)
+                        OutlinedButton(
+                          onPressed: () {
+                            Navigator.pop(c);
+                            JoySounds.instance.stop();
+                            start();
+                          },
+                          child: const Text('Play again'),
+                        ),
+                      if (widget.onNextGame != null)
+                        FilledButton(
+                          onPressed: () {
+                            widget.onNextGame!();
+                            Navigator.pop(c);
+                            Navigator.pop(context, winner);
+                          },
+                          child: const Text('Next game'),
+                        ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(c);
+                          Navigator.pop(context, winner);
+                        },
+                        child: Text(
+                          widget.onNextGame == null
+                              ? 'Continue'
+                              : 'Back to lobby',
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ],
-            ),
           ),
     );
   }
@@ -698,7 +1151,9 @@ class _MatchScreenState extends State<MatchScreen> {
     final g = games[widget.id];
     return Scaffold(
       appBar: AppBar(
-        title: Text(g.name),
+        title: Text(
+          remaining > 0 && started ? '${g.name} • ${remaining}s' : g.name,
+        ),
         actions: [
           ListenableBuilder(
             listenable: JoySounds.instance,
@@ -802,16 +1257,82 @@ class _MatchScreenState extends State<MatchScreen> {
                         '${widget.names.length} players • Shared screen • Offline',
                         style: TextStyle(color: JoyTheme.muted),
                       ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 20),
+                      if (adjustableGames.contains(widget.id) ||
+                          widget.computer && widget.id != 29)
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: 8,
+                          children: [
+                            for (final level in Difficulty.values)
+                              ChoiceChip(
+                                label: Text(
+                                  level.name[0].toUpperCase() +
+                                      level.name.substring(1),
+                                ),
+                                selected: difficulty == level,
+                                onSelected: (_) {
+                                  setState(() => difficulty = level);
+                                  PartyData.instance.difficulty = level;
+                                  PartyData.instance.saveOptions();
+                                },
+                              ),
+                          ],
+                        ),
+                      if (adjustableGames.contains(widget.id) ||
+                          widget.computer && widget.id != 29)
+                        Padding(
+                          padding: EdgeInsets.only(top: 8),
+                          child: Text(
+                            widget.id == 5
+                                ? 'Changes ball speed and computer reaction speed.'
+                                : widget.id == 23
+                                ? 'Changes pattern length and flash speed.'
+                                : widget.id == 24
+                                ? 'Changes cup shuffle speed.'
+                                : widget.id == 26
+                                ? 'Changes the arithmetic number range.'
+                                : 'Changes computer move strength.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: JoyTheme.muted,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      if (timedGames.contains(widget.id))
+                        Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: DropdownButton<int>(
+                            value: roundSeconds,
+                            items: [
+                              for (final seconds in [0, 60, 120, 180])
+                                DropdownMenuItem(
+                                  value: seconds,
+                                  child: Text(
+                                    seconds == 0
+                                        ? 'Untimed round'
+                                        : '$seconds-second round',
+                                  ),
+                                ),
+                            ],
+                            onChanged: (value) {
+                              if (value != null) {
+                                setState(() => roundSeconds = value);
+                                PartyData.instance.roundSeconds = value;
+                                PartyData.instance.saveOptions();
+                              }
+                            },
+                          ),
+                        ),
+                      TextButton.icon(
+                        onPressed: tutorial,
+                        icon: const Icon(Icons.touch_app_rounded),
+                        label: const Text('Watch tutorial'),
+                      ),
+                      const SizedBox(height: 12),
                       FilledButton.icon(
-                        onPressed: () {
-                          JoySounds.instance.play(
-                            [Family.action, Family.arcade].contains(g.family)
-                                ? SoundEffect.tap
-                                : SoundEffect.start,
-                          );
-                          setState(() => started = true);
-                        },
+                        onPressed: start,
                         icon: const Icon(Icons.play_arrow),
                         label: const Text('Let’s play'),
                       ),
@@ -827,12 +1348,36 @@ class _MatchScreenState extends State<MatchScreen> {
                     data: JoyTheme.arena,
                     child: ColoredBox(
                       color: const Color(0xFF161C36),
-                      child: buildGame(
-                        id: widget.id,
-                        names: widget.names,
-                        onFinish: finish,
-                        haptics: widget.haptics,
-                      ),
+                      child:
+                          done
+                              ? const Center(
+                                child: Icon(
+                                  Icons.emoji_events_rounded,
+                                  size: 80,
+                                  color: Color(0xFFFFC16D),
+                                ),
+                              )
+                              : MatchOptions(
+                                difficulty: difficulty,
+                                computer: widget.computer,
+                                onScores: (scores) {
+                                  if (mounted && !done) {
+                                    liveScores = List.of(scores);
+                                  }
+                                },
+                                onPause: (paused) {
+                                  clockPaused = paused;
+                                },
+                                child: KeyedSubtree(
+                                  key: ValueKey(attempt),
+                                  child: buildGame(
+                                    id: widget.id,
+                                    names: widget.names,
+                                    onFinish: finish,
+                                    haptics: widget.haptics,
+                                  ),
+                                ),
+                              ),
                     ),
                   ),
                 ),

@@ -1,4 +1,5 @@
 import '../sound.dart';
+import '../party_data.dart';
 import 'dart:async';
 import 'dart:math';
 
@@ -90,7 +91,25 @@ class _BrainGameState extends State<BrainGame> {
       answer = options.indexOf(q[1]);
     }
     if (id == 26) {
-      final a = 2 + rng.nextInt(18), b = 2 + rng.nextInt(12);
+      final level = MatchOptions.read(context)?.difficulty ?? Difficulty.normal;
+      final a =
+              2 +
+              rng.nextInt(
+                level == Difficulty.easy
+                    ? 8
+                    : level == Difficulty.hard
+                    ? 38
+                    : 18,
+              ),
+          b =
+              2 +
+              rng.nextInt(
+                level == Difficulty.easy
+                    ? 5
+                    : level == Difficulty.hard
+                    ? 18
+                    : 12,
+              );
       final multiply = rng.nextBool();
       final result = multiply ? a * b : a + b;
       prompt = '$a ${multiply ? '×' : '+'} $b = ?';
@@ -113,26 +132,36 @@ class _BrainGameState extends State<BrainGame> {
       timer = Timer(const Duration(milliseconds: 1300), () {
         if (!mounted) return;
         setState(() => cupRevealed = false);
-        timer = Timer.periodic(const Duration(milliseconds: 700), (t) {
-          if (!mounted) {
-            t.cancel();
-            return;
-          }
-          setState(() {
-            if (cupStep == 5) {
+        timer = Timer.periodic(
+          Duration(
+            milliseconds:
+                (MatchOptions.read(context)?.difficulty == Difficulty.easy
+                    ? 1000
+                    : MatchOptions.read(context)?.difficulty == Difficulty.hard
+                    ? 450
+                    : 700),
+          ),
+          (t) {
+            if (!mounted) {
               t.cancel();
-              answer = cups.indexOf(0);
-              locked = false;
-              prompt = 'Where is the diamond?';
               return;
             }
-            final a = rng.nextInt(3), b = (a + 1 + rng.nextInt(2)) % 3;
-            final v = cups[a];
-            cups[a] = cups[b];
-            cups[b] = v;
-            cupStep++;
-          });
-        });
+            setState(() {
+              if (cupStep == 5) {
+                t.cancel();
+                answer = cups.indexOf(0);
+                locked = false;
+                prompt = 'Where is the diamond?';
+                return;
+              }
+              final a = rng.nextInt(3), b = (a + 1 + rng.nextInt(2)) % 3;
+              final v = cups[a];
+              cups[a] = cups[b];
+              cups[b] = v;
+              cupStep++;
+            });
+          },
+        );
       });
     }
   }
@@ -146,14 +175,29 @@ class _BrainGameState extends State<BrainGame> {
     }
   }
 
-  void choose(int i) async {
-    if (locked || finished) return;
+  void choose(int i, {bool bot = false}) async {
+    if (locked ||
+        finished ||
+        (MatchOptions.read(context)?.computer == true && turn == 1 && !bot)) {
+      return;
+    }
     if (widget.id == 29) {
       if (secret == null) {
         JoySounds.instance.play(SoundEffect.tap);
         secret = i;
         turn = 1;
-        setState(() => prompt = 'Pass the phone to ${widget.names[1]}');
+        setState(
+          () =>
+              prompt =
+                  MatchOptions.read(context)?.computer == true
+                      ? 'Computer is choosing…'
+                      : 'Pass the phone to ${widget.names[1]}',
+        );
+        if (MatchOptions.read(context)?.computer == true) {
+          timer = Timer(const Duration(milliseconds: 700), () {
+            if (mounted && !finished) choose(rng.nextInt(3), bot: true);
+          });
+        }
         return;
       }
       locked = true;

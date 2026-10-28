@@ -1,6 +1,6 @@
 # JOY — one screen, big rivalries
 
-36 offline mini-games for 2–4 people sharing an Android phone, iPhone or tablet. Includes a filterable illustrated lobby, random quick play, five-round tournaments, player names, persistent win totals, and optional vibration. Real-time games support simultaneous touch; strategy and word games use alternating turns.
+36 offline mini-games for 2–4 people sharing an Android phone, iPhone or tablet. Includes a searchable illustrated lobby, favorites and recent games, custom party playlists, local profiles, saved results, and optional vibration. Four games also offer solo computer practice. Real-time games support simultaneous touch; strategy and word games use alternating turns.
 
 Tested with Flutter 3.47.8 / Dart 3.13.7. Use the current stable Flutter SDK.
 
@@ -18,6 +18,19 @@ If already cloned, run `git pull origin main` first. Android requires Android St
 ## Look and feel
 
 A consistent navy interface with blue accents, bordered information panels, clear play buttons and a dedicated 2/3/4-player party selector. The lobby, settings, splash and play boards share the same surface and control styles.
+
+## Party features (1.4)
+
+- **Quick rematch:** replay from the result dialog without returning to the lobby. Each completed match is counted once. In a league, Continue advances the fixture instead of replaying it. Quick play also offers a random Next game.
+- **Party mode:** choose 2–4 players, 3/5/8/12 rounds and one or more categories. Playlists contain unique concepts and shorten automatically when a category has fewer games. Interrupted sessions show only completed matches. End-of-session standings and awards use actual results.
+- **Library:** heart a game, filter Favorites or Recent, and search by name. The latest eight unique games are saved.
+- **Profiles and history:** edit the four local nicknames and avatars in Settings. The latest 100 completed results include participants, winner/draw, duration and practice status. No account or internet is required. Computer wins never increase a human profile’s total.
+- **Tutorials:** all 36 games have a three-step animated control guide before first play, with Skip and a Watch tutorial replay button. Guides illustrate controls; the actual game begins after dismissal.
+- **Computer practice:** Ping Pong, Tic Tac Toe, Connect Four and Rock Paper Scissors. Board bots make legal moves; normal bots win/block immediate threats, hard Tic Tac Toe uses minimax, and hard Connect Four avoids immediate losing replies. RPS chooses randomly without inspecting the human choice.
+- **Difficulty:** Easy/Normal/Hard affects Ping Pong ball/bot speed, board bot strength in practice, Simon sequence length/flash speed, cup shuffle speed, and Math Sprint number ranges. Other concepts retain their standard rules.
+- **Round duration:** Untimed or 60/120/180 seconds on score-based games (racing, parking, paddles, baskets, picture pairs, observation searches, riddles, math, reaction, scramble and crossword). Expiry compares live scores; equal leaders draw. The clock pauses in the background and during action-game countdown/manual pause. Other games use their natural finish condition.
+- **Accessibility:** saved reduced motion and larger text settings, P1–P4 scoreboard labels, and distinct Connect Four shapes. Existing Simon pads are numbered and Tic Tac Toe uses cross/circle shapes.
+- **Scorecards:** share a PNG from match or party results. Android/iOS open the native share sheet; browsers download the image. Unsupported platform sharing falls back to copying the result text. Images are generated locally; nothing is posted automatically.
 
 ## Opening and player choice
 
@@ -91,6 +104,9 @@ The sound service throttles repeated contacts and serializes native resource cha
 - `lib/catalog.dart`, `lib/game_factory.dart`: catalog, instructions and explicit engine routing.
 - `lib/players.dart`, `lib/party_league.dart`: group-turn compatibility, unique-pair fixtures and league standings.
 - `lib/music.dart`, `lib/splash.dart`: app-opening music and animated entry.
+- `lib/party_data.dart`, `party_screens.dart`: saved library/history/options, party playlists and awards.
+- `lib/practice_ai.dart`, `tutorial.dart`: legal computer moves and the 36 first-play guides.
+- `lib/result_share.dart`: local PNG scorecards, native share sheets and browser downloads.
 - `tool/build_background_music.py`: regenerates the original music track with the Python standard library.
 - `lib/games/action.dart`: racing, parking, paddle sports, golf, sumo, tanks, snake and bombs.
 - `lib/games/arcade.dart`, `arcade_models.dart`: traffic scheduling, tower trimming, flick/keeper shootouts and jumping.

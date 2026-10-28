@@ -1,4 +1,5 @@
 import '../sound.dart';
+import '../party_data.dart';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -108,8 +109,12 @@ class _ActionGameState extends State<ActionGame>
     final now = elapsed.inMicroseconds / 1e6;
     final dt = (now - last).clamp(0.0, .033);
     last = now;
-    if (paused || over || area.isEmpty) return;
+    if (paused || over || area.isEmpty) {
+      MatchOptions.read(context)?.onPause?.call(true);
+      return;
+    }
     if (countdown > 0) {
+      MatchOptions.read(context)?.onPause?.call(true);
       final before = countdown.ceil();
       setState(() => countdown -= dt);
       if (countdown.ceil() != before) {
@@ -118,6 +123,25 @@ class _ActionGameState extends State<ActionGame>
         );
       }
       return;
+    }
+    final options = MatchOptions.read(context);
+    options?.onPause?.call(false);
+    options?.onScores?.call(List.of(score));
+    if (widget.id == 5 && options?.computer == true) {
+      final level = options!.difficulty;
+      final speed =
+          level == Difficulty.easy
+              ? .30
+              : level == Difficulty.hard
+              ? .80
+              : .48;
+      final aim = (ball.dx +
+              (level == Difficulty.easy ? sin(time * 2) * .12 : 0))
+          .clamp(.10, .90);
+      players[1] = Offset(
+        players[1].dx + (aim - players[1].dx).clamp(-dt * speed, dt * speed),
+        .13,
+      );
     }
     time += dt;
     clock += dt;
@@ -178,7 +202,16 @@ class _ActionGameState extends State<ActionGame>
       }
     }
     if (field) {
-      ball += ballV * dt;
+      final level = options?.difficulty ?? Difficulty.normal;
+      final speed =
+          widget.id == 5
+              ? (level == Difficulty.easy
+                  ? .8
+                  : level == Difficulty.hard
+                  ? 1.25
+                  : 1.0)
+              : 1.0;
+      ball += ballV * dt * speed;
       ballV *= pow(.998, dt * 60).toDouble();
       if (ball.dx < .025 || ball.dx > .975) {
         ballV = Offset(-ballV.dx, ballV.dy);
@@ -360,7 +393,10 @@ class _ActionGameState extends State<ActionGame>
     if (paused || over || countdown > 0) return;
     final v = location(e);
     final p = v.dy > .5 ? 0 : 1;
-    if (pointers.containsValue(p)) return;
+    if (pointers.containsValue(p) ||
+        p == 1 && MatchOptions.read(context)?.computer == true) {
+      return;
+    }
     pointers[e.pointer] = p;
     if (widget.id == 5) {
       paddleGrip[p] = players[p].dx - v.dx;
@@ -474,7 +510,7 @@ class _ActionGameState extends State<ActionGame>
                 )
               else
                 Text(
-                  '${widget.names[p]} • ${score[p]}',
+                  '${PartyData.instance.colorSymbols ? 'P${p + 1} ' : ''}${widget.names[p]} • ${score[p]}',
                   style: TextStyle(
                     color:
                         p == 0

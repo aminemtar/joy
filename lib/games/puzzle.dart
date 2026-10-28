@@ -1,4 +1,7 @@
 import '../sound.dart';
+import 'dart:async';
+import '../party_data.dart';
+import '../practice_ai.dart';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -21,6 +24,8 @@ class PuzzleGame extends StatefulWidget {
 }
 
 class _PuzzleGameState extends State<PuzzleGame> {
+  Timer? botTimer;
+  final botRandom = Random();
   late List<int> board;
   int turn = 0;
   late final List<int> score;
@@ -73,6 +78,33 @@ class _PuzzleGameState extends State<PuzzleGame> {
     }
   }
 
+  @override
+  void dispose() {
+    botTimer?.cancel();
+    super.dispose();
+  }
+
+  void scheduleComputer() {
+    final options = MatchOptions.read(context);
+    if (options?.computer != true ||
+        turn != 1 ||
+        over ||
+        ![18, 19].contains(widget.id)) {
+      return;
+    }
+    botTimer?.cancel();
+    botTimer = Timer(
+      Duration(
+        milliseconds: options!.difficulty == Difficulty.easy ? 1000 : 650,
+      ),
+      () {
+        if (!mounted || over || turn != 1) return;
+        final move = computerMove(board, width, options.difficulty, botRandom);
+        if (move != null) play(move, bot: true);
+      },
+    );
+  }
+
   bool _adj(int a, int b, int w) =>
       (a ~/ w - b ~/ w).abs() + (a % w - b % w).abs() == 1;
   bool _solved() => List.generate(
@@ -85,8 +117,12 @@ class _PuzzleGameState extends State<PuzzleGame> {
     widget.onFinish(p);
   }
 
-  void play(int index) async {
-    if (locked || over) return;
+  void play(int index, {bool bot = false}) async {
+    if (locked ||
+        over ||
+        (MatchOptions.read(context)?.computer == true && turn == 1 && !bot)) {
+      return;
+    }
     if (widget.id == 20) {
       if (matched.contains(index) || open.contains(index)) return;
       JoySounds.instance.play(SoundEffect.flip);
@@ -192,6 +228,7 @@ class _PuzzleGameState extends State<PuzzleGame> {
       }
       turn = (turn + 1) % widget.names.length;
     });
+    scheduleComputer();
   }
 
   @override
@@ -278,6 +315,8 @@ class _PuzzleGameState extends State<PuzzleGame> {
                       ? ''
                       : widget.id == 19
                       ? (board[i] == 1 ? '✕' : '○')
+                      : PartyData.instance.colorSymbols
+                      ? (board[i] == 1 ? '▲' : '■')
                       : '●';
               if (board[i] != 0) {
                 color =

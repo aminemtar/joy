@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'joy_theme.dart';
 import 'players.dart';
+import 'party_data.dart';
 
 class JoyPanel extends StatelessWidget {
   final Widget child;
@@ -11,14 +12,14 @@ class JoyPanel extends StatelessWidget {
     this.padding = const EdgeInsets.all(20),
   });
   @override
-  Widget build(BuildContext context) => Container(
-    padding: padding,
-    decoration: BoxDecoration(
-      color: JoyTheme.surface,
-      border: Border.all(color: JoyTheme.border),
+  Widget build(BuildContext context) => Material(
+    color: JoyTheme.surface,
+    shape: RoundedRectangleBorder(
+      side: const BorderSide(color: JoyTheme.border),
       borderRadius: BorderRadius.circular(24),
     ),
-    child: child,
+    clipBehavior: Clip.antiAlias,
+    child: Padding(padding: padding, child: child),
   );
 }
 
@@ -26,6 +27,7 @@ class PartySetup extends StatelessWidget {
   final int count;
   final List<String> names;
   final List<int> wins;
+  final List<int>? avatars;
   final ValueChanged<int> onChanged;
   final VoidCallback onEdit;
   const PartySetup({
@@ -33,6 +35,7 @@ class PartySetup extends StatelessWidget {
     required this.count,
     required this.names,
     required this.wins,
+    this.avatars,
     required this.onChanged,
     required this.onEdit,
   });
@@ -138,6 +141,11 @@ class PartySetup extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    if (avatars != null)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: Text(profileAvatars[avatars![i]]),
+                      ),
                     Container(
                       width: 7,
                       height: 7,
