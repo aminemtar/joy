@@ -1,33 +1,36 @@
 import 'package:flutter/material.dart';
 
-/// Sunny paper, punchy accents and soft raised surfaces throughout the party.
+/// One navy surface system shared by the lobby, settings and game screens.
 abstract final class JoyTheme {
-  static const ink = Color(0xFF292744);
-  static const muted = Color(0xFF716D87);
-  static const paper = Color(0xFFFFFBF2);
-  static const purple = Color(0xFF7053D6);
-  static const pastels = [
-    Color(0xFFFFE9B0),
-    Color(0xFFDDF3EB),
-    Color(0xFFE8E1FF),
-    Color(0xFFFFE1E5),
-    Color(0xFFDDF0FF),
-  ];
+  static const ink = Color(0xFFF2F5FF);
+  static const muted = Color(0xFFA2ADCA);
+  static const background = Color(0xFF0B1128);
+  static const surface = Color(0xFF131E38);
+  static const raised = Color(0xFF1A2948);
+  static const border = Color(0xFF2A395A);
+  static const accent = Color(0xFF507CFF);
 
-  static ThemeData get light => ThemeData(
+  static ThemeData get dark => ThemeData(
     useMaterial3: true,
-    brightness: Brightness.light,
-    scaffoldBackgroundColor: paper,
-    colorScheme: ColorScheme.fromSeed(seedColor: purple).copyWith(
-      primary: purple,
-      onPrimary: Colors.white,
-      surface: paper,
+    brightness: Brightness.dark,
+    scaffoldBackgroundColor: background,
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: accent,
+      brightness: Brightness.dark,
+    ).copyWith(
+      primary: const Color(0xFF91ACFF),
+      onPrimary: background,
+      primaryContainer: accent,
+      onPrimaryContainer: Colors.white,
+      surface: surface,
       onSurface: ink,
-      secondaryContainer: const Color(0xFFFFE9B0),
+      onSurfaceVariant: muted,
+      outline: border,
+      secondaryContainer: raised,
       onSecondaryContainer: ink,
     ),
     appBarTheme: const AppBarTheme(
-      backgroundColor: paper,
+      backgroundColor: background,
       foregroundColor: ink,
       surfaceTintColor: Colors.transparent,
       centerTitle: false,
@@ -39,37 +42,57 @@ abstract final class JoyTheme {
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
-        textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        backgroundColor: accent,
+        foregroundColor: Colors.white,
+        minimumSize: const Size(48, 52),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: ink,
+        minimumSize: const Size(48, 52),
+        side: const BorderSide(color: border),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+    ),
+    iconButtonTheme: IconButtonThemeData(
+      style: IconButton.styleFrom(foregroundColor: muted),
+    ),
     chipTheme: ChipThemeData(
-      backgroundColor: Colors.white,
-      selectedColor: const Color(0xFFE8E1FF),
-      side: const BorderSide(color: Color(0xFFE6DFD4)),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      labelStyle: const TextStyle(color: ink, fontWeight: FontWeight.w700),
+      backgroundColor: surface,
+      selectedColor: accent.withValues(alpha: .20),
+      side: const BorderSide(color: border),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      labelStyle: const TextStyle(color: ink, fontWeight: FontWeight.w600),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+      showCheckmark: false,
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: Colors.white,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+      fillColor: raised,
+      contentPadding: const EdgeInsets.all(16),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: border),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: border),
+      ),
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
     ),
     bottomSheetTheme: const BottomSheetThemeData(
-      backgroundColor: paper,
+      backgroundColor: surface,
       showDragHandle: true,
     ),
+    dividerTheme: const DividerThemeData(color: border),
   );
 
-  static ThemeData get arena => ThemeData(
-    useMaterial3: true,
-    brightness: Brightness.dark,
-    scaffoldBackgroundColor: const Color(0xFF161C36),
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: const Color(0xFFB5A1FF),
-      brightness: Brightness.dark,
-    ),
-  );
+  static ThemeData get arena => dark;
 }

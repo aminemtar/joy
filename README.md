@@ -1,4 +1,4 @@
-# JOY — a little play, a lot of happy
+# JOY — one screen, big rivalries
 
 36 offline mini-games for 2–4 people sharing an Android phone, iPhone or tablet. Includes a filterable illustrated lobby, random quick play, five-round tournaments, player names, persistent win totals, and optional vibration. Real-time games support simultaneous touch; strategy and word games use alternating turns.
 
@@ -17,11 +17,11 @@ If already cloned, run `git pull origin main` first. Android requires Android St
 
 ## Look and feel
 
-A light cream interface with sunshine, mint, peach and lilac game cards, bold purple controls and a matching animated splash. Play boards sit inside rounded, high-contrast arenas for clear pieces and targets.
+A consistent navy interface with blue accents, bordered information panels, clear play buttons and a dedicated 2/3/4-player party selector. The lobby, settings, splash and play boards share the same surface and control styles.
 
 ## Opening and player choice
 
-The native launch surfaces use JOY’s warm cream background, followed by an animated logo, orbiting particles and a short loading transition. The splash can be skipped and respects reduced-motion settings.
+The native launch surfaces use JOY’s navy background, followed by an animated logo, orbiting particles and a short loading transition. The splash can be skipped and respects reduced-motion settings.
 
 Choose **2 players**, **3 players** or **4 players** in the lobby. The selection, four player names and individual win totals are saved. The 16 group games use shared turns or individual reaction pads: Treasure Auction, Sliding Puzzle, Picture Pairs, Spot the Difference, Hidden Objects, Simon Echo, Follow the Cup, Riddle Duel, Math Sprint, Reaction Duel, Word Scramble, Crossword Duel, Word Search, Dots and Boxes, Code Breaker and Minesweeper Duel.
 

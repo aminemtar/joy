@@ -57,7 +57,7 @@ class _JoySplashState extends State<JoySplash>
             gradient: RadialGradient(
               center: Alignment(0, -.25),
               radius: 1.2,
-              colors: [Color(0xFFFFEDB5), Color(0xFFFFFBF2)],
+              colors: [Color(0xFF243E86), JoyTheme.background],
             ),
           ),
           child: Stack(
@@ -94,7 +94,7 @@ class _JoySplashState extends State<JoySplash>
                       const Text(
                         'JOY',
                         style: TextStyle(
-                          color: JoyTheme.purple,
+                          color: JoyTheme.ink,
                           fontSize: 48,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 12,
@@ -102,7 +102,7 @@ class _JoySplashState extends State<JoySplash>
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'A LITTLE PLAY. A LOT OF HAPPY.',
+                        'SMALL GAMES. BIG RIVALRIES.',
                         style: TextStyle(
                           color: JoyTheme.muted,
                           letterSpacing: 2,
@@ -114,8 +114,8 @@ class _JoySplashState extends State<JoySplash>
                         width: 130,
                         child: LinearProgressIndicator(
                           value: t,
-                          color: JoyTheme.purple,
-                          backgroundColor: Color(0xFFE6DDF4),
+                          color: JoyTheme.ink,
+                          backgroundColor: JoyTheme.border,
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),

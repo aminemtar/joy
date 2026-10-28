@@ -13,6 +13,7 @@ import 'splash.dart';
 import 'players.dart';
 import 'party_league.dart';
 import 'joy_theme.dart';
+import 'lobby_widgets.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,7 +37,7 @@ class _JoyAppState extends State<JoyApp> {
   Widget build(BuildContext context) => MaterialApp(
     debugShowCheckedModeBanner: false,
     title: 'JOY',
-    theme: JoyTheme.light,
+    theme: JoyTheme.dark,
     home: AnimatedSwitcher(
       duration: const Duration(milliseconds: 350),
       child:
@@ -408,7 +409,7 @@ class _LobbyState extends State<Lobby> {
                       ],
                     ),
                     const Text(
-                      'A little play. A lot of happy.',
+                      'Small games. Big rivalries.',
                       style: TextStyle(color: JoyTheme.muted, fontSize: 17),
                     ),
                     const SizedBox(height: 24),
@@ -416,13 +417,13 @@ class _LobbyState extends State<Lobby> {
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFFFFE69A), Color(0xFFFFD6B6)],
+                          colors: [Color(0xFF213D83), Color(0xFF152447)],
                         ),
                         borderRadius: BorderRadius.circular(30),
-                        border: Border.all(color: const Color(0xFFFFD18B)),
+                        border: Border.all(color: JoyTheme.border),
                         boxShadow: const [
                           BoxShadow(
-                            color: Color(0x10C99137),
+                            color: Color(0x20507CFF),
                             blurRadius: 24,
                             offset: Offset(0, 8),
                           ),
@@ -432,32 +433,49 @@ class _LobbyState extends State<Lobby> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'GOOD TIMES, TOGETHER',
+                            'THE LOCAL MULTIPLAYER ARCADE',
                             style: TextStyle(letterSpacing: 2, fontSize: 11),
                           ),
                           const SizedBox(height: 10),
                           const Text(
-                            'More laughs.\nMore rematches.',
+                            'Pick a game.\nMake it a rivalry.',
                             style: TextStyle(
-                              fontSize: 32,
+                              fontSize: 30,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
                           const SizedBox(height: 12),
-                          const Text('36 games • Offline • 2–4 players'),
+                          const Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              InfoPill(
+                                icon: Icons.sports_esports_rounded,
+                                label: '36 games',
+                              ),
+                              InfoPill(
+                                icon: Icons.wifi_off_rounded,
+                                label: 'Offline',
+                              ),
+                              InfoPill(
+                                icon: Icons.people_alt_rounded,
+                                label: '2–4 players',
+                              ),
+                            ],
+                          ),
                           const SizedBox(height: 20),
                           Wrap(
                             spacing: 12,
                             runSpacing: 10,
                             children: [
-                              FilledButton.tonalIcon(
+                              FilledButton.icon(
                                 onPressed:
                                     () =>
                                         _play([Random().nextInt(games.length)]),
                                 icon: const Icon(Icons.shuffle),
                                 label: const Text('Surprise me'),
                               ),
-                              FilledButton(
+                              OutlinedButton(
                                 onPressed: () {
                                   final q = List.generate(
                                     games.length,
@@ -473,45 +491,39 @@ class _LobbyState extends State<Lobby> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    const Text(
-                      'BRING YOUR PEOPLE',
-                      style: TextStyle(color: JoyTheme.muted, letterSpacing: 2),
-                    ),
-                    const SizedBox(height: 10),
-                    SegmentedButton<int>(
-                      segments: const [
-                        ButtonSegment(value: 2, label: Text('2 players')),
-                        ButtonSegment(value: 3, label: Text('3 players')),
-                        ButtonSegment(value: 4, label: Text('4 players')),
-                      ],
-                      selected: {playerCount},
-                      onSelectionChanged: (v) {
-                        setState(() => playerCount = v.single);
+                    PartySetup(
+                      count: playerCount,
+                      names: names,
+                      wins: wins,
+                      onEdit: _settings,
+                      onChanged: (value) {
+                        JoySounds.instance.play(SoundEffect.tap);
+                        setState(() => playerCount = value);
                         _save();
                       },
                     ),
-                    const SizedBox(height: 14),
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 8,
+                    const SizedBox(height: 28),
+                    Row(
                       children: [
-                        for (var i = 0; i < playerCount; i++)
-                          Text(
-                            '${names[i]} • ${wins[i]} wins',
+                        const Expanded(
+                          child: Text(
+                            'Find your next game',
                             style: TextStyle(
-                              color:
-                                  [
-                                    Color(0xFF3659C8),
-                                    Color(0xFFBF405B),
-                                    Color(0xFF986000),
-                                    Color(0xFF7350B5),
-                                  ][i],
-                              fontWeight: FontWeight.w700,
+                              fontSize: 21,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
+                        ),
+                        Text(
+                          '${filtered.length} games',
+                          style: const TextStyle(
+                            color: JoyTheme.muted,
+                            fontSize: 12,
+                          ),
+                        ),
                       ],
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 14),
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
@@ -556,13 +568,11 @@ class _LobbyState extends State<Lobby> {
                         final entry = filtered[i];
                         final g = entry.value;
                         return Card(
-                          color:
-                              JoyTheme.pastels[entry.key %
-                                  JoyTheme.pastels.length],
+                          color: JoyTheme.surface,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(24),
-                            side: const BorderSide(color: Color(0x18000000)),
+                            side: const BorderSide(color: JoyTheme.border),
                           ),
                           clipBehavior: Clip.antiAlias,
                           child: InkWell(
@@ -723,7 +733,10 @@ class _MatchScreenState extends State<MatchScreen> {
                         tag: 'game-${widget.id}',
                         child: Material(
                           color: Colors.transparent,
-                          child: GameArt(id: widget.id, size: 200),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(28),
+                            child: GameArt(id: widget.id, size: 160),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -743,14 +756,46 @@ class _MatchScreenState extends State<MatchScreen> {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      Text(
-                        widget.id == 27 && widget.names.length > 2
-                            ? 'Tap your own pad after NOW. An early tap loses one point. First to five wins.'
-                            : widget.id == 23
-                            ? 'Repeat the entire pattern. Four rounds per player; longest-memory score wins.'
-                            : g.rules,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 22),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 520),
+                        child: JoyPanel(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(
+                                    Icons.info_outline_rounded,
+                                    size: 18,
+                                    color: Color(0xFF91ACFF),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'How to play',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                widget.id == 27 && widget.names.length > 2
+                                    ? 'Tap your own pad after NOW. An early tap loses one point. First to five wins.'
+                                    : widget.id == 23
+                                    ? 'Repeat the entire pattern. Four rounds per player; longest-memory score wins.'
+                                    : g.rules,
+                                textAlign: TextAlign.start,
+                                style: const TextStyle(
+                                  fontSize: 17,
+                                  height: 1.5,
+                                  color: JoyTheme.ink,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 16),
                       Text(
