@@ -233,4 +233,66 @@ void main() {
     expect(preferences.getBool('soundEnabled'), true);
     expect(tester.takeException(), isNull);
   });
+  test(
+    'Sound test reports platform failures and retries successfully',
+    () async {
+      final output = RecordingSoundOutput()..fail = true;
+      final audio = JoySounds(output: output);
+      await audio.initialize();
+      final error = await audio.testSound();
+      expect(error, contains('Simulated unavailable output'));
+      expect(audio.lastError, error);
+      output.fail = false;
+      expect(await audio.testSound(), isNull);
+      expect(audio.lastError, isNull);
+      expect(output.played, [SoundEffect.win]);
+      audio.dispose();
+    },
+  );
+  test('Unmuting restores an audible app volume after zero volume', () async {
+    SharedPreferences.setMockInitialValues({
+      'soundEnabled': false,
+      'soundVolume': 0.0,
+    });
+    final output = RecordingSoundOutput(), audio = JoySounds(output: output);
+    await audio.initialize();
+    expect(await audio.testSound(), contains('muted'));
+    await audio.setEnabled(true);
+    expect(audio.volume, .6);
+    expect(
+      (await SharedPreferences.getInstance()).getDouble('soundVolume'),
+      .6,
+    );
+    expect(await audio.testSound(), isNull);
+    expect(output.levels, [.6]);
+    audio.dispose();
+  });
+  test(
+    'Test sound identifies a zero slider instead of silently doing nothing',
+    () async {
+      final audio = JoySounds(output: RecordingSoundOutput());
+      await audio.initialize();
+      await audio.setVolume(0);
+      expect(await audio.testSound(), contains('volume is zero'));
+      audio.dispose();
+    },
+  );
+  testWidgets('Settings displays muted test feedback inline', (tester) async {
+    await JoySounds.instance.setEnabled(false);
+    await tester.pumpWidget(const JoyApp());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Test sound'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Test sound'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Sound effects are muted. Enable them first.'),
+      findsOneWidget,
+    );
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox());
+    await JoySounds.instance.setEnabled(true);
+  });
 }

@@ -127,6 +127,8 @@ class _LobbyState extends State<Lobby> {
   }
 
   void _settings() {
+    bool testingSound = false, testFailed = false;
+    String? soundTestResult;
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -202,6 +204,54 @@ class _LobbyState extends State<Lobby> {
                             ),
                             const Icon(Icons.volume_up_rounded),
                           ],
+                        ),
+                        FilledButton.tonalIcon(
+                          icon: const Icon(Icons.play_arrow_rounded),
+                          label: Text(testingSound ? 'Testing…' : 'Test sound'),
+                          onPressed:
+                              testingSound
+                                  ? null
+                                  : () async {
+                                    update(() {
+                                      testingSound = true;
+                                      soundTestResult = null;
+                                    });
+                                    final error =
+                                        await JoySounds.instance.testSound();
+                                    if (!c.mounted) return;
+                                    update(() {
+                                      testingSound = false;
+                                      testFailed = error != null;
+                                      soundTestResult =
+                                          error ??
+                                          'Playing test sound. If silent, raise Media volume and check headphones or Bluetooth output.';
+                                    });
+                                  },
+                        ),
+                        ListenableBuilder(
+                          listenable: JoySounds.instance,
+                          builder: (c, child) {
+                            final status =
+                                JoySounds.instance.lastError ?? soundTestResult;
+                            return status == null
+                                ? const SizedBox()
+                                : Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 10,
+                                  ),
+                                  child: Text(
+                                    status,
+                                    style: TextStyle(
+                                      color:
+                                          JoySounds.instance.lastError !=
+                                                      null ||
+                                                  testFailed
+                                              ? Colors.orangeAccent
+                                              : Colors.white70,
+                                    ),
+                                  ),
+                                );
+                          },
                         ),
                         SwitchListTile(
                           title: const Text('Vibration'),

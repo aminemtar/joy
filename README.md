@@ -66,7 +66,7 @@ Picture Pairs uses a 440 ms perspective rotation with separate front/back faces,
 
 Fifteen original synthesized arcade cues are bundled for offline play: taps, flips, correct/missed moves, impacts, jumps, shots, countdown/start cues, win/draw fanfares and four Simon Echo tones. Use the speaker button in the lobby or match toolbar to mute instantly. Settings also provide a volume slider; both preferences persist locally.
 
-The sound service throttles repeated contacts and serializes native resource changes. Result music replaces pending gameplay cues. Muting, leaving a match or backgrounding stops playback. Effects mix with other apps and respect device silent mode where supported. No background music loop is added.
+The sound service throttles repeated contacts and serializes native resource changes. Result music replaces pending gameplay cues. Muting, leaving a match or backgrounding stops playback. Effects mix with other apps and use Android media/game volume and iOS playback audio. No background music loop is added.
 
 `assets/audio/README.md` documents the cues; `python tool/build_sound_effects.py` regenerates them without third-party sound files. `lib/sound.dart` contains playback, preference and lifecycle handling, and `test/sound_test.dart` checks the audio files and service behavior. After pulling this update, stop any running debug app and launch it again so the new native audio plugin is registered.
 
@@ -97,3 +97,5 @@ Tests cover rule outcomes, valid crossword crossings, generated search paths, du
 ## Scope
 
 This is a playable collection requiring device testing and balancing before store release. Menus, clues and questions are English. Crossword packs, riddles and scramble vocabulary are finite. The illustrated memory game uses artwork rather than photographs. No AI opponents, four-player mode, online/LAN multiplayer, ads, accounts, paid content or release signing is configured.
+
+Use **Settings → Test sound** to check playback. This shows plugin or asset errors instead of silently hiding them. If enabling sound after setting volume to zero, JOY restores a 60% app volume. Device media volume and connected audio outputs still apply.

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum SoundEffect {
@@ -34,6 +35,23 @@ abstract interface class SoundOutput {
 /// Native resources are created only for effects actually used. A serialized
 /// command queue avoids play/dispose races while a platform is loading a clip.
 class PooledSoundOutput implements SoundOutput {
+  PooledSoundOutput({AudioCache? audioCache}) : _audioCache = audioCache;
+  final AudioCache? _audioCache;
+
+  // Game effects use media volume, not notification/ringer volume. Playback
+  // plus mixWithOthers is a valid iOS pair; ambient plus that option is not.
+  static AudioContext get audioContext => AudioContext(
+    android: const AudioContextAndroid(
+      contentType: AndroidContentType.sonification,
+      usageType: AndroidUsageType.game,
+      audioFocus: AndroidAudioFocus.none,
+    ),
+    iOS: AudioContextIOS(
+      category: AVAudioSessionCategory.playback,
+      options: const {AVAudioSessionOptions.mixWithOthers},
+    ),
+  );
+
   final _pools = <SoundEffect, AudioPool>{};
   Future<void> _queue = Future.value();
   int _generation = 0;
@@ -53,14 +71,11 @@ class PooledSoundOutput implements SoundOutput {
       var pool = _pools[effect];
       if (pool == null) {
         pool = await AudioPool.create(
-          source: AssetSource(effect.asset),
+          source: AssetSource(effect.asset, mimeType: 'audio/wav'),
+          audioCache: _audioCache,
           minPlayers: 1,
           maxPlayers: 2,
-          audioContext:
-              AudioContextConfig(
-                focus: AudioContextConfigFocus.mixWithOthers,
-                respectSilence: true,
-              ).build(),
+          audioContext: audioContext,
         );
         _pools[effect] = pool;
       }
@@ -102,6 +117,8 @@ class JoySounds extends ChangeNotifier with WidgetsBindingObserver {
       _foreground = true,
       _closed = false;
   bool _celebrating = false;
+  String? _lastError;
+  String? get lastError => _lastError;
   double _volume = .6;
   int _generation = 0;
   bool get enabled => _enabled;
@@ -125,6 +142,13 @@ class JoySounds extends ChangeNotifier with WidgetsBindingObserver {
   Future<void> setEnabled(bool value) async {
     if (_closed) return;
     _enabled = value;
+    // Toggling the speaker on should actually restore an audible level.
+    if (value && _volume == 0) {
+      _volume = .6;
+      final preferences =
+          _preferences ??= await SharedPreferences.getInstance();
+      await preferences.setDouble('soundVolume', _volume);
+    }
     if (!value) stop();
     notifyListeners();
     final p = _preferences ??= await SharedPreferences.getInstance();
@@ -186,12 +210,53 @@ class JoySounds extends ChangeNotifier with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) =>
       setForeground(state == AppLifecycleState.resumed);
+  String _describeError(Object error) {
+    if (error is MissingPluginException) {
+      return 'Audio plugin needs a full restart. Stop the app, run flutter pub get, then flutter run.';
+    }
+    final detail = error.toString();
+    return 'Sound playback failed: ${detail.length > 240 ? detail.substring(0, 240) : detail}';
+  }
+
+  void _reportError(Object error) {
+    debugPrint('JOY sound unavailable: $error');
+    if (_closed) return;
+    _lastError = _describeError(error);
+    notifyListeners();
+  }
+
+  /// Explicit user-triggered diagnosis; never claims to detect speaker output.
+  Future<String?> testSound() async {
+    if (_closed) return 'Audio is no longer available. Restart the app.';
+    await initialize();
+    if (!_enabled) return 'Sound effects are muted. Enable them first.';
+    if (_volume == 0) return 'Sound volume is zero. Raise the volume slider.';
+    if (!_foreground) return 'Return to the app before testing sound.';
+    _generation++;
+    final generation = _generation;
+    _celebrating = false;
+    _lastPlayed.clear();
+    _lastError = null;
+    try {
+      await _output.stopAll().timeout(const Duration(seconds: 5));
+      if (!canPlay || generation != _generation) return 'Sound test cancelled.';
+      await _output
+          .play(SoundEffect.win, _volume)
+          .timeout(const Duration(seconds: 8));
+      if (!_closed) notifyListeners();
+      return null;
+    } catch (error) {
+      _reportError(error);
+      return _lastError;
+    }
+  }
+
   Future<void> _safely(Future<void> Function() action) async {
     try {
       await action();
     } catch (error) {
-      // Audio failure should never interrupt a move or strand a result screen.
-      debugPrint('JOY sound unavailable: $error');
+      // Preserve gameplay, but make the failure visible in sound settings.
+      _reportError(error);
     }
   }
 
