@@ -1,4 +1,4 @@
-# JOY — one screen, two rivals
+# JOY — a little play, a lot of happy
 
 36 offline mini-games for 2–4 people sharing an Android phone, iPhone or tablet. Includes a filterable illustrated lobby, random quick play, five-round tournaments, player names, persistent win totals, and optional vibration. Real-time games support simultaneous touch; strategy and word games use alternating turns.
 
@@ -15,9 +15,13 @@ flutter run
 
 If already cloned, run `git pull origin main` first. Android requires Android Studio/SDK. iOS requires macOS, Xcode and a simulator or a signed physical device. For a browser preview: `flutter run -d chrome`. A mouse provides only one pointer, so touch hardware is recommended for simultaneous multiplayer.
 
+## Look and feel
+
+A light cream interface with sunshine, mint, peach and lilac game cards, bold purple controls and a matching animated splash. Play boards sit inside rounded, high-contrast arenas for clear pieces and targets.
+
 ## Opening and player choice
 
-The native launch surfaces use JOY’s navy background, followed by an animated logo, orbiting particles and a short loading transition. The splash can be skipped and respects reduced-motion settings.
+The native launch surfaces use JOY’s warm cream background, followed by an animated logo, orbiting particles and a short loading transition. The splash can be skipped and respects reduced-motion settings.
 
 Choose **2 players**, **3 players** or **4 players** in the lobby. The selection, four player names and individual win totals are saved. The 16 group games use shared turns or individual reaction pads: Treasure Auction, Sliding Puzzle, Picture Pairs, Spot the Difference, Hidden Objects, Simon Echo, Follow the Cup, Riddle Duel, Math Sprint, Reaction Duel, Word Scramble, Crossword Duel, Word Search, Dots and Boxes, Code Breaker and Minesweeper Duel.
 

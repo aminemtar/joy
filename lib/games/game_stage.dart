@@ -46,7 +46,10 @@ class GameStage extends StatelessWidget {
                         ),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: turn == p ? playerColors[p] : Colors.white12,
+                          color:
+                              turn == p
+                                  ? playerColors[p]
+                                  : Theme.of(context).dividerColor,
                         ),
                       ),
                       child: Row(
@@ -57,7 +60,16 @@ class GameStage extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: playerColors[p],
+                                color:
+                                    Theme.of(context).brightness ==
+                                            Brightness.light
+                                        ? const [
+                                          Color(0xFF3659C8),
+                                          Color(0xFFBF405B),
+                                          Color(0xFF986000),
+                                          Color(0xFF7350B5),
+                                        ][p]
+                                        : playerColors[p],
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -85,7 +97,10 @@ class GameStage extends StatelessWidget {
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.white70, fontSize: 13),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontSize: 13,
+          ),
         ),
       ),
       Expanded(

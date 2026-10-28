@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'players.dart';
+import 'joy_theme.dart';
 import 'game_art.dart';
 import 'sound.dart';
 import 'games/game_stage.dart';
@@ -90,13 +91,13 @@ class _PartyLeagueScreenState extends State<PartyLeagueScreen> {
             const Text(
               'Two opponents per match, with all selected players included.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white60),
+              style: TextStyle(color: JoyTheme.muted),
             ),
             const SizedBox(height: 24),
             if (pair != null) ...[
               Text(
                 'Match ${current + 1} / ${league.fixtures.length}',
-                style: const TextStyle(color: Colors.white54),
+                style: const TextStyle(color: JoyTheme.muted),
               ),
               const SizedBox(height: 10),
               Text(

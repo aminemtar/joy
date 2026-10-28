@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'joy_theme.dart';
 
 class JoySplash extends StatefulWidget {
   final VoidCallback onFinished;
@@ -56,7 +57,7 @@ class _JoySplashState extends State<JoySplash>
             gradient: RadialGradient(
               center: Alignment(0, -.25),
               radius: 1.2,
-              colors: [Color(0xFF243E86), Color(0xFF0B1128)],
+              colors: [Color(0xFFFFEDB5), Color(0xFFFFFBF2)],
             ),
           ),
           child: Stack(
@@ -93,6 +94,7 @@ class _JoySplashState extends State<JoySplash>
                       const Text(
                         'JOY',
                         style: TextStyle(
+                          color: JoyTheme.purple,
                           fontSize: 48,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 12,
@@ -100,9 +102,9 @@ class _JoySplashState extends State<JoySplash>
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        'SMALL GAMES. BIG RIVALRIES.',
+                        'A LITTLE PLAY. A LOT OF HAPPY.',
                         style: TextStyle(
-                          color: Colors.white60,
+                          color: JoyTheme.muted,
                           letterSpacing: 2,
                           fontSize: 11,
                         ),
@@ -112,8 +114,8 @@ class _JoySplashState extends State<JoySplash>
                         width: 130,
                         child: LinearProgressIndicator(
                           value: t,
-                          color: const Color(0xFF7CA6FF),
-                          backgroundColor: Colors.white10,
+                          color: JoyTheme.purple,
+                          backgroundColor: Color(0xFFE6DDF4),
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),

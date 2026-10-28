@@ -12,6 +12,7 @@ import 'music.dart';
 import 'splash.dart';
 import 'players.dart';
 import 'party_league.dart';
+import 'joy_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,15 +36,7 @@ class _JoyAppState extends State<JoyApp> {
   Widget build(BuildContext context) => MaterialApp(
     debugShowCheckedModeBanner: false,
     title: 'JOY',
-    theme: ThemeData(
-      brightness: Brightness.dark,
-      scaffoldBackgroundColor: const Color(0xFF0B1128),
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: blue,
-        brightness: Brightness.dark,
-      ),
-      useMaterial3: true,
-    ),
+    theme: JoyTheme.light,
     home: AnimatedSwitcher(
       duration: const Duration(milliseconds: 350),
       child:
@@ -323,7 +316,7 @@ class _LobbyState extends State<Lobby> {
                                                       null ||
                                                   testFailed
                                               ? Colors.orangeAccent
-                                              : Colors.white70,
+                                              : JoyTheme.muted,
                                     ),
                                   ),
                                 );
@@ -415,28 +408,36 @@ class _LobbyState extends State<Lobby> {
                       ],
                     ),
                     const Text(
-                      'Small games. Big rivalries.',
-                      style: TextStyle(color: Colors.white60, fontSize: 17),
+                      'A little play. A lot of happy.',
+                      style: TextStyle(color: JoyTheme.muted, fontSize: 17),
                     ),
                     const SizedBox(height: 24),
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF375DE0), Color(0xFF233678)],
+                          colors: [Color(0xFFFFE69A), Color(0xFFFFD6B6)],
                         ),
-                        borderRadius: BorderRadius.circular(28),
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(color: const Color(0xFFFFD18B)),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x10C99137),
+                            blurRadius: 24,
+                            offset: Offset(0, 8),
+                          ),
+                        ],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'ONE SCREEN. TWO RIVALS.',
+                            'GOOD TIMES, TOGETHER',
                             style: TextStyle(letterSpacing: 2, fontSize: 11),
                           ),
                           const SizedBox(height: 10),
                           const Text(
-                            'Your next\nparty starts here.',
+                            'More laughs.\nMore rematches.',
                             style: TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.w800,
@@ -473,8 +474,8 @@ class _LobbyState extends State<Lobby> {
                     ),
                     const SizedBox(height: 20),
                     const Text(
-                      'PLAYERS',
-                      style: TextStyle(color: Colors.white54, letterSpacing: 2),
+                      'BRING YOUR PEOPLE',
+                      style: TextStyle(color: JoyTheme.muted, letterSpacing: 2),
                     ),
                     const SizedBox(height: 10),
                     SegmentedButton<int>(
@@ -497,7 +498,16 @@ class _LobbyState extends State<Lobby> {
                         for (var i = 0; i < playerCount; i++)
                           Text(
                             '${names[i]} • ${wins[i]} wins',
-                            style: TextStyle(color: playerColors[i]),
+                            style: TextStyle(
+                              color:
+                                  [
+                                    Color(0xFF3659C8),
+                                    Color(0xFFBF405B),
+                                    Color(0xFF986000),
+                                    Color(0xFF7350B5),
+                                  ][i],
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                       ],
                     ),
@@ -546,7 +556,14 @@ class _LobbyState extends State<Lobby> {
                         final entry = filtered[i];
                         final g = entry.value;
                         return Card(
-                          color: const Color(0xFF111C37),
+                          color:
+                              JoyTheme.pastels[entry.key %
+                                  JoyTheme.pastels.length],
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                            side: const BorderSide(color: Color(0x18000000)),
+                          ),
                           clipBehavior: Clip.antiAlias,
                           child: InkWell(
                             onTap: () => _play([entry.key]),
@@ -560,15 +577,24 @@ class _LobbyState extends State<Lobby> {
                                     tag: 'game-${entry.key}',
                                     child: Material(
                                       color: Colors.transparent,
-                                      child: GameArt(id: entry.key, size: 110),
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(20),
+                                        child: GameArt(
+                                          id: entry.key,
+                                          size: 110,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                   const Spacer(),
                                   Text(
                                     g.name,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
                                       fontSize: 16,
-                                      fontWeight: FontWeight.w700,
+                                      color: JoyTheme.ink,
+                                      fontWeight: FontWeight.w800,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -577,7 +603,7 @@ class _LobbyState extends State<Lobby> {
                                         ? g.category
                                         : '${playerCount}P ${supportsGroupTurns(entry.key) ? 'shared turns' : 'league'}',
                                     style: const TextStyle(
-                                      color: Colors.white54,
+                                      color: JoyTheme.muted,
                                       fontSize: 12,
                                     ),
                                   ),
@@ -594,7 +620,7 @@ class _LobbyState extends State<Lobby> {
                         ),
                         mainAxisSpacing: 10,
                         crossAxisSpacing: 10,
-                        mainAxisExtent: 240,
+                        mainAxisExtent: 250,
                       ),
                     ),
               ),
@@ -729,7 +755,7 @@ class _MatchScreenState extends State<MatchScreen> {
                       const SizedBox(height: 16),
                       Text(
                         '${widget.names.length} players • Shared screen • Offline',
-                        style: TextStyle(color: Colors.white60),
+                        style: TextStyle(color: JoyTheme.muted),
                       ),
                       const SizedBox(height: 32),
                       FilledButton.icon(
@@ -748,11 +774,23 @@ class _MatchScreenState extends State<MatchScreen> {
                   ),
                 ),
               )
-              : buildGame(
-                id: widget.id,
-                names: widget.names,
-                onFinish: finish,
-                haptics: widget.haptics,
+              : Padding(
+                padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: Theme(
+                    data: JoyTheme.arena,
+                    child: ColoredBox(
+                      color: const Color(0xFF161C36),
+                      child: buildGame(
+                        id: widget.id,
+                        names: widget.names,
+                        onFinish: finish,
+                        haptics: widget.haptics,
+                      ),
+                    ),
+                  ),
+                ),
               ),
     );
   }
