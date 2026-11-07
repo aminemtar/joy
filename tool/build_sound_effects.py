@@ -22,28 +22,27 @@ def tone(frequency, duration, *, end=None, amplitude=.32, sparkle=False):
         result.append(amplitude * max(0, envelope) * value)
     return result
 
-def soft_pluck():
-    """A gentle, rounded two-harmonic UI note with a quick bloom and smooth decay."""
-    duration = .105
+def selection_chime():
+    """A polished, rounded glass-mallet note for frequent selection feedback."""
+    duration = .145
     count = round(duration * RATE)
-    phases = [0.0, 0.0, 0.0]
+    phases = [0.0, 0.0, 0.0, 0.0]
     result = []
     for i in range(count):
         t = i / RATE
         progress = i / max(1, count - 1)
-        frequencies = (680 - 105 * progress, 1360 - 210 * progress, 2040 - 315 * progress)
+        frequencies = (790 - 150 * progress, 1580 - 300 * progress,
+                       2370 - 450 * progress, 395 - 55 * progress)
         for index, frequency in enumerate(frequencies):
             phases[index] += 2 * math.pi * frequency / RATE
-        attack = 1 - math.exp(-t / .004)
-        decay = math.exp(-t / .043)
-        release = min(1.0, (duration - t) / .018)
-        envelope = max(0.0, attack * decay * release)
-        sample = (
-            math.sin(phases[0])
-            + .22 * math.sin(phases[1])
-            + .07 * math.sin(phases[2])
-        )
-        result.append(.115 * envelope * sample)
+        attack = 1 - math.exp(-t / .0035)
+        decay = math.exp(-t / .052)
+        release = min(1.0, max(0.0, (duration - t) / .025))
+        envelope = attack * decay * release
+        transient = math.exp(-t / .006) * math.sin(2 * math.pi * 3200 * t) * .018
+        body = (.72 * math.sin(phases[0]) + .19 * math.sin(phases[1])
+                + .055 * math.sin(phases[2]) + .12 * math.sin(phases[3]))
+        result.append(.205 * envelope * body + transient * envelope)
     return result
 
 def melody(notes, seconds=.11):
@@ -62,7 +61,7 @@ def write(name, samples):
 
 OUT.mkdir(parents=True, exist_ok=True)
 effects = {
-    'tap': soft_pluck(),
+    'tap': selection_chime(),
     'flip': tone(450, .11, end=1150, amplitude=.23),
     'correct': melody([659.25, 987.77], .11),
     'wrong': melody([311.13, 233.08], .14),
