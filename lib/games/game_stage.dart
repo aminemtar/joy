@@ -157,7 +157,7 @@ Widget boardGrid(
 Widget gameTile({
   required Widget child,
   VoidCallback? onTap,
-  Color color = const Color(0xFF1C294A),
+  Color color = const Color(0xFFEAF6FF),
   bool selected = false,
 }) => Material(
   color: color,
@@ -169,7 +169,7 @@ Widget gameTile({
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: selected ? Colors.amber : Colors.white10,
+          color: selected ? const Color(0xFFFFC94A) : const Color(0xFFB9DDF5),
           width: selected ? 2 : 1,
         ),
       ),
