@@ -558,7 +558,7 @@ class _TowerPainter extends CustomPainter {
         rect.topLeft + const Offset(4, 3),
         rect.topRight + const Offset(-4, 3),
         p
-          ..color = Colors.white38
+          ..color = const Color(0xFF8EB8E2)
           ..strokeWidth = 2,
       );
     }
@@ -635,14 +635,14 @@ class _PenaltyPainter extends CustomPainter {
         s.width * .7,
         s.height * .09,
       ),
-      p..color = Colors.white12,
+      p..color = const Color(0xFFBBD8F5),
     );
     for (var x = .15; x <= .85; x += .07) {
       c.drawLine(
         Offset(s.width * x, s.height * .05),
         Offset(s.width * x, s.height * .14),
         p
-          ..color = Colors.white24
+          ..color = const Color(0xFF91B9E3)
           ..strokeWidth = 1,
       );
     }
@@ -656,7 +656,7 @@ class _PenaltyPainter extends CustomPainter {
       p
         ..style = PaintingStyle.stroke
         ..strokeWidth = 3
-        ..color = Colors.white70,
+        ..color = const Color(0xFF4779AA),
     );
     p.style = PaintingStyle.fill;
     GameSprites.orb(
