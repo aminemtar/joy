@@ -246,23 +246,24 @@ class PartySetup extends StatelessWidget {
                       gradient: count == n
                           ? JoyTheme.blueGradient
                           : const LinearGradient(
-                              colors: [Colors.white, Color(0xFFEAF6FF)],
+                              colors: [Color(0xFFFFFFFF), Color(0xFFF4FAFF), Color(0xFFDDEFFF)],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
                       borderRadius: BorderRadius.circular(17),
                       border: Border.all(
                         color: count == n
-                            ? const Color(0xFF9DD5FF)
-                            : JoyTheme.border,
+                            ? const Color(0xFFC7F0FF)
+                            : const Color(0xFFD5EBFA),
                       ),
                       boxShadow: [
                         BoxShadow(
                           color: count == n
                               ? const Color(0x443B9DFF)
                               : const Color(0x1D4E8DBD),
-                          blurRadius: count == n ? 15 : 9,
-                          offset: const Offset(0, 5),
+                          blurRadius: count == n ? 22 : 13,
+                          spreadRadius: count == n ? 1 : 0,
+                          offset: const Offset(0, 8),
                         ),
                       ],
                     ),
@@ -321,7 +322,7 @@ class PartySetup extends StatelessWidget {
                     colors: [Colors.white, Color(0xFFEAF6FF)],
                   ),
                   borderRadius: BorderRadius.circular(13),
-                  border: Border.all(color: JoyTheme.border),
+                  border: Border.all(color: const Color(0xFFD1E9FA), width: 1.1),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -382,10 +383,12 @@ class InfoPill extends StatelessWidget {
     padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
     decoration: BoxDecoration(
       gradient: const LinearGradient(
-        colors: [Color(0xFFE5F4FF), Colors.white],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Colors.white, Color(0xFFE9F6FF), Color(0xFFD8EEFF)],
       ),
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: const Color(0xFFB8DFFF)),
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: Colors.white, width: 1.2),
       boxShadow: const [
         BoxShadow(
           color: Color(0x223B9DFF),
