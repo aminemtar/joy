@@ -858,12 +858,13 @@ class _LobbyState extends State<Lobby> {
                         final entry = filtered[i];
                         final g = entry.value;
                         return Card(
-                          color: JoyTheme.surface,
-                          elevation: 7,
-                          shadowColor: const Color(0x55397BFF),
+                          // Restore the original JOY game-card palette.
+                          color: const Color(0xFF131E38),
+                          elevation: 12,
+                          shadowColor: const Color(0x88397BFF),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(24),
-                            side: const BorderSide(color: Color(0xFFCAE6FA), width: 1),
+                            side: const BorderSide(color: Color(0xFF507CFF), width: 1.2),
                           ),
                           clipBehavior: Clip.antiAlias,
                           child: InkWell(
@@ -922,8 +923,8 @@ class _LobbyState extends State<Lobby> {
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
                                       fontSize: 16,
-                                      color: JoyTheme.ink,
-                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFFF2F5FF),
+                                      fontWeight: FontWeight.w900,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -932,8 +933,9 @@ class _LobbyState extends State<Lobby> {
                                         ? g.category
                                         : '${playerCount}P ${supportsGroupTurns(entry.key) ? 'shared turns' : 'league'}',
                                     style: const TextStyle(
-                                      color: JoyTheme.muted,
+                                      color: Color(0xFFA2ADCA),
                                       fontSize: 12,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ],
