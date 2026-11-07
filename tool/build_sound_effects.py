@@ -22,27 +22,20 @@ def tone(frequency, duration, *, end=None, amplitude=.32, sparkle=False):
         result.append(amplitude * max(0, envelope) * value)
     return result
 
-def selection_chime():
-    """A polished, rounded glass-mallet note for frequent selection feedback."""
-    duration = .145
+def click_sound():
+    """A short, dry tactile UI click: crisp transient, no pitched chime."""
+    duration = .052
     count = round(duration * RATE)
-    phases = [0.0, 0.0, 0.0, 0.0]
     result = []
+    seed = 731
     for i in range(count):
         t = i / RATE
-        progress = i / max(1, count - 1)
-        frequencies = (790 - 150 * progress, 1580 - 300 * progress,
-                       2370 - 450 * progress, 395 - 55 * progress)
-        for index, frequency in enumerate(frequencies):
-            phases[index] += 2 * math.pi * frequency / RATE
-        attack = 1 - math.exp(-t / .0035)
-        decay = math.exp(-t / .052)
-        release = min(1.0, max(0.0, (duration - t) / .025))
-        envelope = attack * decay * release
-        transient = math.exp(-t / .006) * math.sin(2 * math.pi * 3200 * t) * .018
-        body = (.72 * math.sin(phases[0]) + .19 * math.sin(phases[1])
-                + .055 * math.sin(phases[2]) + .12 * math.sin(phases[3]))
-        result.append(.205 * envelope * body + transient * envelope)
+        seed = (1664525 * seed + 1013904223) & 0xffffffff
+        noise = (seed / 0xffffffff) * 2 - 1
+        transient = math.exp(-t / .0022) * noise * .24
+        body = (math.sin(2 * math.pi * 1850 * t) * math.exp(-t / .008) * .16
+                + math.sin(2 * math.pi * 920 * t) * math.exp(-t / .012) * .055)
+        result.append(transient + body)
     return result
 
 def melody(notes, seconds=.11):
@@ -61,7 +54,7 @@ def write(name, samples):
 
 OUT.mkdir(parents=True, exist_ok=True)
 effects = {
-    'tap': selection_chime(),
+    'tap': click_sound(),
     'flip': tone(450, .11, end=1150, amplitude=.23),
     'correct': melody([659.25, 987.77], .11),
     'wrong': melody([311.13, 233.08], .14),
