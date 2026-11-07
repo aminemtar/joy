@@ -568,6 +568,7 @@ class _LobbyState extends State<Lobby> {
       );
     }
     return Scaffold(
+      backgroundColor: JoyTheme.background,
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
