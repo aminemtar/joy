@@ -438,7 +438,7 @@ class _WordsGameState extends State<WordsGame> {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
-                color: const Color(0xFF24355B),
+                color: const Color(0xFFD7EEFF),
                 border: Border.all(color: Colors.white24),
               ),
               child: Text(
