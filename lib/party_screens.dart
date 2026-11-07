@@ -47,7 +47,7 @@ class _PartyBuilderState extends State<PartyBuilder> {
             children: [
               for (final n in [2, 3, 4])
                 ChoiceChip(
-                  label: Text('$n players'),
+                  label: Text('$n players', style: TextStyle(color: players == n ? Colors.white : JoyTheme.ink)),
                   selected: players == n,
                   onSelected: (_) => setState(() => players = n),
                 ),
@@ -61,7 +61,7 @@ class _PartyBuilderState extends State<PartyBuilder> {
             children: [
               for (final n in [3, 5, 8, 12])
                 ChoiceChip(
-                  label: Text('$n rounds'),
+                  label: Text('$n rounds', style: TextStyle(color: rounds == n ? Colors.white : JoyTheme.ink)),
                   selected: rounds == n,
                   onSelected: (_) => setState(() => rounds = n),
                 ),
@@ -76,7 +76,7 @@ class _PartyBuilderState extends State<PartyBuilder> {
             children: [
               for (final category in games.map((g) => g.category).toSet())
                 FilterChip(
-                  label: Text(category),
+                  label: Text(category, style: TextStyle(color: categories.contains(category) ? Colors.white : JoyTheme.ink)),
                   selected: categories.contains(category),
                   onSelected:
                       (v) => setState(
