@@ -617,7 +617,7 @@ class ArenaPainter extends CustomPainter {
   void paint(Canvas c, Size s) {
     Offset at(Offset p) => Offset(p.dx * s.width, p.dy * s.height);
     final unit = min(s.width, s.height);
-    c.drawRect(Offset.zero & s, brush..color = const Color(0xFFF0F7FF));
+    c.drawRect(Offset.zero & s, brush..color = const Color(0xFF111C37));
     for (var x = 0.0; x < s.width; x += 32) {
       c.drawLine(
         Offset(x, 0),
@@ -643,7 +643,7 @@ class ArenaPainter extends CustomPainter {
           width: radius * 2 * s.width,
           height: radius * 2 * s.height,
         ),
-        brush..color = const Color(0xFFCDE5FC),
+        brush..color = const Color(0xFF283861),
       );
     }
     if (id == 10) {
