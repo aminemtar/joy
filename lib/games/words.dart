@@ -199,7 +199,7 @@ class _WordsGameState extends State<WordsGame> {
                     confirmed != null
                         ? const Color(0xFF9FD5FF)
                         : cells.contains(i)
-                        ? const Color(0xFF28365C)
+                        ? const Color(0xFFBDE4FF)
                         : const Color(0xFF1C294A),
                 onTap: () {
                   if (cells.contains(i) && confirmed == null) {
