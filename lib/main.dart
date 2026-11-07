@@ -568,6 +568,7 @@ class _LobbyState extends State<Lobby> {
       );
     }
     return Scaffold(
+      backgroundColor: const Color(0xFF087BFF),
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
@@ -592,35 +593,63 @@ class _LobbyState extends State<Lobby> {
                         const Text(
                           'JOY',
                           style: TextStyle(
+                            color: Colors.white,
                             fontSize: 38,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 5,
+                            shadows: [
+                              Shadow(color: Color(0x553052A0), blurRadius: 12, offset: Offset(0, 3)),
+                            ],
                           ),
                         ),
                         const Spacer(),
                         ListenableBuilder(
                           listenable: JoySounds.instance,
-                          builder:
-                              (context, child) => IconButton(
-                                tooltip:
-                                    JoySounds.instance.enabled
-                                        ? 'Mute sound effects'
-                                        : 'Enable sound effects',
-                                onPressed:
-                                    () => JoySounds.instance.setEnabled(
-                                      !JoySounds.instance.enabled,
-                                    ),
-                                icon: Icon(
-                                  JoySounds.instance.enabled
-                                      ? Icons.volume_up_rounded
-                                      : Icons.volume_off_rounded,
+                          builder: (context, child) => IconButton.filledTonal(
+                            tooltip: JoySounds.instance.enabled
+                                ? 'Mute sound effects'
+                                : 'Enable sound effects',
+                            style: ButtonStyle(
+                              backgroundColor: WidgetStateProperty.all(Colors.white),
+                              foregroundColor: WidgetStateProperty.all(JoyTheme.accentDeep),
+                              fixedSize: WidgetStateProperty.all(const Size(52, 52)),
+                              elevation: WidgetStateProperty.all(9),
+                              shadowColor: WidgetStateProperty.all(const Color(0x66003D9E)),
+                              shape: WidgetStateProperty.all(
+                                RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(18),
+                                  side: const BorderSide(color: Color(0xFFEAF8FF), width: 1.4),
                                 ),
                               ),
+                            ),
+                            onPressed: () => JoySounds.instance.setEnabled(
+                              !JoySounds.instance.enabled,
+                            ),
+                            icon: Icon(
+                              JoySounds.instance.enabled
+                                  ? Icons.volume_up_rounded
+                                  : Icons.volume_off_rounded,
+                            ),
+                          ),
                         ),
-                        IconButton(
+                        IconButton.filledTonal(
                           onPressed: _settings,
+                          style: ButtonStyle(
+                            backgroundColor: WidgetStateProperty.all(Colors.white),
+                            foregroundColor: WidgetStateProperty.all(JoyTheme.accentDeep),
+                            fixedSize: WidgetStateProperty.all(const Size(52, 52)),
+                            elevation: WidgetStateProperty.all(9),
+                            shadowColor: WidgetStateProperty.all(const Color(0x66003D9E)),
+                            shape: WidgetStateProperty.all(
+                              RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(18),
+                                side: const BorderSide(color: Color(0xFFEAF8FF), width: 1.4),
+                              ),
+                            ),
+                          ),
                           icon: const Icon(Icons.tune_rounded),
                         ),
+
                       ],
                     ),
                     const Text(
@@ -628,78 +657,62 @@ class _LobbyState extends State<Lobby> {
                       style: TextStyle(color: JoyTheme.muted, fontSize: 17),
                     ),
                     const SizedBox(height: 24),
-                    Container(
+                    JoyPanel(
                       padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF213D83), Color(0xFF152447)],
-                        ),
-                        borderRadius: BorderRadius.circular(30),
-                        border: Border.all(color: JoyTheme.border),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x20507CFF),
-                            blurRadius: 24,
-                            offset: Offset(0, 8),
-                          ),
-                        ],
-                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
                             'THE LOCAL MULTIPLAYER ARCADE',
-                            style: TextStyle(letterSpacing: 2, fontSize: 11),
+                            style: TextStyle(
+                              letterSpacing: 2,
+                              fontSize: 11,
+                              color: JoyTheme.accentDeep,
+                              fontWeight: FontWeight.w900,
+                            ),
                           ),
                           const SizedBox(height: 10),
                           const Text(
                             'Pick a game.\nMake it a rivalry.',
                             style: TextStyle(
                               fontSize: 30,
-                              fontWeight: FontWeight.w800,
+                              height: 1.12,
+                              color: JoyTheme.ink,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -.7,
                             ),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 16),
                           const Wrap(
                             spacing: 8,
                             runSpacing: 8,
                             children: [
-                              InfoPill(
-                                icon: Icons.sports_esports_rounded,
-                                label: '36 games',
-                              ),
-                              InfoPill(
-                                icon: Icons.wifi_off_rounded,
-                                label: 'Offline',
-                              ),
-                              InfoPill(
-                                icon: Icons.people_alt_rounded,
-                                label: '2–4 players',
-                              ),
+                              InfoPill(icon: Icons.sports_esports_rounded, label: '36 games'),
+                              InfoPill(icon: Icons.wifi_off_rounded, label: 'Offline'),
+                              InfoPill(icon: Icons.people_alt_rounded, label: '2–4 players'),
                             ],
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 22),
                           Wrap(
                             spacing: 12,
-                            runSpacing: 10,
+                            runSpacing: 12,
                             children: [
-                              FilledButton.icon(
-                                onPressed:
-                                    () => _play([
-                                      practice
-                                          ? practiceGames.elementAt(
-                                            Random().nextInt(
-                                              practiceGames.length,
-                                            ),
-                                          )
-                                          : Random().nextInt(games.length),
-                                    ]),
-                                icon: const Icon(Icons.shuffle),
-                                label: const Text('Surprise me'),
+                              JoyActionButton(
+                                icon: Icons.shuffle_rounded,
+                                label: 'Surprise me',
+                                onPressed: () => _play([
+                                  practice
+                                      ? practiceGames.elementAt(
+                                          Random().nextInt(practiceGames.length),
+                                        )
+                                      : Random().nextInt(games.length),
+                                ]),
                               ),
-                              OutlinedButton(
+                              JoyActionButton(
+                                icon: Icons.groups_rounded,
+                                label: 'Party mode',
+                                primary: false,
                                 onPressed: practice ? null : _partyBuilder,
-                                child: const Text('Party mode'),
                               ),
                             ],
                           ),
@@ -774,12 +787,31 @@ class _LobbyState extends State<Lobby> {
                       ],
                     ),
                     const SizedBox(height: 14),
-                    TextField(
-                      decoration: const InputDecoration(
-                        hintText: 'Search games',
-                        prefixIcon: Icon(Icons.search_rounded),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(19),
+                        boxShadow: const [
+                          BoxShadow(color: Color(0x55003D9E), blurRadius: 15, offset: Offset(0, 7)),
+                          BoxShadow(color: Color(0x88FFFFFF), blurRadius: 1, offset: Offset(0, -1)),
+                        ],
                       ),
-                      onChanged: (v) => setState(() => search = v),
+                      child: TextField(
+                        decoration: InputDecoration(
+                          hintText: 'Search games',
+                          prefixIcon: const Icon(Icons.search_rounded),
+                          filled: true,
+                          fillColor: const Color(0xFFF8FCFF),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(19),
+                            borderSide: const BorderSide(color: Colors.white, width: 1.3),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(19),
+                            borderSide: const BorderSide(color: Color(0xFFD7EEFF), width: 1.3),
+                          ),
+                        ),
+                        onChanged: (v) => setState(() => search = v),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Wrap(
