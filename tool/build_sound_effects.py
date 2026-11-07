@@ -22,6 +22,22 @@ def tone(frequency, duration, *, end=None, amplitude=.32, sparkle=False):
         result.append(amplitude * max(0, envelope) * value)
     return result
 
+def click_sound():
+    """A short, dry tactile UI click: crisp transient, no pitched chime."""
+    duration = .052
+    count = round(duration * RATE)
+    result = []
+    seed = 731
+    for i in range(count):
+        t = i / RATE
+        seed = (1664525 * seed + 1013904223) & 0xffffffff
+        noise = (seed / 0xffffffff) * 2 - 1
+        transient = math.exp(-t / .0022) * noise * .24
+        body = (math.sin(2 * math.pi * 1850 * t) * math.exp(-t / .008) * .16
+                + math.sin(2 * math.pi * 920 * t) * math.exp(-t / .012) * .055)
+        result.append(transient + body)
+    return result
+
 def melody(notes, seconds=.11):
     values = []
     for hz in notes:
@@ -38,7 +54,7 @@ def write(name, samples):
 
 OUT.mkdir(parents=True, exist_ok=True)
 effects = {
-    'tap': tone(850, .055, end=650, amplitude=.18),
+    'tap': click_sound(),
     'flip': tone(450, .11, end=1150, amplitude=.23),
     'correct': melody([659.25, 987.77], .11),
     'wrong': melody([311.13, 233.08], .14),

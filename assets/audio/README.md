@@ -4,7 +4,8 @@ These 15 short arcade cues are synthesized specifically for JOY by `tool/build_s
 
 WAV format: 22,050 Hz, mono, signed 16-bit PCM. Sounds use bounded levels, soft attack/release envelopes and silent tails. The complete pack is bundled for offline playback.
 
-- tap / flip: menu actions, board moves, letter entry and card reveals
+- tap: a short, dry tactile click with a crisp transient and subtle body; no musical pitch or lingering chime. Shared by color selection, crossword letters, word search and frequent menu/game interactions
+- flip: board moves and card reveals
 - correct / wrong: goals, matches, answers, solved clues and missed attempts
 - hit / jump / shoot: paddle contacts, collisions, tower placement and action controls
 - tick / start: countdown and game start

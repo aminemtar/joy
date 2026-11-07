@@ -282,7 +282,7 @@ class _LobbyState extends State<Lobby> {
                                   }
                                 },
                         icon: const Icon(Icons.ios_share_rounded),
-                        label: const Text('Share scorecard'),
+                        label: const Text('Share'),
                       ),
                       FilledButton(
                         onPressed: () => Navigator.pop(c),
@@ -1069,79 +1069,123 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
       barrierDismissible: false,
       builder:
           (c) => StatefulBuilder(
-            builder:
-                (c, update) => PopScope(
-                  canPop: false,
-                  child: AlertDialog(
-                    title: Text(
-                      winner < 0
-                          ? 'Match tied!'
-                          : '${widget.names[winner]} wins!',
-                    ),
-                    content: Text(
-                      '${games[widget.id].name} • ${elapsed}s\nReady for another rivalry?',
-                    ),
-                    actions: [
-                      TextButton.icon(
-                        onPressed:
-                            sharing
-                                ? null
-                                : () async {
-                                  update(() => sharing = true);
-                                  final message = await shareScorecard(
-                                    '${games[widget.id].name} • match wins',
-                                    widget.names,
-                                    [
-                                      for (
-                                        var i = 0;
-                                        i < widget.names.length;
-                                        i++
-                                      )
-                                        winner == i ? 1 : 0,
-                                    ],
-                                  );
-                                  if (c.mounted) {
-                                    update(() => sharing = false);
-                                    ScaffoldMessenger.of(c).showSnackBar(
-                                      SnackBar(content: Text(message)),
-                                    );
-                                  }
-                                },
-                        icon: const Icon(Icons.ios_share_rounded),
-                        label: const Text('Share scorecard'),
-                      ),
-                      if (widget.allowRematch)
-                        OutlinedButton(
-                          onPressed: () {
-                            Navigator.pop(c);
-                            JoySounds.instance.stop();
-                            start();
+            builder: (c, update) {
+              final actions = <Widget>[
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF507CFF),
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed:
+                      sharing
+                          ? null
+                          : () async {
+                            update(() => sharing = true);
+                            final message = await shareScorecard(
+                              '${games[widget.id].name} • match wins',
+                              widget.names,
+                              [
+                                for (var i = 0; i < widget.names.length; i++)
+                                  winner == i ? 1 : 0,
+                              ],
+                            );
+                            if (c.mounted) {
+                              update(() => sharing = false);
+                              ScaffoldMessenger.of(c).showSnackBar(
+                                SnackBar(content: Text(message)),
+                              );
+                            }
                           },
-                          child: const Text('Play again'),
-                        ),
-                      if (widget.onNextGame != null)
-                        FilledButton(
-                          onPressed: () {
-                            widget.onNextGame!();
-                            Navigator.pop(c);
-                            Navigator.pop(context, winner);
-                          },
-                          child: const Text('Next game'),
-                        ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(c);
-                          Navigator.pop(context, winner);
-                        },
-                        child: Text(
-                          widget.onNextGame == null
-                              ? 'Continue'
-                              : 'Back to lobby',
-                        ),
-                      ),
-                    ],
+                  icon: const Icon(Icons.ios_share_rounded),
+                  label: const Text('Share'),
+                ),
+                if (widget.allowRematch)
+                  FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF6F83),
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: () {
+                      Navigator.pop(c);
+                      JoySounds.instance.stop();
+                      start();
+                    },
+                    icon: const Icon(Icons.replay_rounded),
+                    label: const Text('Play again'),
+                  ),
+                if (widget.onNextGame != null)
+                  FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFFFFC16D),
+                      foregroundColor: const Color(0xFF382B19),
+                    ),
+                    onPressed: () {
+                      widget.onNextGame!();
+                      Navigator.pop(c);
+                      Navigator.pop(context, winner);
+                    },
+                    icon: const Icon(Icons.arrow_forward_rounded),
+                    label: const Text('Next game'),
+                  ),
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF39B8A6),
+                    foregroundColor: const Color(0xFF102C2A),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(c);
+                    Navigator.pop(context, winner);
+                  },
+                  icon: Icon(
+                    widget.onNextGame == null
+                        ? Icons.check_circle_outline_rounded
+                        : Icons.home_rounded,
+                  ),
+                  label: Text(
+                    widget.onNextGame == null ? 'Continue' : 'Back to lobby',
                   ),
                 ),
+              ];
+              return _WinConfettiOverlay(
+                child: PopScope(
+                  canPop: false,
+                  child: AlertDialog(
+                  title: Text(
+                    winner < 0
+                        ? 'Match tied!'
+                        : '${widget.names[winner]} wins!',
+                  ),
+                  content: Text(
+                    '${games[widget.id].name} • ${elapsed}s\nReady for another rivalry?',
+                  ),
+                  actions: [
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        for (var i = 0; i < actions.length; i += 2)
+                          Padding(
+                            padding: EdgeInsets.only(
+                              bottom: i + 2 < actions.length ? 8 : 0,
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(child: actions[i]),
+                                const SizedBox(width: 8),
+                                if (i + 1 < actions.length)
+                                  Expanded(child: actions[i + 1])
+                                else
+                                  const Spacer(),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                  ),
+                ),
+              );
+            },
           ),
     );
   }
@@ -1302,27 +1346,184 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
                         ),
                       if (timedGames.contains(widget.id))
                         Padding(
-                          padding: const EdgeInsets.only(top: 12),
-                          child: DropdownButton<int>(
-                            value: roundSeconds,
-                            items: [
-                              for (final seconds in [0, 60, 120, 180])
-                                DropdownMenuItem(
-                                  value: seconds,
-                                  child: Text(
-                                    seconds == 0
-                                        ? 'Untimed round'
-                                        : '$seconds-second round',
+                          padding: const EdgeInsets.only(top: 20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 38,
+                                    height: 38,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF507CFF).withValues(alpha: 0.14),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: const Color(0xFF507CFF).withValues(alpha: 0.28),
+                                      ),
+                                    ),
+                                    child: const Icon(
+                                      Icons.timer_outlined,
+                                      color: Color(0xFF8EABFF),
+                                      size: 20,
+                                    ),
                                   ),
-                                ),
+                                  const SizedBox(width: 12),
+                                  const Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'ROUND DURATION',
+                                          style: TextStyle(
+                                            color: JoyTheme.ink,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: 1.1,
+                                          ),
+                                        ),
+                                        SizedBox(height: 3),
+                                        Text(
+                                          'Choose how long the challenge lasts',
+                                          style: TextStyle(
+                                            color: JoyTheme.muted,
+                                            fontSize: 11,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 14),
+                              LayoutBuilder(
+                                builder: (context, constraints) {
+                                  final compact = constraints.maxWidth < 360;
+                                  final options = [
+                                    (0, 'Untimed', 'No time limit', Icons.all_inclusive_rounded),
+                                    (60, '1 minute', '60 seconds', Icons.timer_rounded),
+                                    (120, '2 minutes', '120 seconds', Icons.hourglass_bottom_rounded),
+                                    (180, '3 minutes', '180 seconds', Icons.hourglass_full_rounded),
+                                  ];
+                                  return GridView.builder(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    itemCount: options.length,
+                                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: compact ? 1 : 2,
+                                      mainAxisSpacing: 9,
+                                      crossAxisSpacing: 9,
+                                      mainAxisExtent: 70,
+                                    ),
+                                    itemBuilder: (context, index) {
+                                      final option = options[index];
+                                      final selected = roundSeconds == option.$1;
+                                      return Semantics(
+                                        button: true,
+                                        selected: selected,
+                                        label: '${option.$2}, ${option.$3}',
+                                        child: Material(
+                                          color: Colors.transparent,
+                                          child: InkWell(
+                                            borderRadius: BorderRadius.circular(17),
+                                            onTap: () {
+                                              JoySounds.instance.play(SoundEffect.tap);
+                                              setState(() => roundSeconds = option.$1);
+                                              PartyData.instance.roundSeconds = option.$1;
+                                              PartyData.instance.saveOptions();
+                                            },
+                                            child: AnimatedContainer(
+                                              duration: const Duration(milliseconds: 220),
+                                              curve: Curves.easeOutCubic,
+                                              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+                                              decoration: BoxDecoration(
+                                                borderRadius: BorderRadius.circular(17),
+                                                gradient: selected
+                                                    ? const LinearGradient(
+                                                        begin: Alignment.topLeft,
+                                                        end: Alignment.bottomRight,
+                                                        colors: [Color(0xFF315CCB), Color(0xFF507CFF)],
+                                                      )
+                                                    : null,
+                                                color: selected ? null : const Color(0xFF202A49),
+                                                border: Border.all(
+                                                  color: selected
+                                                      ? const Color(0xFF91ACFF)
+                                                      : const Color(0xFF344264),
+                                                  width: selected ? 1.5 : 1,
+                                                ),
+                                                boxShadow: selected
+                                                    ? [
+                                                        BoxShadow(
+                                                          color: const Color(0xFF507CFF).withValues(alpha: 0.24),
+                                                          blurRadius: 16,
+                                                          offset: const Offset(0, 5),
+                                                        ),
+                                                      ]
+                                                    : null,
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  AnimatedContainer(
+                                                    duration: const Duration(milliseconds: 220),
+                                                    width: 38,
+                                                    height: 38,
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.white.withValues(alpha: selected ? 0.18 : 0.07),
+                                                      borderRadius: BorderRadius.circular(12),
+                                                    ),
+                                                    child: Icon(
+                                                      option.$4,
+                                                      color: selected ? Colors.white : const Color(0xFF9DB4FF),
+                                                      size: 20,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 10),
+                                                  Expanded(
+                                                    child: Column(
+                                                      mainAxisAlignment: MainAxisAlignment.center,
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        Text(
+                                                          option.$2,
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow.ellipsis,
+                                                          style: TextStyle(
+                                                            color: selected ? Colors.white : JoyTheme.ink,
+                                                            fontSize: 13,
+                                                            fontWeight: FontWeight.w800,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(height: 2),
+                                                        Text(
+                                                          option.$3,
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow.ellipsis,
+                                                          style: TextStyle(
+                                                            color: selected ? Colors.white.withValues(alpha: 0.78) : JoyTheme.muted,
+                                                            fontSize: 10,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  if (selected)
+                                                    const Icon(
+                                                      Icons.check_circle_rounded,
+                                                      color: Colors.white,
+                                                      size: 18,
+                                                    ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
                             ],
-                            onChanged: (value) {
-                              if (value != null) {
-                                setState(() => roundSeconds = value);
-                                PartyData.instance.roundSeconds = value;
-                                PartyData.instance.saveOptions();
-                              }
-                            },
                           ),
                         ),
                       TextButton.icon(
@@ -1384,4 +1585,98 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
               ),
     );
   }
+}
+
+
+class _WinConfettiOverlay extends StatefulWidget {
+  final Widget child;
+
+  const _WinConfettiOverlay({required this.child});
+
+  @override
+  State<_WinConfettiOverlay> createState() => _WinConfettiOverlayState();
+}
+
+class _WinConfettiOverlayState extends State<_WinConfettiOverlay>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2400),
+  )..repeat();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Positioned.fill(
+          child: IgnorePointer(
+            child: AnimatedBuilder(
+              animation: _controller,
+              builder: (context, _) => CustomPaint(
+                painter: _WinConfettiPainter(_controller.value),
+              ),
+            ),
+          ),
+        ),
+        Center(child: widget.child),
+      ],
+    );
+  }
+}
+
+class _WinConfettiPainter extends CustomPainter {
+  final double progress;
+  static const colors = [
+    Color(0xFF507CFF),
+    Color(0xFFFF6F83),
+    Color(0xFFFFC16D),
+    Color(0xFF39B8A6),
+    Color(0xFFB69CFF),
+  ];
+
+  const _WinConfettiPainter(this.progress);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final random = Random(42);
+    final paint = Paint()..style = PaintingStyle.fill;
+    for (var i = 0; i < 76; i++) {
+      final x = random.nextDouble() * size.width;
+      final phase = random.nextDouble();
+      final speed = 0.65 + random.nextDouble() * 0.7;
+      final drift = (random.nextDouble() - 0.5) * 54;
+      final y = ((progress * speed + phase) % 1.18) * size.height -
+          size.height * 0.09;
+      final fade = (1 - progress * 0.45).clamp(0.0, 1.0);
+      paint.color = colors[i % colors.length].withValues(alpha: fade);
+      canvas.save();
+      canvas.translate(x + drift * progress, y);
+      canvas.rotate(progress * 7 + phase * pi * 2);
+      final width = 4.0 + random.nextDouble() * 4;
+      final height = 7.0 + random.nextDouble() * 7;
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(
+            center: Offset.zero,
+            width: width,
+            height: height,
+          ),
+          const Radius.circular(1.5),
+        ),
+        paint,
+      );
+      canvas.restore();
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _WinConfettiPainter oldDelegate) =>
+      oldDelegate.progress != progress;
 }

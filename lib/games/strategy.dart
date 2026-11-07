@@ -1,9 +1,16 @@
 import '../sound.dart';
+import '../joy_theme.dart';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'game_stage.dart';
 import '../players.dart' show leadingPlayer;
 import 'strategy_models.dart';
+
+class _CodeAttempt {
+  final List<int> pegs;
+  final int exact, misplaced;
+  const _CodeAttempt(this.pegs, this.exact, this.misplaced);
+}
 
 class StrategyGame extends StatefulWidget {
   final int id;
@@ -31,7 +38,7 @@ class _StrategyGameState extends State<StrategyGame> {
   late final MineBoard mines;
   late final List<List<int>> secrets;
   final guess = <int>[];
-  late final List<List<String>> history;
+  late final List<List<_CodeAttempt>> history;
   static const colors = [
     Color(0xFF507CFF),
     Color(0xFFFF6F83),
@@ -47,7 +54,7 @@ class _StrategyGameState extends State<StrategyGame> {
     coins = List.filled(widget.names.length, 12);
     lives = List.filled(widget.names.length, 2);
     attempts = List.filled(widget.names.length, 0);
-    history = List.generate(widget.names.length, (_) => <String>[]);
+    history = List.generate(widget.names.length, (_) => <_CodeAttempt>[]);
     fleets = [FleetBoard(random), FleetBoard(random)];
     mines = MineBoard(random);
     secrets = List.generate(
@@ -78,8 +85,9 @@ class _StrategyGameState extends State<StrategyGame> {
   void nextTurn() {
     do {
       turn = (turn + 1) % widget.names.length;
-    } while (widget.id == 35 && lives[turn] <= 0);
-    pass = widget.id == 33;
+    } while ((widget.id == 35 && lives[turn] <= 0) ||
+        (widget.id == 34 && attempts[turn] >= 8));
+    pass = widget.id == 33 || widget.id == 34;
   }
 
   void auction() {
@@ -210,15 +218,18 @@ class _StrategyGameState extends State<StrategyGame> {
       );
       attempts[turn]++;
       history[turn].add(
-        '${guess.map((i) => i + 1).join(' ')}   •   ${feedback.exact} exact / ${feedback.misplaced} misplaced',
+        _CodeAttempt(List<int>.of(guess), feedback.exact, feedback.misplaced),
       );
       score[turn] = max(score[turn], feedback.exact);
       if (feedback.exact == 4) {
         end(turn);
       } else {
         guess.clear();
-        nextTurn();
-        if (attempts.every((n) => n >= 8)) end();
+        if (attempts.every((n) => n >= 8)) {
+          end();
+        } else {
+          nextTurn();
+        }
       }
     });
   }
@@ -329,59 +340,240 @@ class _StrategyGameState extends State<StrategyGame> {
     ),
   );
   Widget codeView() => Column(
+    mainAxisSize: MainAxisSize.min,
     children: [
-      const Text(
-        'A different hidden code for each player.\n4 pegs • 6 colors • repeats allowed',
-        textAlign: TextAlign.center,
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(16, 15, 16, 14),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF1C3159), Color(0xFF14213D)],
+          ),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: const Color(0xFF507CFF).withValues(alpha: .38)),
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.lock_outline_rounded, color: Color(0xFF9DB7FF), size: 18),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    'CRACK THE CODE',
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.5),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF507CFF).withValues(alpha: .18),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${attempts[turn]} / 8',
+                    style: const TextStyle(color: Color(0xFFB8CAFF), fontWeight: FontWeight.w800, fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Find the 4 hidden colors. Repeats are allowed.',
+              style: TextStyle(color: JoyTheme.muted, fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 15),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                for (var i = 0; i < 4; i++)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 7),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: i < guess.length ? colors[guess[i]] : const Color(0xFF0D1830),
+                        border: Border.all(
+                          color: i < guess.length ? Colors.white.withValues(alpha: .8) : const Color(0xFF526487),
+                          width: 2,
+                        ),
+                        boxShadow: i < guess.length
+                            ? [BoxShadow(color: colors[guess[i]].withValues(alpha: .35), blurRadius: 12, spreadRadius: 1)]
+                            : null,
+                      ),
+                      child: Center(
+                        child: Text(
+                          i < guess.length ? '${guess[i] + 1}' : '${i + 1}',
+                          style: TextStyle(
+                            color: i < guess.length ? Colors.white : const Color(0xFF7384A7),
+                            fontWeight: FontWeight.w900,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                const Expanded(
+                  child: Text('CHOOSE A COLOR', style: TextStyle(fontSize: 10, letterSpacing: 1.2, color: JoyTheme.muted, fontWeight: FontWeight.w800)),
+                ),
+                Text('${guess.length} of 4 selected', style: const TextStyle(fontSize: 10, color: Color(0xFF9DB7FF))),
+              ],
+            ),
+            const SizedBox(height: 9),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 11,
+              runSpacing: 10,
+              children: [
+                for (var i = 0; i < colors.length; i++)
+                  Semantics(
+                    button: true,
+                    label: 'Color ${i + 1}',
+                    child: InkWell(
+                      onTap: guess.length < 4
+                          ? () {
+                              JoySounds.instance.play(SoundEffect.tap);
+                              setState(() => guess.add(i));
+                            }
+                          : null,
+                      customBorder: const CircleBorder(),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 160),
+                        width: 39,
+                        height: 39,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: colors[i],
+                          border: Border.all(color: Colors.white.withValues(alpha: .85), width: 2),
+                          boxShadow: [BoxShadow(color: colors[i].withValues(alpha: .3), blurRadius: 9, offset: const Offset(0, 3))],
+                        ),
+                        child: Center(child: Text('${i + 1}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900))),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 13),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: guess.isEmpty
+                        ? null
+                        : () {
+                            JoySounds.instance.play(SoundEffect.tap);
+                            setState(() => guess.clear());
+                          },
+                    icon: const Icon(Icons.restart_alt_rounded, size: 17),
+                    label: const Text('Clear'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFB8CAFF),
+                      side: const BorderSide(color: Color(0xFF526487)),
+                      padding: const EdgeInsets.symmetric(vertical: 11),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 9),
+                Expanded(
+                  flex: 2,
+                  child: FilledButton.icon(
+                    onPressed: guess.length == 4 ? checkCode : null,
+                    icon: const Icon(Icons.lock_open_rounded, size: 17),
+                    label: const Text('Check code'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFF507CFF),
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: const Color(0xFF33415F),
+                      padding: const EdgeInsets.symmetric(vertical: 11),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-      const SizedBox(height: 16),
+      const SizedBox(height: 13),
       Row(
+        children: [
+          const Expanded(child: Text('YOUR ATTEMPTS', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.2))),
+          Text('${8 - attempts[turn]} remaining', style: const TextStyle(fontSize: 11, color: JoyTheme.muted)),
+        ],
+      ),
+      const SizedBox(height: 7),
+      if (history[turn].isEmpty)
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF17243E),
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(color: Colors.white.withValues(alpha: .07)),
+          ),
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.lightbulb_outline_rounded, color: Color(0xFFFFC16D), size: 17),
+              SizedBox(width: 8),
+              Flexible(child: Text('Your feedback will appear here after each guess.', textAlign: TextAlign.center, style: TextStyle(color: JoyTheme.muted, fontSize: 11))),
+            ],
+          ),
+        )
+      else
+        for (var index = history[turn].length - 1; index >= 0; index--)
+          _codeAttemptRow(index + 1, history[turn][index]),
+      const SizedBox(height: 7),
+      const Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          for (var i = 0; i < 4; i++)
-            Padding(
-              padding: const EdgeInsets.all(7),
-              child: CircleAvatar(
-                radius: 22,
-                backgroundColor:
-                    i < guess.length ? colors[guess[i]] : Colors.white12,
-                child: Text(i < guess.length ? '${guess[i] + 1}' : '?'),
-              ),
-            ),
+          _FeedbackLegend(color: Colors.white, label: 'Exact position'),
+          SizedBox(width: 14),
+          _FeedbackLegend(color: Color(0xFF71809B), label: 'Right color'),
         ],
       ),
-      Wrap(
-        spacing: 10,
-        children: [
-          for (var i = 0; i < 6; i++)
-            IconButton.filled(
-              onPressed:
-                  guess.length < 4 ? () => setState(() => guess.add(i)) : null,
-              style: IconButton.styleFrom(backgroundColor: colors[i]),
-              icon: Text('${i + 1}'),
-            ),
-        ],
-      ),
-      Wrap(
-        spacing: 12,
-        children: [
-          TextButton(
-            onPressed:
-                guess.isEmpty ? null : () => setState(() => guess.removeLast()),
-            child: const Text('Undo'),
-          ),
-          FilledButton(
-            onPressed: guess.length == 4 ? checkCode : null,
-            child: const Text('Test code'),
-          ),
-        ],
-      ),
-      const SizedBox(height: 16),
-      Text('Attempt ${attempts[turn] + 1} / 8'),
-      for (final row in history[turn])
-        Padding(padding: const EdgeInsets.all(7), child: Text(row)),
     ],
   );
+
+  Widget _codeAttemptRow(int number, _CodeAttempt attempt) => Container(
+    margin: const EdgeInsets.only(bottom: 6),
+    padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+    decoration: BoxDecoration(
+      color: const Color(0xFF17243E),
+      borderRadius: BorderRadius.circular(13),
+      border: Border.all(color: Colors.white.withValues(alpha: .07)),
+    ),
+    child: Row(
+      children: [
+        SizedBox(width: 25, child: Text('$number', style: const TextStyle(color: JoyTheme.muted, fontSize: 11, fontWeight: FontWeight.w800))),
+        for (final peg in attempt.pegs)
+          Container(
+            width: 17,
+            height: 17,
+            margin: const EdgeInsets.only(right: 5),
+            decoration: BoxDecoration(shape: BoxShape.circle, color: colors[peg], border: Border.all(color: Colors.white54, width: 1)),
+          ),
+        const Spacer(),
+        for (var i = 0; i < attempt.exact; i++)
+          const Padding(padding: EdgeInsets.only(left: 3), child: _FeedbackDot(color: Colors.white)),
+        for (var i = 0; i < attempt.misplaced; i++)
+          const Padding(padding: EdgeInsets.only(left: 3), child: _FeedbackDot(color: Color(0xFF71809B))),
+        const SizedBox(width: 8),
+        Text('${attempt.exact}+${attempt.misplaced}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Color(0xFFB8CAFF))),
+      ],
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
     final id = widget.id;
@@ -420,6 +612,8 @@ class _StrategyGameState extends State<StrategyGame> {
                     child: Text(
                       widget.id == 1
                           ? 'Ready — place my bid'
+                          : widget.id == 34
+                          ? 'Ready — make my guess'
                           : 'Ready — view target grid',
                     ),
                   ),
@@ -555,4 +749,36 @@ class _StrategyGameState extends State<StrategyGame> {
               },
     );
   }
+}
+
+class _FeedbackDot extends StatelessWidget {
+  final Color color;
+  const _FeedbackDot({required this.color});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 7,
+    height: 7,
+    decoration: BoxDecoration(
+      color: color,
+      shape: BoxShape.circle,
+      border: Border.all(color: Colors.white24, width: .5),
+    ),
+  );
+}
+
+class _FeedbackLegend extends StatelessWidget {
+  final Color color;
+  final String label;
+  const _FeedbackLegend({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      _FeedbackDot(color: color),
+      const SizedBox(width: 5),
+      Text(label, style: const TextStyle(color: JoyTheme.muted, fontSize: 9)),
+    ],
+  );
 }
