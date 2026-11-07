@@ -1,10 +1,12 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'joy_theme.dart';
 
 class JoySplash extends StatefulWidget {
   final VoidCallback onFinished;
   const JoySplash({super.key, required this.onFinished});
+
   @override
   State<JoySplash> createState() => _JoySplashState();
 }
@@ -19,7 +21,7 @@ class _JoySplashState extends State<JoySplash>
     super.initState();
     controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2100),
+      duration: const Duration(milliseconds: 2300),
     )..addStatusListener((state) {
         if (state == AnimationStatus.completed) finish();
       });
@@ -30,7 +32,7 @@ class _JoySplashState extends State<JoySplash>
     super.didChangeDependencies();
     controller.duration = MediaQuery.disableAnimationsOf(context)
         ? const Duration(milliseconds: 350)
-        : const Duration(milliseconds: 2100);
+        : const Duration(milliseconds: 2300);
     if (controller.value == 0 && !controller.isAnimating) {
       controller.forward();
     }
@@ -55,10 +57,10 @@ class _JoySplashState extends State<JoySplash>
           animation: controller,
           builder: (context, child) {
             final t = controller.value;
-            final size = MediaQuery.sizeOf(context);
-            final iconSize = min(248.0, size.width * .62);
+            final screen = MediaQuery.sizeOf(context);
+            final iconSize = min(320.0, screen.width * .78);
             final entrance = Curves.easeOutBack.transform(
-              (t * 1.45).clamp(0.0, 1.0),
+              (t * 1.4).clamp(0.0, 1.0),
             );
             return DecoratedBox(
               decoration: const BoxDecoration(
@@ -78,97 +80,94 @@ class _JoySplashState extends State<JoySplash>
                 children: [
                   CustomPaint(painter: _OrbitPainter(t)),
                   Positioned(
-                    top: -size.width * .34,
-                    right: -size.width * .28,
-                    child: _AmbientGlow(diameter: size.width * .9),
+                    top: -screen.width * .34,
+                    right: -screen.width * .28,
+                    child: _AmbientGlow(diameter: screen.width * .9),
                   ),
                   Positioned(
-                    bottom: -size.width * .42,
-                    left: -size.width * .3,
-                    child: _AmbientGlow(diameter: size.width * .95),
+                    bottom: -screen.width * .42,
+                    left: -screen.width * .3,
+                    child: _AmbientGlow(diameter: screen.width * .95),
                   ),
                   Center(
-                    child: Opacity(
-                      opacity: (t * 3.5).clamp(0.0, 1.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Transform.scale(
-                            scale: .72 + entrance * .28,
-                            child: Transform.rotate(
-                              angle: sin(t * pi * 2) * .025,
+                    child: SingleChildScrollView(
+                      physics: const NeverScrollableScrollPhysics(),
+                      child: Opacity(
+                        opacity: (t * 3.5).clamp(0.0, 1.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Transform.scale(
+                              scale: .68 + entrance * .32,
                               child: SizedBox(
-                                width: iconSize + 34,
-                                height: iconSize + 34,
+                                width: iconSize + 94,
+                                height: iconSize + 94,
                                 child: Stack(
                                   alignment: Alignment.center,
                                   children: [
                                     Container(
-                                      width: iconSize + 28,
-                                      height: iconSize + 28,
+                                      width: iconSize + 35,
+                                      height: iconSize + 35,
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         boxShadow: [
                                           BoxShadow(
                                             color: const Color(0xFF6C9BFF)
-                                                .withValues(alpha: .32),
-                                            blurRadius: 62,
-                                            spreadRadius: 8,
+                                                .withValues(alpha: .42),
+                                            blurRadius: 72,
+                                            spreadRadius: 12,
                                           ),
                                         ],
                                       ),
                                     ),
-                                    Container(
-                                      width: iconSize + 14,
-                                      height: iconSize + 14,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: Colors.white.withValues(
-                                            alpha: .16,
-                                          ),
-                                          width: 1.2,
-                                        ),
-                                        gradient: LinearGradient(
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                          colors: [
-                                            Colors.white.withValues(alpha: .14),
-                                            Colors.white.withValues(alpha: .025),
-                                          ],
-                                        ),
+                                    Lottie.asset(
+                                      'assets/animations/joy_splash_orbit.json',
+                                      width: iconSize + 94,
+                                      height: iconSize + 94,
+                                      fit: BoxFit.contain,
+                                      repeat: true,
+                                      animate: !MediaQuery.disableAnimationsOf(
+                                        context,
                                       ),
                                     ),
                                     Container(
                                       width: iconSize,
                                       height: iconSize,
-                                      padding: const EdgeInsets.all(7),
+                                      padding: const EdgeInsets.all(5),
                                       decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(48),
+                                        borderRadius: BorderRadius.circular(54),
                                         border: Border.all(
                                           color: Colors.white.withValues(
-                                            alpha: .28,
+                                            alpha: .32,
                                           ),
-                                          width: 1.4,
+                                          width: 1.5,
+                                        ),
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                          colors: [
+                                            Colors.white.withValues(alpha: .18),
+                                            Colors.white.withValues(alpha: .035),
+                                          ],
                                         ),
                                         boxShadow: [
                                           BoxShadow(
                                             color: Colors.black.withValues(
-                                              alpha: .34,
+                                              alpha: .38,
                                             ),
-                                            blurRadius: 34,
-                                            offset: const Offset(0, 20),
+                                            blurRadius: 38,
+                                            offset: const Offset(0, 22),
                                           ),
                                         ],
                                       ),
                                       child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(41),
+                                        borderRadius: BorderRadius.circular(49),
                                         child: Image.asset(
                                           'assets/art/app_icon.png',
                                           width: iconSize,
                                           height: iconSize,
                                           fit: BoxFit.cover,
-                                          cacheWidth: 600,
+                                          cacheWidth: 720,
                                         ),
                                       ),
                                     ),
@@ -176,62 +175,62 @@ class _JoySplashState extends State<JoySplash>
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 30),
-                          const Text(
-                            'JOY',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 58,
-                              height: 1,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 15,
-                              shadows: [
-                                Shadow(
-                                  color: Color(0x665D8FFF),
-                                  blurRadius: 24,
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 13),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 15,
-                              vertical: 7,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: .075),
-                              borderRadius: BorderRadius.circular(30),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: .13),
-                              ),
-                            ),
-                            child: const Text(
-                              'SMALL GAMES  •  BIG RIVALRIES',
+                            const SizedBox(height: 16),
+                            const Text(
+                              'JOY',
                               style: TextStyle(
-                                color: Color(0xFFD3E0FF),
-                                letterSpacing: 2.1,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                                fontSize: 60,
+                                height: 1,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 16,
+                                shadows: [
+                                  Shadow(
+                                    color: Color(0x885D8FFF),
+                                    blurRadius: 28,
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 42),
-                          SizedBox(
-                            width: 150,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: LinearProgressIndicator(
-                                value: t,
-                                minHeight: 3,
-                                color: const Color(0xFF9DBBFF),
-                                backgroundColor:
-                                    Colors.white.withValues(alpha: .14),
+                            const SizedBox(height: 13),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 15,
+                                vertical: 7,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: .075),
+                                borderRadius: BorderRadius.circular(30),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: .13),
+                                ),
+                              ),
+                              child: const Text(
+                                'SMALL GAMES  •  BIG RIVALRIES',
+                                style: TextStyle(
+                                  color: Color(0xFFD3E0FF),
+                                  letterSpacing: 2.1,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 28),
+                            SizedBox(
+                              width: 150,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(20),
+                                child: LinearProgressIndicator(
+                                  value: t,
+                                  minHeight: 3,
+                                  color: const Color(0xFF9DBBFF),
+                                  backgroundColor:
+                                      Colors.white.withValues(alpha: .14),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -316,10 +315,9 @@ class _OrbitPainter extends CustomPainter {
       final radius = shortest * (.34 + (i % 4) * .105);
       final point = center +
           Offset(cos(angle) * radius, sin(angle) * radius * .92);
-      final dotRadius = 1.8 + (i % 3) * .8;
       canvas.drawCircle(
         point,
-        dotRadius,
+        1.8 + (i % 3) * .8,
         Paint()
           ..color = [
             const Color(0xFF8DB2FF),
