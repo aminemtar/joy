@@ -1139,6 +1139,7 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
                   actions: [
                     Column(
                       mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         for (var i = 0; i < actions.length; i += 2)
                           Padding(
