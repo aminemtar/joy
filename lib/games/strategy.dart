@@ -85,7 +85,8 @@ class _StrategyGameState extends State<StrategyGame> {
   void nextTurn() {
     do {
       turn = (turn + 1) % widget.names.length;
-    } while (widget.id == 35 && lives[turn] <= 0);
+    } while ((widget.id == 35 && lives[turn] <= 0) ||
+        (widget.id == 34 && attempts[turn] >= 8));
     pass = widget.id == 33 || widget.id == 34;
   }
 
@@ -224,8 +225,11 @@ class _StrategyGameState extends State<StrategyGame> {
         end(turn);
       } else {
         guess.clear();
-        nextTurn();
-        if (attempts.every((n) => n >= 8)) end();
+        if (attempts.every((n) => n >= 8)) {
+          end();
+        } else {
+          nextTurn();
+        }
       }
     });
   }
