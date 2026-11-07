@@ -625,23 +625,23 @@ class _LobbyState extends State<Lobby> {
                     ),
                     const Text(
                       'Small games. Big rivalries.',
-                      style: TextStyle(color: JoyTheme.muted, fontSize: 17),
+                      style: TextStyle(color: Color(0xFFEAF6FF), fontSize: 17, fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 24),
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF213D83), Color(0xFF152447)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Colors.white, Color(0xFFF1FAFF), Color(0xFFD5EDFF)],
+                          stops: [0, .48, 1],
                         ),
                         borderRadius: BorderRadius.circular(30),
-                        border: Border.all(color: JoyTheme.border),
+                        border: Border.all(color: Colors.white, width: 1.5),
                         boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x20507CFF),
-                            blurRadius: 24,
-                            offset: Offset(0, 8),
-                          ),
+                          BoxShadow(color: Color(0x880044A8), blurRadius: 28, offset: Offset(0, 13)),
+                          BoxShadow(color: Color(0xAAFFFFFF), blurRadius: 1, offset: Offset(0, -2)),
                         ],
                       ),
                       child: Column(
@@ -656,7 +656,10 @@ class _LobbyState extends State<Lobby> {
                             'Pick a game.\nMake it a rivalry.',
                             style: TextStyle(
                               fontSize: 30,
-                              fontWeight: FontWeight.w800,
+                              color: JoyTheme.ink,
+                              height: 1.12,
+                              letterSpacing: -.6,
+                              fontWeight: FontWeight.w900,
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -742,6 +745,10 @@ class _LobbyState extends State<Lobby> {
                     ),
                     const SizedBox(height: 12),
                     TextButton.icon(
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        textStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+                      ),
                       onPressed:
                           () => Navigator.push(
                             context,
@@ -760,15 +767,17 @@ class _LobbyState extends State<Lobby> {
                             'Find your next game',
                             style: TextStyle(
                               fontSize: 21,
-                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
                             ),
                           ),
                         ),
                         Text(
                           '${filtered.length} games',
                           style: const TextStyle(
-                            color: JoyTheme.muted,
+                            color: const Color(0xFFDDEEFF),
                             fontSize: 12,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
@@ -849,11 +858,11 @@ class _LobbyState extends State<Lobby> {
                         final entry = filtered[i];
                         final g = entry.value;
                         return Card(
-                          color: JoyTheme.surface,
+                          color: JoyTheme.cardSurface,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(24),
-                            side: const BorderSide(color: JoyTheme.border),
+                            side: const BorderSide(color: JoyTheme.cardBorder),
                           ),
                           clipBehavior: Clip.antiAlias,
                           child: InkWell(
@@ -889,6 +898,11 @@ class _LobbyState extends State<Lobby> {
                                               data.favorites.contains(entry.key)
                                                   ? 'Remove favorite'
                                                   : 'Add favorite',
+                                          style: IconButton.styleFrom(
+                                            backgroundColor: JoyTheme.cardRaised,
+                                            foregroundColor: JoyTheme.cardAccent,
+                                            elevation: 0,
+                                          ),
                                           onPressed: () async {
                                             await data.toggleFavorite(
                                               entry.key,
@@ -912,7 +926,7 @@ class _LobbyState extends State<Lobby> {
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
                                       fontSize: 16,
-                                      color: JoyTheme.ink,
+                                      color: JoyTheme.cardInk,
                                       fontWeight: FontWeight.w800,
                                     ),
                                   ),
@@ -922,7 +936,7 @@ class _LobbyState extends State<Lobby> {
                                         ? g.category
                                         : '${playerCount}P ${supportsGroupTurns(entry.key) ? 'shared turns' : 'league'}',
                                     style: const TextStyle(
-                                      color: JoyTheme.muted,
+                                      color: JoyTheme.cardMuted,
                                       fontSize: 12,
                                     ),
                                   ),
