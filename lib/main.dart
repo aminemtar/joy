@@ -1346,27 +1346,184 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
                         ),
                       if (timedGames.contains(widget.id))
                         Padding(
-                          padding: const EdgeInsets.only(top: 12),
-                          child: DropdownButton<int>(
-                            value: roundSeconds,
-                            items: [
-                              for (final seconds in [0, 60, 120, 180])
-                                DropdownMenuItem(
-                                  value: seconds,
-                                  child: Text(
-                                    seconds == 0
-                                        ? 'Untimed round'
-                                        : '$seconds-second round',
+                          padding: const EdgeInsets.only(top: 20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 38,
+                                    height: 38,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF507CFF).withValues(alpha: 0.14),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: const Color(0xFF507CFF).withValues(alpha: 0.28),
+                                      ),
+                                    ),
+                                    child: const Icon(
+                                      Icons.timer_outlined,
+                                      color: Color(0xFF8EABFF),
+                                      size: 20,
+                                    ),
                                   ),
-                                ),
+                                  const SizedBox(width: 12),
+                                  const Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'ROUND DURATION',
+                                          style: TextStyle(
+                                            color: JoyTheme.ink,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: 1.1,
+                                          ),
+                                        ),
+                                        SizedBox(height: 3),
+                                        Text(
+                                          'Choose how long the challenge lasts',
+                                          style: TextStyle(
+                                            color: JoyTheme.muted,
+                                            fontSize: 11,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 14),
+                              LayoutBuilder(
+                                builder: (context, constraints) {
+                                  final compact = constraints.maxWidth < 360;
+                                  final options = [
+                                    (0, 'Untimed', 'No time limit', Icons.all_inclusive_rounded),
+                                    (60, '1 minute', '60 seconds', Icons.timer_rounded),
+                                    (120, '2 minutes', '120 seconds', Icons.hourglass_bottom_rounded),
+                                    (180, '3 minutes', '180 seconds', Icons.hourglass_full_rounded),
+                                  ];
+                                  return GridView.builder(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    itemCount: options.length,
+                                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: compact ? 1 : 2,
+                                      mainAxisSpacing: 9,
+                                      crossAxisSpacing: 9,
+                                      mainAxisExtent: 70,
+                                    ),
+                                    itemBuilder: (context, index) {
+                                      final option = options[index];
+                                      final selected = roundSeconds == option.$1;
+                                      return Semantics(
+                                        button: true,
+                                        selected: selected,
+                                        label: '${option.$2}, ${option.$3}',
+                                        child: Material(
+                                          color: Colors.transparent,
+                                          child: InkWell(
+                                            borderRadius: BorderRadius.circular(17),
+                                            onTap: () {
+                                              JoySounds.instance.play(SoundEffect.tap);
+                                              setState(() => roundSeconds = option.$1);
+                                              PartyData.instance.roundSeconds = option.$1;
+                                              PartyData.instance.saveOptions();
+                                            },
+                                            child: AnimatedContainer(
+                                              duration: const Duration(milliseconds: 220),
+                                              curve: Curves.easeOutCubic,
+                                              padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
+                                              decoration: BoxDecoration(
+                                                borderRadius: BorderRadius.circular(17),
+                                                gradient: selected
+                                                    ? const LinearGradient(
+                                                        begin: Alignment.topLeft,
+                                                        end: Alignment.bottomRight,
+                                                        colors: [Color(0xFF315CCB), Color(0xFF507CFF)],
+                                                      )
+                                                    : null,
+                                                color: selected ? null : const Color(0xFF202A49),
+                                                border: Border.all(
+                                                  color: selected
+                                                      ? const Color(0xFF91ACFF)
+                                                      : const Color(0xFF344264),
+                                                  width: selected ? 1.5 : 1,
+                                                ),
+                                                boxShadow: selected
+                                                    ? [
+                                                        BoxShadow(
+                                                          color: const Color(0xFF507CFF).withValues(alpha: 0.24),
+                                                          blurRadius: 16,
+                                                          offset: const Offset(0, 5),
+                                                        ),
+                                                      ]
+                                                    : null,
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  AnimatedContainer(
+                                                    duration: const Duration(milliseconds: 220),
+                                                    width: 38,
+                                                    height: 38,
+                                                    decoration: BoxDecoration(
+                                                      color: Colors.white.withValues(alpha: selected ? 0.18 : 0.07),
+                                                      borderRadius: BorderRadius.circular(12),
+                                                    ),
+                                                    child: Icon(
+                                                      option.$4,
+                                                      color: selected ? Colors.white : const Color(0xFF9DB4FF),
+                                                      size: 20,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 10),
+                                                  Expanded(
+                                                    child: Column(
+                                                      mainAxisAlignment: MainAxisAlignment.center,
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        Text(
+                                                          option.$2,
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow.ellipsis,
+                                                          style: TextStyle(
+                                                            color: selected ? Colors.white : JoyTheme.ink,
+                                                            fontSize: 13,
+                                                            fontWeight: FontWeight.w800,
+                                                          ),
+                                                        ),
+                                                        const SizedBox(height: 2),
+                                                        Text(
+                                                          option.$3,
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow.ellipsis,
+                                                          style: TextStyle(
+                                                            color: selected ? Colors.white.withValues(alpha: 0.78) : JoyTheme.muted,
+                                                            fontSize: 10,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  if (selected)
+                                                    const Icon(
+                                                      Icons.check_circle_rounded,
+                                                      color: Colors.white,
+                                                      size: 18,
+                                                    ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
                             ],
-                            onChanged: (value) {
-                              if (value != null) {
-                                setState(() => roundSeconds = value);
-                                PartyData.instance.roundSeconds = value;
-                                PartyData.instance.saveOptions();
-                              }
-                            },
                           ),
                         ),
                       TextButton.icon(
