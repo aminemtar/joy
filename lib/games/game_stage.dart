@@ -50,16 +50,26 @@ class GameStage extends StatelessWidget {
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: playerColors[p].withValues(
-                            alpha: turn == p ? .22 : .07,
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: turn == p
+                                ? [Colors.white, const Color(0xFFE2F3FF)]
+                                : [const Color(0xFFF9FCFF), const Color(0xFFEAF5FF)],
                           ),
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(15),
                           border: Border.all(
-                            color:
-                                turn == p
-                                    ? playerColors[p]
-                                    : Theme.of(context).dividerColor,
+                            color: turn == p ? playerColors[p] : const Color(0xFFC8E3F7),
+                            width: turn == p ? 1.5 : 1,
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: turn == p ? playerColors[p].withValues(alpha: .18) : const Color(0x18004488),
+                              blurRadius: turn == p ? 13 : 7,
+                              offset: const Offset(0, 4),
+                            ),
+                            const BoxShadow(color: Colors.white, blurRadius: 1, offset: Offset(0, -1)),
+                          ],
                         ),
                         child: Row(
                           children: [
