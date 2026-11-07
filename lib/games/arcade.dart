@@ -484,11 +484,11 @@ class _TrafficPainter extends CustomPainter {
     final p = Paint();
     c.drawRRect(
       RRect.fromRectAndRadius(Offset.zero & s, const Radius.circular(20)),
-      p..color = const Color(0xFFE5F2FF),
+      p..color = const Color(0xFF1C294A),
     );
     c.drawRect(
       Rect.fromLTWH(0, s.height * .35, s.width, s.height * .3),
-      p..color = const Color(0xFFCDE5FA),
+      p..color = const Color(0xFF0B142B),
     );
     c.drawRect(Rect.fromLTWH(s.width * .38, 0, s.width * .24, s.height), p);
     for (final axis in [0, 1]) {
@@ -534,7 +534,7 @@ class _TowerPainter extends CustomPainter {
     final p = Paint();
     c.drawRRect(
       RRect.fromRectAndRadius(Offset.zero & s, const Radius.circular(20)),
-      p..color = const Color(0xFFEAF4FF),
+      p..color = const Color(0xFF111C37),
     );
     final visible = layers.skip(max(0, layers.length - 12)).toList(),
         h = s.height / 16;
@@ -558,7 +558,7 @@ class _TowerPainter extends CustomPainter {
         rect.topLeft + const Offset(4, 3),
         rect.topRight + const Offset(-4, 3),
         p
-          ..color = const Color(0xFF8EB8E2)
+          ..color = Colors.white38
           ..strokeWidth = 2,
       );
     }
@@ -592,13 +592,13 @@ class _JumpPainter extends CustomPainter {
           Rect.fromLTWH(0, base, s.width, 12),
           const Radius.circular(5),
         ),
-        p..color = const Color(0xFF8FB9E3),
+        p..color = const Color(0xFF57709F),
       );
       c.save();
       c.clipRect(Rect.fromLTWH(0, base, s.width, 15));
       c.drawRect(
         Rect.fromLTWH(gaps[player] * s.width, base, s.width * .18, 15),
-        p..color = const Color(0xFFB8D9F7),
+        p..color = const Color(0xFF0B1128),
       );
       c.restore();
       GameSprites.orb(
@@ -626,7 +626,7 @@ class _PenaltyPainter extends CustomPainter {
     Offset at(Offset v) => Offset(v.dx * s.width, v.dy * s.height);
     c.drawRRect(
       RRect.fromRectAndRadius(Offset.zero & s, const Radius.circular(20)),
-      p..color = const Color(0xFFD9EDFF),
+      p..color = const Color(0xFF18314E),
     );
     c.drawRect(
       Rect.fromLTWH(
@@ -635,14 +635,14 @@ class _PenaltyPainter extends CustomPainter {
         s.width * .7,
         s.height * .09,
       ),
-      p..color = const Color(0xFFBBD8F5),
+      p..color = Colors.white12,
     );
     for (var x = .15; x <= .85; x += .07) {
       c.drawLine(
         Offset(s.width * x, s.height * .05),
         Offset(s.width * x, s.height * .14),
         p
-          ..color = const Color(0xFF91B9E3)
+          ..color = Colors.white24
           ..strokeWidth = 1,
       );
     }
@@ -656,7 +656,7 @@ class _PenaltyPainter extends CustomPainter {
       p
         ..style = PaintingStyle.stroke
         ..strokeWidth = 3
-        ..color = const Color(0xFF4779AA),
+        ..color = Colors.white70,
     );
     p.style = PaintingStyle.fill;
     GameSprites.orb(
