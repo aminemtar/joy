@@ -484,11 +484,11 @@ class _TrafficPainter extends CustomPainter {
     final p = Paint();
     c.drawRRect(
       RRect.fromRectAndRadius(Offset.zero & s, const Radius.circular(20)),
-      p..color = const Color(0xFF1C294A),
+      p..color = const Color(0xFFE5F2FF),
     );
     c.drawRect(
       Rect.fromLTWH(0, s.height * .35, s.width, s.height * .3),
-      p..color = const Color(0xFF0B142B),
+      p..color = const Color(0xFFCDE5FA),
     );
     c.drawRect(Rect.fromLTWH(s.width * .38, 0, s.width * .24, s.height), p);
     for (final axis in [0, 1]) {
@@ -534,7 +534,7 @@ class _TowerPainter extends CustomPainter {
     final p = Paint();
     c.drawRRect(
       RRect.fromRectAndRadius(Offset.zero & s, const Radius.circular(20)),
-      p..color = const Color(0xFF111C37),
+      p..color = const Color(0xFFEAF4FF),
     );
     final visible = layers.skip(max(0, layers.length - 12)).toList(),
         h = s.height / 16;
@@ -592,13 +592,13 @@ class _JumpPainter extends CustomPainter {
           Rect.fromLTWH(0, base, s.width, 12),
           const Radius.circular(5),
         ),
-        p..color = const Color(0xFF57709F),
+        p..color = const Color(0xFF8FB9E3),
       );
       c.save();
       c.clipRect(Rect.fromLTWH(0, base, s.width, 15));
       c.drawRect(
         Rect.fromLTWH(gaps[player] * s.width, base, s.width * .18, 15),
-        p..color = const Color(0xFF0B1128),
+        p..color = const Color(0xFFB8D9F7),
       );
       c.restore();
       GameSprites.orb(
@@ -626,7 +626,7 @@ class _PenaltyPainter extends CustomPainter {
     Offset at(Offset v) => Offset(v.dx * s.width, v.dy * s.height);
     c.drawRRect(
       RRect.fromRectAndRadius(Offset.zero & s, const Radius.circular(20)),
-      p..color = const Color(0xFF18314E),
+      p..color = const Color(0xFFD9EDFF),
     );
     c.drawRect(
       Rect.fromLTWH(
