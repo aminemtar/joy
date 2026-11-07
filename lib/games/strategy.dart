@@ -478,7 +478,7 @@ class _StrategyGameState extends State<StrategyGame> {
                                 ? (board.ships.contains(i)
                                     ? const Color(0xFF704356)
                                     : const Color(0xFFD7EEFF))
-                                : const Color(0xFF162844),
+                                : const Color(0xFFEAF6FF),
                         child: Icon(
                           hit
                               ? (board.ships.contains(i)
