@@ -632,13 +632,15 @@ class _LobbyState extends State<Lobby> {
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF213D83), Color(0xFF152447)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFFE3F3FF), Color(0xFFB8DDFF), Color(0xFF9CCEFF)],
                         ),
                         borderRadius: BorderRadius.circular(30),
-                        border: Border.all(color: JoyTheme.border),
+                        border: Border.all(color: const Color(0xFF8FC7FA), width: 1.2),
                         boxShadow: const [
                           BoxShadow(
-                            color: Color(0x20507CFF),
+                            color: Color(0x40509FEF),
                             blurRadius: 24,
                             offset: Offset(0, 8),
                           ),
