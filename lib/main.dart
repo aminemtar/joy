@@ -634,10 +634,10 @@ class _LobbyState extends State<Lobby> {
                         gradient: const LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [Color(0xFF315FC0), Color(0xFF1B3978), Color(0xFF112448)],
+                          colors: [Color(0xFF43B7FF), Color(0xFF168BFF), Color(0xFF0754D6)],
                         ),
                         borderRadius: BorderRadius.circular(30),
-                        border: Border.all(color: const Color(0xFF6F9FFF), width: 1.1),
+                        border: Border.all(color: const Color(0xFF9BD7FF), width: 1.2),
                         boxShadow: const [
                           BoxShadow(
                             color: Color(0x55397BFF),
@@ -862,7 +862,7 @@ class _LobbyState extends State<Lobby> {
                           shadowColor: const Color(0x55397BFF),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(24),
-                            side: const BorderSide(color: Color(0xFF365587), width: .9),
+                            side: const BorderSide(color: Color(0xFFCAE6FA), width: 1),
                           ),
                           clipBehavior: Clip.antiAlias,
                           child: InkWell(
@@ -1352,7 +1352,11 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
               : Container(
                 padding: const EdgeInsets.fromLTRB(9, 1.5, 9, 9),
                 decoration: BoxDecoration(
-                  gradient: JoyTheme.blueGradient,
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFF74CEFF), Color(0xFF168BFF), Color(0xFF0754D6)],
+                  ),
                   borderRadius: BorderRadius.circular(26),
                   boxShadow: const [
                     BoxShadow(
