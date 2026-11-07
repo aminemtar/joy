@@ -511,7 +511,7 @@ class _StrategyGameState extends State<StrategyGame> {
                         color:
                             open
                                 ? const Color(0xFFBFE3FF)
-                                : const Color(0xFF1C294A),
+                                : const Color(0xFFEAF6FF),
                         child:
                             open
                                 ? (bomb
