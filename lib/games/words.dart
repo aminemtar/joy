@@ -197,7 +197,7 @@ class _WordsGameState extends State<WordsGame> {
                 selected: cells.contains(i),
                 color:
                     confirmed != null
-                        ? const Color(0xFF2D416C)
+                        ? const Color(0xFF9FD5FF)
                         : cells.contains(i)
                         ? const Color(0xFF28365C)
                         : const Color(0xFF1C294A),
