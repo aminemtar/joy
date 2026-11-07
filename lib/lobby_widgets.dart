@@ -140,9 +140,9 @@ class PartySetup extends StatelessWidget {
                             const SizedBox(height: 8),
                             Text(
                               '$n players',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w800,
                                 color: count == n ? Colors.white : JoyTheme.ink,
                               ),
                             ),
