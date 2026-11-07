@@ -544,6 +544,610 @@ class _LobbyState extends State<Lobby> {
 
   @override
   Widget build(BuildContext context) {
+    final filtered =
+        games
+            .asMap()
+            .entries
+            .where(
+              (e) =>
+                  (category == 'All' || e.value.category == category) &&
+                  (!practice || practiceGames.contains(e.key)) &&
+                  (libraryFilter != 'Favorites' ||
+                      data.favorites.contains(e.key)) &&
+                  (libraryFilter != 'Recent' || data.recent.contains(e.key)) &&
+                  (search.isEmpty ||
+                      e.value.name.toLowerCase().contains(
+                        search.toLowerCase(),
+                      )),
+            )
+            .toList();
+    if (libraryFilter == 'Recent') {
+      filtered.sort(
+        (a, b) =>
+            data.recent.indexOf(a.key).compareTo(data.recent.indexOf(b.key)),
+      );
+    }
+    return Scaffold(
+      body: SafeArea(
+        child: CustomScrollView(
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.all(24),
+              sliver: SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: Image.asset(
+                            'assets/art/app_icon.png',
+                            width: 44,
+                            height: 44,
+                            cacheWidth: 128,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'JOY',
+                          style: TextStyle(
+                            fontSize: 38,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 5,
+                          ),
+                        ),
+                        const Spacer(),
+                        ListenableBuilder(
+                          listenable: JoySounds.instance,
+                          builder:
+                              (context, child) => IconButton(
+                                tooltip:
+                                    JoySounds.instance.enabled
+                                        ? 'Mute sound effects'
+                                        : 'Enable sound effects',
+                                onPressed:
+                                    () => JoySounds.instance.setEnabled(
+                                      !JoySounds.instance.enabled,
+                                    ),
+                                icon: Icon(
+                                  JoySounds.instance.enabled
+                                      ? Icons.volume_up_rounded
+                                      : Icons.volume_off_rounded,
+                                ),
+                              ),
+                        ),
+                        IconButton(
+                          onPressed: _settings,
+                          icon: const Icon(Icons.tune_rounded),
+                        ),
+                      ],
+                    ),
+                    const Text(
+                      'Small games. Big rivalries.',
+                      style: TextStyle(color: JoyTheme.muted, fontSize: 17),
+                    ),
+                    const SizedBox(height: 24),
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF213D83), Color(0xFF152447)],
+                        ),
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(color: JoyTheme.border),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x20507CFF),
+                            blurRadius: 24,
+                            offset: Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'THE LOCAL MULTIPLAYER ARCADE',
+                            style: TextStyle(letterSpacing: 2, fontSize: 11),
+                          ),
+                          const SizedBox(height: 10),
+                          const Text(
+                            'Pick a game.\nMake it a rivalry.',
+                            style: TextStyle(
+                              fontSize: 30,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          const Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              InfoPill(
+                                icon: Icons.sports_esports_rounded,
+                                label: '36 games',
+                              ),
+                              InfoPill(
+                                icon: Icons.wifi_off_rounded,
+                                label: 'Offline',
+                              ),
+                              InfoPill(
+                                icon: Icons.people_alt_rounded,
+                                label: '2–4 players',
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 10,
+                            children: [
+                              FilledButton.icon(
+                                onPressed:
+                                    () => _play([
+                                      practice
+                                          ? practiceGames.elementAt(
+                                            Random().nextInt(
+                                              practiceGames.length,
+                                            ),
+                                          )
+                                          : Random().nextInt(games.length),
+                                    ]),
+                                icon: const Icon(Icons.shuffle),
+                                label: const Text('Surprise me'),
+                              ),
+                              OutlinedButton(
+                                onPressed: practice ? null : _partyBuilder,
+                                child: const Text('Party mode'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    PartySetup(
+                      count: playerCount,
+                      names: names,
+                      wins: wins,
+                      avatars: data.avatars,
+                      onEdit: _settings,
+                      onChanged: (value) {
+                        JoySounds.instance.play(SoundEffect.tap);
+                        setState(() => playerCount = value);
+                        _save();
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    JoyPanel(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 4,
+                      ),
+                      child: SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Computer practice'),
+                        subtitle: const Text(
+                          'Ping Pong, Tic Tac Toe, Connect Four & RPS',
+                        ),
+                        value: practice,
+                        onChanged:
+                            (v) => setState(() {
+                              practice = v;
+                              category = 'All';
+                              libraryFilter = 'All games';
+                            }),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextButton.icon(
+                      onPressed:
+                          () => Navigator.push(
+                            context,
+                            MaterialPageRoute<void>(
+                              builder: (_) => const HistoryScreen(),
+                            ),
+                          ),
+                      icon: const Icon(Icons.history_rounded),
+                      label: const Text('Match history'),
+                    ),
+                    const SizedBox(height: 28),
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Find your next game',
+                            style: TextStyle(
+                              fontSize: 21,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          '${filtered.length} games',
+                          style: const TextStyle(
+                            color: JoyTheme.muted,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    TextField(
+                      decoration: const InputDecoration(
+                        hintText: 'Search games',
+                        prefixIcon: Icon(Icons.search_rounded),
+                      ),
+                      onChanged: (v) => setState(() => search = v),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        for (final f in ['All games', 'Favorites', 'Recent'])
+                          ChoiceChip(
+                            label: Text(f),
+                            selected: libraryFilter == f,
+                            onSelected:
+                                (_) => setState(() => libraryFilter = f),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          for (final c in [
+                            'All',
+                            'Cars',
+                            'Sports',
+                            'Arena',
+                            'Puzzles',
+                            'Memory',
+                            'Brain',
+                            'Words',
+                            'Strategy',
+                            'Arcade',
+                          ])
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ChoiceChip(
+                                label: Text(c),
+                                selected: category == c,
+                                onSelected: (_) {
+                                  JoySounds.instance.play(SoundEffect.tap);
+                                  setState(() => category = c);
+                                },
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                ),
+              ),
+            ),
+            if (filtered.isEmpty)
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Text(
+                    'No games here yet. Try another filter, save a favorite, or play your first game.',
+                    style: TextStyle(color: JoyTheme.muted),
+                  ),
+                ),
+              ),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+              sliver: SliverLayoutBuilder(
+                builder:
+                    (c, constraints) => SliverGrid(
+                      delegate: SliverChildBuilderDelegate((c, i) {
+                        final entry = filtered[i];
+                        final g = entry.value;
+                        return Card(
+                          color: JoyTheme.surface,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                            side: const BorderSide(color: JoyTheme.border),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: InkWell(
+                            onTap: () => _play([entry.key]),
+                            child: Padding(
+                              padding: const EdgeInsets.all(14),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Stack(
+                                    children: [
+                                      Center(
+                                        child: Hero(
+                                          tag: 'game-${entry.key}',
+                                          child: Material(
+                                            color: Colors.transparent,
+                                            child: ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                              child: GameArt(
+                                                id: entry.key,
+                                                size: 100,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Align(
+                                        alignment: Alignment.topRight,
+                                        child: IconButton.filledTonal(
+                                          tooltip:
+                                              data.favorites.contains(entry.key)
+                                                  ? 'Remove favorite'
+                                                  : 'Add favorite',
+                                          onPressed: () async {
+                                            await data.toggleFavorite(
+                                              entry.key,
+                                            );
+                                            if (mounted) setState(() {});
+                                          },
+                                          icon: Icon(
+                                            data.favorites.contains(entry.key)
+                                                ? Icons.favorite_rounded
+                                                : Icons.favorite_border_rounded,
+                                            size: 18,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const Spacer(),
+                                  Text(
+                                    g.name,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: JoyTheme.ink,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    playerCount == 2
+                                        ? g.category
+                                        : '${playerCount}P ${supportsGroupTurns(entry.key) ? 'shared turns' : 'league'}',
+                                    style: const TextStyle(
+                                      color: JoyTheme.muted,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }, childCount: filtered.length),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: max(
+                          2,
+                          (constraints.crossAxisExtent / 220).floor(),
+                        ),
+                        mainAxisSpacing: 10,
+                        crossAxisSpacing: 10,
+                        mainAxisExtent: 260,
+                      ),
+                    ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class MatchScreen extends StatefulWidget {
+  final int id;
+  final List<String> names;
+  final bool haptics;
+  final bool computer, allowRematch;
+  final Future<void> Function(MatchRecord)? onResult;
+  final VoidCallback? onNextGame;
+  const MatchScreen({
+    super.key,
+    required this.id,
+    required this.names,
+    required this.haptics,
+    this.computer = false,
+    this.allowRematch = true,
+    this.onResult,
+    this.onNextGame,
+  });
+  @override
+  State<MatchScreen> createState() => _MatchScreenState();
+}
+
+class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
+  bool started = false,
+      done = false,
+      clockPaused = false,
+      backgrounded = false,
+      tutorialBusy = false;
+  int attempt = 0, elapsed = 0, remaining = 0;
+  List<int> liveScores = [];
+  Timer? roundTimer;
+  Difficulty difficulty = PartyData.instance.difficulty;
+  int roundSeconds = PartyData.instance.roundSeconds;
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    backgrounded = state != AppLifecycleState.resumed;
+  }
+
+  Future<void> tutorial() async {
+    if (tutorialBusy) return;
+    tutorialBusy = true;
+    await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => GameTutorial(id: widget.id)),
+    );
+    await PartyData.instance.tutorialSeen(widget.id);
+    tutorialBusy = false;
+  }
+
+  Future<void> start() async {
+    if (tutorialBusy) return;
+    if (!PartyData.instance.seen.contains(widget.id)) {
+      await tutorial();
+    }
+    if (!mounted) return;
+    JoySounds.instance.play(SoundEffect.start);
+    roundTimer?.cancel();
+    setState(() {
+      started = true;
+      done = false;
+      attempt++;
+      elapsed = 0;
+      clockPaused = false;
+      liveScores = List.filled(widget.names.length, 0);
+      remaining = timedGames.contains(widget.id) ? roundSeconds : 0;
+    });
+    roundTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted || done || backgrounded || clockPaused) return;
+      setState(() {
+        elapsed++;
+        if (remaining > 0) remaining--;
+      });
+      if (roundSeconds > 0 &&
+          timedGames.contains(widget.id) &&
+          remaining == 0) {
+        finish(leadingPlayer(liveScores));
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    roundTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    JoySounds.instance.stop();
+    super.dispose();
+  }
+
+  void finish(int winner) async {
+    if (done || !mounted) return;
+    setState(() => done = true);
+    roundTimer?.cancel();
+    JoySounds.instance.celebrate(winner);
+    final record = MatchRecord(
+      game: widget.id,
+      names: List.of(widget.names),
+      winner: winner,
+      seconds: elapsed,
+      date: DateTime.now(),
+      practice: widget.computer,
+    );
+    if (widget.onResult != null) {
+      await widget.onResult!(record);
+    } else {
+      await PartyData.instance.record(record);
+    }
+    if (!mounted) return;
+    bool sharing = false;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (c) => StatefulBuilder(
+            builder:
+                (c, update) => PopScope(
+                  canPop: false,
+                  child: AlertDialog(
+                    title: Text(
+                      winner < 0
+                          ? 'Match tied!'
+                          : '${widget.names[winner]} wins!',
+                    ),
+                    content: Text(
+                      '${games[widget.id].name} • ${elapsed}s\nReady for another rivalry?',
+                    ),
+                    actions: [
+                      TextButton.icon(
+                        onPressed:
+                            sharing
+                                ? null
+                                : () async {
+                                  update(() => sharing = true);
+                                  final message = await shareScorecard(
+                                    '${games[widget.id].name} • match wins',
+                                    widget.names,
+                                    [
+                                      for (
+                                        var i = 0;
+                                        i < widget.names.length;
+                                        i++
+                                      )
+                                        winner == i ? 1 : 0,
+                                    ],
+                                  );
+                                  if (c.mounted) {
+                                    update(() => sharing = false);
+                                    ScaffoldMessenger.of(c).showSnackBar(
+                                      SnackBar(content: Text(message)),
+                                    );
+                                  }
+                                },
+                        icon: const Icon(Icons.ios_share_rounded),
+                        label: const Text('Share scorecard'),
+                      ),
+                      if (widget.allowRematch)
+                        OutlinedButton(
+                          onPressed: () {
+                            Navigator.pop(c);
+                            JoySounds.instance.stop();
+                            start();
+                          },
+                          child: const Text('Play again'),
+                        ),
+                      if (widget.onNextGame != null)
+                        FilledButton(
+                          onPressed: () {
+                            widget.onNextGame!();
+                            Navigator.pop(c);
+                            Navigator.pop(context, winner);
+                          },
+                          child: const Text('Next game'),
+                        ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(c);
+                          Navigator.pop(context, winner);
+                        },
+                        child: Text(
+                          widget.onNextGame == null
+                              ? 'Continue'
+                              : 'Back to lobby',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+          ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final g = games[widget.id];
     return Scaffold(
       appBar: AppBar(
@@ -736,39 +1340,14 @@ class _LobbyState extends State<Lobby> {
                   ),
                 ),
               )
-              : Container(
-                padding: const EdgeInsets.fromLTRB(9, 1.5, 9, 9),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF74CEFF),
-                      Color(0xFF168BFF),
-                      Color(0xFF0754D6),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(26),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x55397BFF),
-                      blurRadius: 25,
-                      spreadRadius: 1,
-                      offset: Offset(0, 8),
-                    ),
-                    BoxShadow(
-                      color: Color(0x66000000),
-                      blurRadius: 16,
-                      offset: Offset(0, 7),
-                    ),
-                  ],
-                ),
+              : Padding(
+                padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(23),
+                  borderRadius: BorderRadius.circular(24),
                   child: Theme(
                     data: JoyTheme.arena,
                     child: ColoredBox(
-                      color: JoyTheme.accent,
+                      color: const Color(0xFF161C36),
                       child:
                           done
                               ? const Center(
