@@ -440,7 +440,7 @@ class _StrategyGameState extends State<StrategyGame> {
                                   width: 9,
                                   height: 9,
                                   decoration: const BoxDecoration(
-                                    color: Colors.white38,
+                                    color: const Color(0xFF8ABEF0),
                                     shape: BoxShape.circle,
                                   ),
                                 )
@@ -485,7 +485,7 @@ class _StrategyGameState extends State<StrategyGame> {
                                   ? Icons.local_fire_department_rounded
                                   : Icons.water_drop_rounded)
                               : Icons.radar_rounded,
-                          color: hit ? Colors.white : Colors.white24,
+                          color: hit ? const Color(0xFFD94B65) : const Color(0xFF4D80B5),
                         ),
                       );
                     }),
@@ -534,7 +534,7 @@ class _StrategyGameState extends State<StrategyGame> {
                                 )
                                 : const Icon(
                                   Icons.square_rounded,
-                                  color: Colors.white10,
+                                  color: const Color(0xFF9ABCE0),
                                 ),
                       );
                     }),
