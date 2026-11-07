@@ -1071,7 +1071,11 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
           (c) => StatefulBuilder(
             builder: (c, update) {
               final actions = <Widget>[
-                TextButton.icon(
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF507CFF),
+                    foregroundColor: Colors.white,
+                  ),
                   onPressed:
                       sharing
                           ? null
@@ -1096,38 +1100,56 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
                   label: const Text('Share scorecard'),
                 ),
                 if (widget.allowRematch)
-                  OutlinedButton(
+                  FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF6F83),
+                      foregroundColor: Colors.white,
+                    ),
                     onPressed: () {
                       Navigator.pop(c);
                       JoySounds.instance.stop();
                       start();
                     },
-                    child: const Text('Play again'),
+                    icon: const Icon(Icons.replay_rounded),
+                    label: const Text('Play again'),
                   ),
                 if (widget.onNextGame != null)
-                  FilledButton(
+                  FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFFFFC16D),
+                      foregroundColor: const Color(0xFF382B19),
+                    ),
                     onPressed: () {
                       widget.onNextGame!();
                       Navigator.pop(c);
                       Navigator.pop(context, winner);
                     },
-                    child: const Text('Next game'),
+                    icon: const Icon(Icons.arrow_forward_rounded),
+                    label: const Text('Next game'),
                   ),
-                TextButton(
+                FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF39B8A6),
+                    foregroundColor: const Color(0xFF102C2A),
+                  ),
                   onPressed: () {
                     Navigator.pop(c);
                     Navigator.pop(context, winner);
                   },
-                  child: Text(
+                  icon: Icon(
                     widget.onNextGame == null
-                        ? 'Continue'
-                        : 'Back to lobby',
+                        ? Icons.check_circle_outline_rounded
+                        : Icons.home_rounded,
+                  ),
+                  label: Text(
+                    widget.onNextGame == null ? 'Continue' : 'Back to lobby',
                   ),
                 ),
               ];
-              return PopScope(
-                canPop: false,
-                child: AlertDialog(
+              return _WinConfettiOverlay(
+                child: PopScope(
+                  canPop: false,
+                  child: AlertDialog(
                   title: Text(
                     winner < 0
                         ? 'Match tied!'
@@ -1160,6 +1182,7 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
                       ],
                     ),
                   ],
+                  ),
                 ),
               );
             },
@@ -1405,4 +1428,98 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
               ),
     );
   }
+}
+
+
+class _WinConfettiOverlay extends StatefulWidget {
+  final Widget child;
+
+  const _WinConfettiOverlay({required this.child});
+
+  @override
+  State<_WinConfettiOverlay> createState() => _WinConfettiOverlayState();
+}
+
+class _WinConfettiOverlayState extends State<_WinConfettiOverlay>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2400),
+  )..forward();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Positioned.fill(
+          child: IgnorePointer(
+            child: AnimatedBuilder(
+              animation: _controller,
+              builder: (context, _) => CustomPaint(
+                painter: _WinConfettiPainter(_controller.value),
+              ),
+            ),
+          ),
+        ),
+        Center(child: widget.child),
+      ],
+    );
+  }
+}
+
+class _WinConfettiPainter extends CustomPainter {
+  final double progress;
+  static const colors = [
+    Color(0xFF507CFF),
+    Color(0xFFFF6F83),
+    Color(0xFFFFC16D),
+    Color(0xFF39B8A6),
+    Color(0xFFB69CFF),
+  ];
+
+  const _WinConfettiPainter(this.progress);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final random = Random(42);
+    final paint = Paint()..style = PaintingStyle.fill;
+    for (var i = 0; i < 76; i++) {
+      final x = random.nextDouble() * size.width;
+      final phase = random.nextDouble();
+      final speed = 0.65 + random.nextDouble() * 0.7;
+      final drift = (random.nextDouble() - 0.5) * 54;
+      final y = ((progress * speed + phase) % 1.18) * size.height -
+          size.height * 0.09;
+      final fade = (1 - progress * 0.45).clamp(0.0, 1.0);
+      paint.color = colors[i % colors.length].withValues(alpha: fade);
+      canvas.save();
+      canvas.translate(x + drift * progress, y);
+      canvas.rotate(progress * 7 + phase * pi * 2);
+      final width = 4.0 + random.nextDouble() * 4;
+      final height = 7.0 + random.nextDouble() * 7;
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(
+            center: Offset.zero,
+            width: width,
+            height: height,
+          ),
+          const Radius.circular(1.5),
+        ),
+        paint,
+      );
+      canvas.restore();
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _WinConfettiPainter oldDelegate) =>
+      oldDelegate.progress != progress;
 }
