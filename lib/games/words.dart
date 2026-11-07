@@ -439,7 +439,7 @@ class _WordsGameState extends State<WordsGame> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
                 color: const Color(0xFFD7EEFF),
-                border: Border.all(color: Colors.white24),
+                border: Border.all(color: const Color(0xFF9BCDF0)),
               ),
               child: Text(
                 i < picked.length ? letters[picked[i]] : '',
