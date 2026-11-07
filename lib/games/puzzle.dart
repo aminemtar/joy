@@ -250,7 +250,7 @@ class _PuzzleGameState extends State<PuzzleGame> {
                 value: matched.length / 16,
                 minHeight: 6,
                 color: Colors.amber,
-                backgroundColor: const Color(0xFFDCEEFF),
+                backgroundColor: Colors.white10,
               ),
             ),
             const SizedBox(height: 22),
@@ -276,7 +276,7 @@ class _PuzzleGameState extends State<PuzzleGame> {
             const Text(
               'Match a pair to keep your turn.\nUnmatched cards turn back over.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: const Color(0xFF607A99)),
+              style: TextStyle(color: Colors.white54),
             ),
           ],
         ),
@@ -291,12 +291,12 @@ class _PuzzleGameState extends State<PuzzleGame> {
         children: [
           boardGrid(board.length, width, (i) {
             String label = '';
-            Color color = const Color(0xFFE5F2FF);
+            Color color = const Color(0xFF1C294A);
             if (widget.id == 15) {
               label = board[i] == 0 ? '' : '${board[i]}';
             } else if (widget.id == 20) {
               label = '?';
-              if (matched.contains(i)) color = const Color(0xFFC6DFFA);
+              if (matched.contains(i)) color = const Color(0xFF334C79);
             } else if (widget.id == 17) {
               label =
                   walls.contains(i)
@@ -347,7 +347,7 @@ class _PuzzleGameState extends State<PuzzleGame> {
           const Text(
             'Take turns on the same board',
             textAlign: TextAlign.center,
-            style: TextStyle(color: const Color(0xFF607A99)),
+            style: TextStyle(color: Colors.white54),
           ),
         ],
       ),
