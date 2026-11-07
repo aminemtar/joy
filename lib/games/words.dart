@@ -349,7 +349,7 @@ class _WordsGameState extends State<WordsGame> {
               word,
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: found.contains(word) ? Colors.amber : Colors.white70,
+                color: found.contains(word) ? Colors.amber : const Color(0xFF345779),
                 decoration:
                     found.contains(word) ? TextDecoration.lineThrough : null,
               ),
@@ -439,7 +439,7 @@ class _WordsGameState extends State<WordsGame> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
                 color: const Color(0xFFD9EBFC),
-                border: Border.all(color: Colors.white24),
+                border: Border.all(color: const Color(0xFFBBD5EF)),
               ),
               child: Text(
                 i < picked.length ? letters[picked[i]] : '',
