@@ -70,8 +70,10 @@ abstract final class JoyTheme {
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: ButtonStyle(
-        foregroundColor: const WidgetStatePropertyAll(Colors.white),
-        backgroundColor: const WidgetStatePropertyAll(accent),
+        foregroundColor: WidgetStateProperty.resolveWith((states) =>
+          states.contains(WidgetState.disabled) ? const Color(0xFF6683A5) : Colors.white),
+        backgroundColor: WidgetStateProperty.resolveWith((states) =>
+          states.contains(WidgetState.disabled) ? const Color(0xFFD9E7F5) : accent),
         minimumSize: const WidgetStatePropertyAll(Size(48, 52)),
         padding: const WidgetStatePropertyAll(
           EdgeInsets.symmetric(horizontal: 20, vertical: 15),
@@ -80,7 +82,12 @@ abstract final class JoyTheme {
           fontFamily: 'Roboto', fontSize: 14, fontWeight: FontWeight.w800,
           letterSpacing: .15,
         )),
-        elevation: const WidgetStatePropertyAll(5),
+        elevation: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.disabled)) return 0;
+          if (states.contains(WidgetState.pressed)) return 1;
+          if (states.contains(WidgetState.hovered)) return 7;
+          return 5;
+        }),
         shadowColor: const WidgetStatePropertyAll(Color(0x55075BC7)),
         overlayColor: WidgetStatePropertyAll(Colors.white.withValues(alpha: .12)),
         shape: WidgetStatePropertyAll(RoundedRectangleBorder(
@@ -106,6 +113,7 @@ abstract final class JoyTheme {
       style: OutlinedButton.styleFrom(
         foregroundColor: accentDeep,
         minimumSize: const Size(48, 50),
+        disabledForegroundColor: const Color(0xFF8BA2BA),
         side: const BorderSide(color: Color(0xFF9CCBFA), width: 1.2),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
