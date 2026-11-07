@@ -236,7 +236,7 @@ class _GameTutorialState extends State<GameTutorial>
           children: [
             Text(
               'STEP ${step + 1} OF 3',
-              style: const TextStyle(color: JoyTheme.muted, letterSpacing: 2),
+              style: const TextStyle(color: JoyTheme.accentDeep, letterSpacing: 2, fontWeight: FontWeight.w900),
             ),
             const SizedBox(height: 20),
             SizedBox(
@@ -275,7 +275,7 @@ class _GameTutorialState extends State<GameTutorial>
                       width: i == step ? 24 : 8,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: i == step ? JoyTheme.accent : JoyTheme.border,
+                        color: i == step ? JoyTheme.accent : const Color(0xFFBBDCF4),
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
