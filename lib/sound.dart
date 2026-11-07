@@ -167,13 +167,14 @@ class JoySounds extends ChangeNotifier with WidgetsBindingObserver {
   void play(SoundEffect effect) {
     if (!canPlay || _celebrating) return;
     final now = _now(), previous = _lastPlayed[effect];
-    final interval = effect == SoundEffect.hit ? 95 : 55;
+    final interval = effect == SoundEffect.hit ? 110 : effect == SoundEffect.tap ? 85 : 65;
     if (previous != null &&
         now.difference(previous).inMilliseconds < interval) {
       return;
     }
     _lastPlayed[effect] = now;
-    unawaited(_safely(() => _output.play(effect, _volume)));
+    final effectVolume = effect == SoundEffect.tap ? _volume * .72 : _volume;
+    unawaited(_safely(() => _output.play(effect, effectVolume)));
   }
 
   /// The result fanfare replaces pending effects instead of layering on top.
