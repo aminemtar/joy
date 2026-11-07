@@ -291,12 +291,12 @@ class _PuzzleGameState extends State<PuzzleGame> {
         children: [
           boardGrid(board.length, width, (i) {
             String label = '';
-            Color color = const Color(0xFF1C294A);
+            Color color = const Color(0xFFE5F3FF);
             if (widget.id == 15) {
               label = board[i] == 0 ? '' : '${board[i]}';
             } else if (widget.id == 20) {
               label = '?';
-              if (matched.contains(i)) color = const Color(0xFF334C79);
+              if (matched.contains(i)) color = const Color(0xFFBFE3FF);
             } else if (widget.id == 17) {
               label =
                   walls.contains(i)
