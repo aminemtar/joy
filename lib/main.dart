@@ -1380,7 +1380,7 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
                   child: Theme(
                     data: JoyTheme.arena,
                     child: ColoredBox(
-                      color: JoyTheme.background,
+                      color: JoyTheme.accent,
                       child:
                           done
                               ? const Center(
