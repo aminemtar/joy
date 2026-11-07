@@ -723,6 +723,8 @@ class _LobbyState extends State<Lobby> {
                     ),
                     const SizedBox(height: 16),
                     JoyPanel(
+                      color: const Color(0xFFE6F7FF),
+                      accentColor: const Color(0xFF59BCE5),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 4,
