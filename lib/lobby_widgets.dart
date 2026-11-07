@@ -40,6 +40,7 @@ class PartySetup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => JoyPanel(
+    color: const Color(0xFFF0F7FF),
     accentColor: JoyTheme.accent,
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
