@@ -57,7 +57,7 @@ class _JoySplashState extends State<JoySplash>
             gradient: RadialGradient(
               center: Alignment(0, -.25),
               radius: 1.2,
-              colors: [Color(0xFF243E86), JoyTheme.background],
+              colors: [Color(0xFFFFFFFF), JoyTheme.background],
             ),
           ),
           child: Stack(
@@ -94,7 +94,7 @@ class _JoySplashState extends State<JoySplash>
                       const Text(
                         'JOY',
                         style: TextStyle(
-                          color: JoyTheme.ink,
+                          color: JoyTheme.accentDeep,
                           fontSize: 48,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 12,
@@ -114,7 +114,7 @@ class _JoySplashState extends State<JoySplash>
                         width: 130,
                         child: LinearProgressIndicator(
                           value: t,
-                          color: JoyTheme.ink,
+                          color: JoyTheme.accent,
                           backgroundColor: JoyTheme.border,
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -155,9 +155,9 @@ class _OrbitPainter extends CustomPainter {
         3 + (i % 3) * 2,
         Paint()
           ..color = [
-            const Color(0xFF397BFF),
-            const Color(0xFF78A8FF),
-            const Color(0xFFB7D7FF),
+            const Color(0xFF087BFF),
+            const Color(0xFF35B7FF),
+            const Color(0xFF8BD8FF),
           ][i % 3].withValues(alpha: .16 + .38 * t),
       );
     }
