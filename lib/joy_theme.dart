@@ -225,8 +225,6 @@ abstract final class JoyTheme {
         fontWeight: FontWeight.w400,
       ),
       actionsPadding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-      actionsAlignment: MainAxisAlignment.end,
-      actionsOverflowButtonSpacing: 10,
     ),
     bottomSheetTheme: const BottomSheetThemeData(
       backgroundColor: surface,
