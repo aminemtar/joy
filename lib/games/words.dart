@@ -395,7 +395,7 @@ class _WordsGameState extends State<WordsGame> {
                       selected: selection.contains(i),
                       color:
                           marked.contains(i)
-                              ? const Color(0xFF4C426B)
+                              ? const Color(0xFF8CCFFF)
                               : const Color(0xFFEAF6FF),
                       child: Text(
                         search.letters[i],
