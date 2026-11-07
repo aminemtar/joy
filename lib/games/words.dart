@@ -200,7 +200,7 @@ class _WordsGameState extends State<WordsGame> {
                         ? const Color(0xFF9FD5FF)
                         : cells.contains(i)
                         ? const Color(0xFFBDE4FF)
-                        : const Color(0xFF1C294A),
+                        : const Color(0xFFEAF6FF),
                 onTap: () {
                   if (cells.contains(i) && confirmed == null) {
                     setState(() => cursor = cells.indexOf(i));
@@ -396,7 +396,7 @@ class _WordsGameState extends State<WordsGame> {
                       color:
                           marked.contains(i)
                               ? const Color(0xFF4C426B)
-                              : const Color(0xFF1C294A),
+                              : const Color(0xFFEAF6FF),
                       child: Text(
                         search.letters[i],
                         style: const TextStyle(
