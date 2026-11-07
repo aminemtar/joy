@@ -57,7 +57,7 @@ class _JoySplashState extends State<JoySplash>
             gradient: RadialGradient(
               center: Alignment(0, -.25),
               radius: 1.2,
-              colors: [Color(0xFF243E86), JoyTheme.background],
+              colors: [Color(0xFF53BDFF), Color(0xFF087BFF), Color(0xFF034FBF)],
             ),
           ),
           child: Stack(
@@ -104,8 +104,9 @@ class _JoySplashState extends State<JoySplash>
                       const Text(
                         'SMALL GAMES. BIG RIVALRIES.',
                         style: TextStyle(
-                          color: JoyTheme.muted,
+                          color: const Color(0xFFEAF7FF),
                           letterSpacing: 2,
+                          fontWeight: FontWeight.w800,
                           fontSize: 11,
                         ),
                       ),
@@ -115,7 +116,7 @@ class _JoySplashState extends State<JoySplash>
                         child: LinearProgressIndicator(
                           value: t,
                           color: JoyTheme.ink,
-                          backgroundColor: JoyTheme.border,
+                          backgroundColor: const Color(0xFFB8DFFF),
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
@@ -155,9 +156,9 @@ class _OrbitPainter extends CustomPainter {
         3 + (i % 3) * 2,
         Paint()
           ..color = [
-            const Color(0xFF507CFF),
-            const Color(0xFFFF6F83),
-            const Color(0xFFFFC16D),
+            const Color(0xFFDFF5FF),
+            const Color(0xFF8ED8FF),
+            const Color(0xFFFFFFFF),
           ][i % 3].withValues(alpha: .20 + .35 * t),
       );
     }
