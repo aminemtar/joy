@@ -197,10 +197,10 @@ class _WordsGameState extends State<WordsGame> {
                 selected: cells.contains(i),
                 color:
                     confirmed != null
-                        ? const Color(0xFF2D416C)
+                        ? const Color(0xFFB9DAFF)
                         : cells.contains(i)
-                        ? const Color(0xFF28365C)
-                        : const Color(0xFF1C294A),
+                        ? const Color(0xFFCDE5FF)
+                        : const Color(0xFFEAF4FF),
                 onTap: () {
                   if (cells.contains(i) && confirmed == null) {
                     setState(() => cursor = cells.indexOf(i));
@@ -395,8 +395,8 @@ class _WordsGameState extends State<WordsGame> {
                       selected: selection.contains(i),
                       color:
                           marked.contains(i)
-                              ? const Color(0xFF4C426B)
-                              : const Color(0xFF1C294A),
+                              ? const Color(0xFFE7E1FF)
+                              : const Color(0xFFEAF4FF),
                       child: Text(
                         search.letters[i],
                         style: const TextStyle(
@@ -438,7 +438,7 @@ class _WordsGameState extends State<WordsGame> {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
-                color: const Color(0xFF24355B),
+                color: const Color(0xFFD9EBFC),
                 border: Border.all(color: Colors.white24),
               ),
               child: Text(
