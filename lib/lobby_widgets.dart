@@ -12,14 +12,26 @@ class JoyPanel extends StatelessWidget {
     this.padding = const EdgeInsets.all(20),
   });
   @override
-  Widget build(BuildContext context) => Material(
-    color: JoyTheme.surface,
-    shape: RoundedRectangleBorder(
-      side: const BorderSide(color: JoyTheme.border),
-      borderRadius: BorderRadius.circular(24),
+  Widget build(BuildContext context) => Container(
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(25),
+      gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Colors.white, Color(0xFFF3FAFF), Color(0xFFDCEFFF)],
+        stops: [0, .52, 1],
+      ),
+      border: Border.all(color: Colors.white, width: 1.4),
+      boxShadow: const [
+        BoxShadow(color: Color(0x660044A8), blurRadius: 22, offset: Offset(0, 11)),
+        BoxShadow(color: Color(0x99FFFFFF), blurRadius: 1, offset: Offset(0, -2)),
+        BoxShadow(color: Color(0x2275BFFF), blurRadius: 7, spreadRadius: -2, offset: Offset(0, 3)),
+      ],
     ),
-    clipBehavior: Clip.antiAlias,
-    child: Padding(padding: padding, child: child),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: Padding(padding: padding, child: child),
+    ),
   );
 }
 
@@ -73,25 +85,43 @@ class PartySetup extends StatelessWidget {
                   selected: count == n,
                   button: true,
                   child: Material(
-                    color: count == n ? JoyTheme.accent : JoyTheme.background,
-                    borderRadius: BorderRadius.circular(16),
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(17),
                     child: InkWell(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(17),
                       onTap: () => onChanged(n),
                       child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 180),
+                        duration: const Duration(milliseconds: 260),
+                        curve: Curves.easeOutCubic,
                         padding: const EdgeInsets.symmetric(
                           vertical: 16,
                           horizontal: 4,
                         ),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
+                          gradient: count == n
+                              ? const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [Color(0xFF52BDFF), Color(0xFF087BFF), Color(0xFF0754C5)],
+                                )
+                              : const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [Colors.white, Color(0xFFEAF6FF)],
+                                ),
+                          borderRadius: BorderRadius.circular(17),
                           border: Border.all(
-                            color:
-                                count == n
-                                    ? const Color(0xFF91ACFF)
-                                    : JoyTheme.border,
+                            color: count == n ? const Color(0xFFBCEBFF) : const Color(0xFFD1E9F8),
+                            width: 1.2,
                           ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: count == n ? const Color(0x77004DAA) : const Color(0x22004488),
+                              blurRadius: count == n ? 16 : 9,
+                              offset: Offset(0, count == n ? 8 : 5),
+                            ),
+                            const BoxShadow(color: Color(0xAAFFFFFF), blurRadius: 1, offset: Offset(0, -1)),
+                          ],
                         ),
                         child: Column(
                           children: [
@@ -101,7 +131,7 @@ class PartySetup extends StatelessWidget {
                                   : n == 3
                                   ? Icons.groups_rounded
                                   : Icons.diversity_3_rounded,
-                              color: count == n ? Colors.white : JoyTheme.muted,
+                              color: count == n ? Colors.white : JoyTheme.accentDeep,
                               size: 25,
                             ),
                             const SizedBox(height: 8),
@@ -110,7 +140,7 @@ class PartySetup extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
-                                color: JoyTheme.ink,
+                                color: count == n ? Colors.white : JoyTheme.ink,
                               ),
                             ),
                           ],
@@ -135,8 +165,17 @@ class PartySetup extends StatelessWidget {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: JoyTheme.raised,
-                  borderRadius: BorderRadius.circular(12),
+                  gradient: const LinearGradient(
+                    colors: [Colors.white, Color(0xFFE5F3FF)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(13),
+                  border: Border.all(color: const Color(0xFFD3EAFB)),
+                  boxShadow: const [
+                    BoxShadow(color: Color(0x22004488), blurRadius: 8, offset: Offset(0, 4)),
+                    BoxShadow(color: Colors.white, blurRadius: 1, offset: Offset(0, -1)),
+                  ],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -188,14 +227,22 @@ class InfoPill extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
     decoration: BoxDecoration(
-      color: JoyTheme.background.withValues(alpha: .4),
-      borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: JoyTheme.border),
+      gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Colors.white, Color(0xFFE2F3FF)],
+      ),
+      borderRadius: BorderRadius.circular(13),
+      border: Border.all(color: const Color(0xFFC9E6FA), width: 1.1),
+      boxShadow: const [
+        BoxShadow(color: Color(0x22004488), blurRadius: 9, offset: Offset(0, 4)),
+        BoxShadow(color: Colors.white, blurRadius: 1, offset: Offset(0, -1)),
+      ],
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: const Color(0xFF91ACFF)),
+        Icon(icon, size: 14, color: JoyTheme.accentDeep),
         const SizedBox(width: 6),
         Text(
           label,
