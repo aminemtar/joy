@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   shared_preferences: ^2.5.3
+  lottie: ^3.3.1
 dev_dependencies:
   audioplayers_platform_interface: ^7.2.0
   flutter_test:
@@ -21,4 +22,5 @@ flutter:
     - assets/art/game_atlas.png
     - assets/art/strategy_atlas.png
     - assets/art/app_icon.png
+    - assets/animations/joy_splash_orbit.json
     - assets/audio/
