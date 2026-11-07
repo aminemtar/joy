@@ -568,6 +568,8 @@ class _LobbyState extends State<Lobby> {
       );
     }
     return Scaffold(
+      // Electric cobalt is the HOME SCREEN background, not the gameplay canvas.
+      backgroundColor: const Color(0xFF087BFF),
       body: SafeArea(
         child: CustomScrollView(
           slivers: [
@@ -592,9 +594,13 @@ class _LobbyState extends State<Lobby> {
                         const Text(
                           'JOY',
                           style: TextStyle(
+                            color: Colors.white,
                             fontSize: 38,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 5,
+                            shadows: [
+                              Shadow(color: Color(0x553052A0), blurRadius: 12, offset: Offset(0, 3)),
+                            ],
                           ),
                         ),
                         const Spacer(),
@@ -625,7 +631,7 @@ class _LobbyState extends State<Lobby> {
                     ),
                     const Text(
                       'Small games. Big rivalries.',
-                      style: TextStyle(color: JoyTheme.muted, fontSize: 17),
+                      style: TextStyle(color: Color(0xFFEAF6FF), fontSize: 17, fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 24),
                     Container(
