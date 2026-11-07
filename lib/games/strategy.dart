@@ -510,7 +510,7 @@ class _StrategyGameState extends State<StrategyGame> {
                         onTap: () => move(i),
                         color:
                             open
-                                ? const Color(0xFF28354B)
+                                ? const Color(0xFFBFE3FF)
                                 : const Color(0xFF1C294A),
                         child:
                             open
