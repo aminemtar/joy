@@ -848,7 +848,7 @@ class _LobbyState extends State<Lobby> {
                   padding: EdgeInsets.all(24),
                   child: Text(
                     'No games here yet. Try another filter, save a favorite, or play your first game.',
-                    style: TextStyle(color: JoyTheme.muted),
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
@@ -903,7 +903,8 @@ class _LobbyState extends State<Lobby> {
                                                   : 'Add favorite',
                                           style: IconButton.styleFrom(
                                             backgroundColor: JoyTheme.cardRaised,
-                                            foregroundColor: JoyTheme.cardAccent,
+                                            foregroundColor: JoyTheme.cardMuted,
+                                            shape: const CircleBorder(),
                                           ),
                                           onPressed: () async {
                                             await data.toggleFavorite(
