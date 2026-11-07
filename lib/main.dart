@@ -654,7 +654,7 @@ class _LobbyState extends State<Lobby> {
                     ),
                     const Text(
                       'Small games. Big rivalries.',
-                      style: TextStyle(color: JoyTheme.muted, fontSize: 17),
+                      style: TextStyle(color: Color(0xFFEAF6FF), fontSize: 17, fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 24),
                     JoyPanel(
@@ -755,6 +755,10 @@ class _LobbyState extends State<Lobby> {
                     ),
                     const SizedBox(height: 12),
                     TextButton.icon(
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        textStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15),
+                      ),
                       onPressed:
                           () => Navigator.push(
                             context,
@@ -772,16 +776,18 @@ class _LobbyState extends State<Lobby> {
                           child: Text(
                             'Find your next game',
                             style: TextStyle(
+                              color: Colors.white,
                               fontSize: 21,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w900,
                             ),
                           ),
                         ),
                         Text(
                           '${filtered.length} games',
                           style: const TextStyle(
-                            color: JoyTheme.muted,
+                            color: Color(0xFFDCEEFF),
                             fontSize: 12,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
