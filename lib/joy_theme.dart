@@ -48,13 +48,11 @@ abstract final class JoyTheme {
       onSecondaryContainer: ink,
       surfaceContainerHighest: raised,
     ),
-    scaffoldMessengerTheme: const ScaffoldMessengerThemeData(
-      snackBarTheme: SnackBarThemeData(
-        backgroundColor: Color(0xFF20365E),
-        contentTextStyle: TextStyle(color: ink, fontWeight: FontWeight.w600),
-        behavior: SnackBarBehavior.floating,
-        elevation: 12,
-      ),
+    snackBarTheme: const SnackBarThemeData(
+      backgroundColor: Color(0xFF20365E),
+      contentTextStyle: TextStyle(color: ink, fontWeight: FontWeight.w600),
+      behavior: SnackBarBehavior.floating,
+      elevation: 12,
     ),
     appBarTheme: const AppBarTheme(
       backgroundColor: background,
