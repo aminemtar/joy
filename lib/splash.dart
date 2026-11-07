@@ -155,10 +155,10 @@ class _OrbitPainter extends CustomPainter {
         3 + (i % 3) * 2,
         Paint()
           ..color = [
-            const Color(0xFF507CFF),
-            const Color(0xFFFF6F83),
-            const Color(0xFFFFC16D),
-          ][i % 3].withValues(alpha: .20 + .35 * t),
+            const Color(0xFF397BFF),
+            const Color(0xFF78A8FF),
+            const Color(0xFFB7D7FF),
+          ][i % 3].withValues(alpha: .16 + .38 * t),
       );
     }
   }
