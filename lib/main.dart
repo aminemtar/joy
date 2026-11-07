@@ -865,7 +865,7 @@ class _LobbyState extends State<Lobby> {
                   padding: EdgeInsets.all(24),
                   child: Text(
                     'No games here yet. Try another filter, save a favorite, or play your first game.',
-                    style: TextStyle(color: JoyTheme.muted),
+                    style: TextStyle(color: Color(0xFFEAF6FF), fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
