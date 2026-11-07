@@ -432,7 +432,7 @@ class _StrategyGameState extends State<StrategyGame> {
                       legal = reversi.captures(i, turn + 1).isNotEmpty;
                   return gameTile(
                     onTap: () => move(i),
-                    color: const Color(0xFF1A304C),
+                    color: const Color(0xFFE2F0FF),
                     child:
                         v == 0
                             ? (legal
@@ -476,9 +476,9 @@ class _StrategyGameState extends State<StrategyGame> {
                         color:
                             hit
                                 ? (board.ships.contains(i)
-                                    ? const Color(0xFF704356)
-                                    : const Color(0xFF1D3954))
-                                : const Color(0xFF162844),
+                                    ? const Color(0xFFF5DCE4)
+                                    : const Color(0xFFD5E9FC))
+                                : const Color(0xFFEAF4FF),
                         child: Icon(
                           hit
                               ? (board.ships.contains(i)
@@ -510,8 +510,8 @@ class _StrategyGameState extends State<StrategyGame> {
                         onTap: () => move(i),
                         color:
                             open
-                                ? const Color(0xFF28354B)
-                                : const Color(0xFF1C294A),
+                                ? const Color(0xFFD3E8FB)
+                                : const Color(0xFFE5F2FF),
                         child:
                             open
                                 ? (bomb
