@@ -42,7 +42,7 @@ class _JoyAppState extends State<JoyApp> {
   Widget build(BuildContext context) => MaterialApp(
     debugShowCheckedModeBanner: false,
     title: 'JOY',
-    theme: JoyTheme.dark,
+    theme: JoyTheme.light,
     builder:
         (context, child) => ListenableBuilder(
           listenable: PartyData.instance,
