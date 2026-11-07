@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 abstract final class JoyTheme {
   // App canvas and surfaces.
   static const background = Color(0xFF087BFF);
+  static const canvas = Color(0xFFEAF6FF);
   static const surface = Color(0xFFF7FCFF);
   static const raised = Color(0xFFE8F5FF);
   static const ink = Color(0xFF102B52);
@@ -32,7 +33,7 @@ abstract final class JoyTheme {
     useMaterial3: true,
     fontFamily: 'Roboto',
     brightness: Brightness.light,
-    scaffoldBackgroundColor: background,
+    scaffoldBackgroundColor: canvas,
     colorScheme: ColorScheme.fromSeed(
       seedColor: accent,
       brightness: Brightness.light,
