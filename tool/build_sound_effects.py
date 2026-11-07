@@ -22,6 +22,30 @@ def tone(frequency, duration, *, end=None, amplitude=.32, sparkle=False):
         result.append(amplitude * max(0, envelope) * value)
     return result
 
+def soft_pluck():
+    """A gentle, rounded two-harmonic UI note with a quick bloom and smooth decay."""
+    duration = .105
+    count = round(duration * RATE)
+    phases = [0.0, 0.0, 0.0]
+    result = []
+    for i in range(count):
+        t = i / RATE
+        progress = i / max(1, count - 1)
+        frequencies = (680 - 105 * progress, 1360 - 210 * progress, 2040 - 315 * progress)
+        for index, frequency in enumerate(frequencies):
+            phases[index] += 2 * math.pi * frequency / RATE
+        attack = 1 - math.exp(-t / .004)
+        decay = math.exp(-t / .043)
+        release = min(1.0, (duration - t) / .018)
+        envelope = max(0.0, attack * decay * release)
+        sample = (
+            math.sin(phases[0])
+            + .22 * math.sin(phases[1])
+            + .07 * math.sin(phases[2])
+        )
+        result.append(.115 * envelope * sample)
+    return result
+
 def melody(notes, seconds=.11):
     values = []
     for hz in notes:
@@ -38,7 +62,7 @@ def write(name, samples):
 
 OUT.mkdir(parents=True, exist_ok=True)
 effects = {
-    'tap': tone(850, .055, end=650, amplitude=.18),
+    'tap': soft_pluck(),
     'flip': tone(450, .11, end=1150, amplitude=.23),
     'correct': melody([659.25, 987.77], .11),
     'wrong': melody([311.13, 233.08], .14),
