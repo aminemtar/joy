@@ -484,11 +484,11 @@ class _TrafficPainter extends CustomPainter {
     final p = Paint();
     c.drawRRect(
       RRect.fromRectAndRadius(Offset.zero & s, const Radius.circular(20)),
-      p..color = const Color(0xFFEAF6FF),
+      p..color = const Color(0xFF087BFF),
     );
     c.drawRect(
       Rect.fromLTWH(0, s.height * .35, s.width, s.height * .3),
-      p..color = const Color(0xFFD4EDFF),
+      p..color = const Color(0xFF36A2FF),
     );
     c.drawRect(Rect.fromLTWH(s.width * .38, 0, s.width * .24, s.height), p);
     for (final axis in [0, 1]) {
