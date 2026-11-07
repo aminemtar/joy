@@ -308,6 +308,7 @@ class _WordsGameState extends State<WordsGame> {
                 ],
               ),
         ),
+        const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
