@@ -17,25 +17,27 @@ class JoyPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     decoration: BoxDecoration(
-      gradient: highlighted ? JoyTheme.blueGradient : JoyTheme.panelGradient,
+      gradient: highlighted
+          ? JoyTheme.blueGradient
+          : JoyTheme.panelGradient,
       borderRadius: BorderRadius.circular(25),
       border: Border.all(
-        color: highlighted
-            ? const Color(0xFF83B4FF)
-            : const Color(0xFF304A77),
-        width: highlighted ? 1.2 : .85,
+        color: highlighted ? const Color(0xFF8ACBFF) : Colors.white,
+        width: highlighted ? 1.2 : 1.1,
       ),
       boxShadow: [
         BoxShadow(
-          color: highlighted ? const Color(0x55397BFF) : const Color(0x44000000),
-          blurRadius: highlighted ? 25 : 17,
+          color: highlighted
+              ? const Color(0x553B9DFF)
+              : const Color(0x223D83BD),
+          blurRadius: highlighted ? 27 : 18,
           spreadRadius: highlighted ? 1 : 0,
           offset: const Offset(0, 9),
         ),
-        const BoxShadow(
-          color: Color(0x223D75D8),
+        BoxShadow(
+          color: Colors.white.withValues(alpha: highlighted ? .22 : .9),
           blurRadius: 1,
-          offset: Offset(0, -1),
+          offset: const Offset(0, -1),
         ),
       ],
     ),
@@ -52,12 +54,12 @@ class JoyPanel extends StatelessWidget {
             right: 24,
             child: IgnorePointer(
               child: Container(
-                height: 1,
+                height: 2,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
                       Colors.transparent,
-                      Colors.white.withValues(alpha: .20),
+                      Colors.white.withValues(alpha: .9),
                       Colors.transparent,
                     ],
                   ),
@@ -98,7 +100,11 @@ class PartySetup extends StatelessWidget {
             const Expanded(
               child: Text(
                 'Your party',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+                style: TextStyle(
+                  fontSize: 20,
+                  color: JoyTheme.ink,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
             ),
             TextButton.icon(
@@ -127,31 +133,25 @@ class PartySetup extends StatelessWidget {
                       gradient: count == n
                           ? JoyTheme.blueGradient
                           : const LinearGradient(
-                              colors: [Color(0xFF192B4A), Color(0xFF111D34)],
+                              colors: [Colors.white, Color(0xFFEAF6FF)],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
                       borderRadius: BorderRadius.circular(17),
                       border: Border.all(
                         color: count == n
-                            ? const Color(0xFF91BDFF)
+                            ? const Color(0xFF9DD5FF)
                             : JoyTheme.border,
                       ),
-                      boxShadow: count == n
-                          ? const [
-                              BoxShadow(
-                                color: Color(0x55397BFF),
-                                blurRadius: 14,
-                                offset: Offset(0, 5),
-                              ),
-                            ]
-                          : const [
-                              BoxShadow(
-                                color: Color(0x33000000),
-                                blurRadius: 8,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
+                      boxShadow: [
+                        BoxShadow(
+                          color: count == n
+                              ? const Color(0x443B9DFF)
+                              : const Color(0x1D4E8DBD),
+                          blurRadius: count == n ? 15 : 9,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
                     ),
                     child: Material(
                       color: Colors.transparent,
@@ -172,16 +172,16 @@ class PartySetup extends StatelessWidget {
                                     : n == 3
                                     ? Icons.groups_rounded
                                     : Icons.diversity_3_rounded,
-                                color: Colors.white,
+                                color: count == n ? Colors.white : JoyTheme.accent,
                                 size: 25,
                               ),
                               const SizedBox(height: 8),
                               Text(
                                 '$n players',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                  color: count == n ? Colors.white : JoyTheme.ink,
                                 ),
                               ),
                             ],
@@ -202,13 +202,10 @@ class PartySetup extends StatelessWidget {
           children: [
             for (var i = 0; i < count; i++)
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 11,
-                  vertical: 9,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF20365B), Color(0xFF162743)],
+                    colors: [Colors.white, Color(0xFFEAF6FF)],
                   ),
                   borderRadius: BorderRadius.circular(13),
                   border: Border.all(color: JoyTheme.border),
@@ -229,8 +226,8 @@ class PartySetup extends StatelessWidget {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: playerColors[i].withValues(alpha: .55),
-                            blurRadius: 7,
+                            color: playerColors[i].withValues(alpha: .4),
+                            blurRadius: 6,
                           ),
                         ],
                       ),
@@ -239,8 +236,9 @@ class PartySetup extends StatelessWidget {
                     Text(
                       names[i],
                       style: const TextStyle(
+                        color: JoyTheme.ink,
                         fontSize: 12,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -271,29 +269,29 @@ class InfoPill extends StatelessWidget {
     padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
     decoration: BoxDecoration(
       gradient: const LinearGradient(
-        colors: [Color(0xFF294B8A), Color(0xFF1A315C)],
+        colors: [Color(0xFFE5F4FF), Colors.white],
       ),
-      borderRadius: BorderRadius.circular(11),
-      border: Border.all(color: const Color(0xFF668DCE).withValues(alpha: .65)),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: const Color(0xFFB8DFFF)),
       boxShadow: const [
         BoxShadow(
-          color: Color(0x33397BFF),
-          blurRadius: 9,
-          offset: Offset(0, 3),
+          color: Color(0x223B9DFF),
+          blurRadius: 10,
+          offset: Offset(0, 4),
         ),
       ],
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: const Color(0xFFB8D5FF)),
+        Icon(icon, size: 14, color: JoyTheme.accent),
         const SizedBox(width: 6),
         Text(
           label,
           style: const TextStyle(
             fontSize: 11,
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
+            color: JoyTheme.accentDeep,
+            fontWeight: FontWeight.w900,
           ),
         ),
       ],
