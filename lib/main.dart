@@ -268,7 +268,7 @@ class _LobbyState extends State<Lobby> {
                                 ? null
                                 : () async {
                                   update(() => sharing = true);
-                                  final message = await shareScorecard(
+                                  final message = await shareResultsText(
                                     'Party results',
                                     participants,
                                     points,
@@ -282,7 +282,7 @@ class _LobbyState extends State<Lobby> {
                                   }
                                 },
                         icon: const Icon(Icons.ios_share_rounded),
-                        label: const Text('Share scorecard'),
+                        label: const Text('Share'),
                       ),
                       FilledButton(
                         onPressed: () => Navigator.pop(c),
@@ -1081,7 +1081,7 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
                           ? null
                           : () async {
                             update(() => sharing = true);
-                            final message = await shareScorecard(
+                            final message = await shareResultsText(
                               '${games[widget.id].name} • match wins',
                               widget.names,
                               [
@@ -1097,7 +1097,7 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
                             }
                           },
                   icon: const Icon(Icons.ios_share_rounded),
-                  label: const Text('Share scorecard'),
+                  label: const Text('Share'),
                 ),
                 if (widget.allowRematch)
                   FilledButton.icon(
@@ -1445,7 +1445,7 @@ class _WinConfettiOverlayState extends State<_WinConfettiOverlay>
   late final AnimationController _controller = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 2400),
-  )..forward();
+  )..repeat();
 
   @override
   void dispose() {
