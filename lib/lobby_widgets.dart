@@ -30,7 +30,10 @@ class JoyPanel extends StatelessWidget {
     ),
     child: ClipRRect(
       borderRadius: BorderRadius.circular(24),
-      child: Padding(padding: padding, child: child),
+      child: Material(
+        color: Colors.transparent,
+        child: Padding(padding: padding, child: child),
+      ),
     ),
   );
 }
