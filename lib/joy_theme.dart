@@ -94,8 +94,6 @@ abstract final class JoyTheme {
         foregroundColor: accentDeep,
         backgroundColor: surface,
         minimumSize: const Size(48, 52),
-        elevation: 4,
-        shadowColor: shadow,
         side: const BorderSide(color: border, width: 1.2),
         textStyle: const TextStyle(fontWeight: FontWeight.w800),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(17)),
@@ -112,8 +110,6 @@ abstract final class JoyTheme {
       style: IconButton.styleFrom(
         foregroundColor: accentDeep,
         backgroundColor: surface,
-        elevation: 5,
-        shadowColor: shadow,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     ),
