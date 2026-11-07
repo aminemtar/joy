@@ -593,6 +593,8 @@ class _LobbyState extends State<Lobby> {
                         const Text(
                           'JOY',
                           style: TextStyle(
+                            color: Colors.white,
+                            shadows: [Shadow(color: Color(0x66002F80), blurRadius: 14, offset: Offset(0, 3))],
                             fontSize: 38,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 5,
@@ -824,7 +826,7 @@ class _LobbyState extends State<Lobby> {
                             Padding(
                               padding: const EdgeInsets.only(right: 8),
                               child: ChoiceChip(
-                                label: Text(c),
+                                label: Text(c, style: TextStyle(color: category == c ? Colors.white : JoyTheme.ink)),
                                 selected: category == c,
                                 onSelected: (_) {
                                   JoySounds.instance.play(SoundEffect.tap);
