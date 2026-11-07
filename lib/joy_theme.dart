@@ -21,7 +21,6 @@ abstract final class JoyTheme {
     useMaterial3: true,
     fontFamily: 'Roboto',
     brightness: Brightness.light,
-    scaffoldBackgroundColor: background,
     canvasColor: surface,
     colorScheme: ColorScheme.fromSeed(
       seedColor: accent,
