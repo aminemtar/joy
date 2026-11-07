@@ -24,7 +24,7 @@
                                 <color key="textColor" red="0.58" green="0.68" blue="0.88" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                             </label>
                         </subviews>
-                        <color key="backgroundColor" red="0.043" green="0.075" blue="0.18" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <color key="backgroundColor" red="0.0431372549" green="0.0666666667" blue="0.1568627451" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
                             <constraint firstItem="JOY-wordmark" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="joy-center-x"/>
                             <constraint firstItem="JOY-wordmark" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" constant="-12" id="joy-center-y"/>
