@@ -154,7 +154,7 @@ class HistoryScreen extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     r.winner < 0 ? 'Draw' : '${r.names[r.winner]} won',
-                    style: const TextStyle(color: Color(0xFF075BC7)),
+                    style: const TextStyle(color: Color(0xFF91ACFF)),
                   ),
                   const SizedBox(height: 6),
                   Text(
