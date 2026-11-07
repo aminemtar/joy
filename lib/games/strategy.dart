@@ -1,4 +1,5 @@
 import '../sound.dart';
+import '../joy_theme.dart';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'game_stage.dart';
