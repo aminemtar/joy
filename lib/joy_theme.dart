@@ -95,11 +95,45 @@ abstract final class JoyTheme {
     ),
     dialogTheme: DialogThemeData(
       backgroundColor: surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      surfaceTintColor: Colors.transparent,
+      shadowColor: const Color(0x99000000),
+      elevation: 24,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 24),
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(28),
+        side: const BorderSide(color: Color(0xFF34466D), width: 1),
+      ),
+      titleTextStyle: const TextStyle(
+        color: ink,
+        fontSize: 21,
+        height: 1.2,
+        fontWeight: FontWeight.w800,
+        letterSpacing: -.35,
+      ),
+      contentTextStyle: const TextStyle(
+        color: muted,
+        fontSize: 14,
+        height: 1.55,
+        fontWeight: FontWeight.w400,
+      ),
+      actionsPadding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+      actionsAlignment: MainAxisAlignment.end,
+      actionsOverflowButtonSpacing: 10,
     ),
-    bottomSheetTheme: const BottomSheetThemeData(
+    bottomSheetTheme: BottomSheetThemeData(
       backgroundColor: surface,
+      modalBackgroundColor: surface,
+      surfaceTintColor: Colors.transparent,
+      elevation: 24,
       showDragHandle: true,
+      dragHandleColor: const Color(0xFF60749B),
+      dragHandleSize: const Size(42, 4),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        side: BorderSide(color: Color(0xFF34466D), width: 1),
+      ),
+      modalBarrierColor: const Color(0xB8000718),
     ),
     dividerTheme: const DividerThemeData(color: border),
   );
