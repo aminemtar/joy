@@ -440,7 +440,7 @@ class _StrategyGameState extends State<StrategyGame> {
                                   width: 9,
                                   height: 9,
                                   decoration: const BoxDecoration(
-                                    color: Colors.white38,
+                                    color: const Color(0xFF8CBDE4),
                                     shape: BoxShape.circle,
                                   ),
                                 )
