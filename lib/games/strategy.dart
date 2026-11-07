@@ -344,7 +344,7 @@ class _StrategyGameState extends State<StrategyGame> {
               child: CircleAvatar(
                 radius: 22,
                 backgroundColor:
-                    i < guess.length ? colors[guess[i]] : const Color(0xFFDBEAF9),
+                    i < guess.length ? colors[guess[i]] : Colors.white12,
                 child: Text(i < guess.length ? '${guess[i] + 1}' : '?'),
               ),
             ),
@@ -432,7 +432,7 @@ class _StrategyGameState extends State<StrategyGame> {
                       legal = reversi.captures(i, turn + 1).isNotEmpty;
                   return gameTile(
                     onTap: () => move(i),
-                    color: const Color(0xFFE2F0FF),
+                    color: const Color(0xFF1A304C),
                     child:
                         v == 0
                             ? (legal
@@ -440,7 +440,7 @@ class _StrategyGameState extends State<StrategyGame> {
                                   width: 9,
                                   height: 9,
                                   decoration: const BoxDecoration(
-                                    color: const Color(0xFF8ABEF0),
+                                    color: Colors.white38,
                                     shape: BoxShape.circle,
                                   ),
                                 )
@@ -476,16 +476,16 @@ class _StrategyGameState extends State<StrategyGame> {
                         color:
                             hit
                                 ? (board.ships.contains(i)
-                                    ? const Color(0xFFF5DCE4)
-                                    : const Color(0xFFD5E9FC))
-                                : const Color(0xFFEAF4FF),
+                                    ? const Color(0xFF704356)
+                                    : const Color(0xFF1D3954))
+                                : const Color(0xFF162844),
                         child: Icon(
                           hit
                               ? (board.ships.contains(i)
                                   ? Icons.local_fire_department_rounded
                                   : Icons.water_drop_rounded)
                               : Icons.radar_rounded,
-                          color: hit ? const Color(0xFFD94B65) : const Color(0xFF4D80B5),
+                          color: hit ? Colors.white : Colors.white24,
                         ),
                       );
                     }),
@@ -510,8 +510,8 @@ class _StrategyGameState extends State<StrategyGame> {
                         onTap: () => move(i),
                         color:
                             open
-                                ? const Color(0xFFD3E8FB)
-                                : const Color(0xFFE5F2FF),
+                                ? const Color(0xFF28354B)
+                                : const Color(0xFF1C294A),
                         child:
                             open
                                 ? (bomb
@@ -534,7 +534,7 @@ class _StrategyGameState extends State<StrategyGame> {
                                 )
                                 : const Icon(
                                   Icons.square_rounded,
-                                  color: const Color(0xFF9ABCE0),
+                                  color: Colors.white10,
                                 ),
                       );
                     }),
