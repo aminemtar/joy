@@ -108,6 +108,84 @@ class JoyPanel extends StatelessWidget {
   }
 }
 
+class JoyActionButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback? onPressed;
+  final bool primary;
+  const JoyActionButton({
+    super.key,
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+    this.primary = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onPressed != null;
+    final colors = primary
+        ? const [Color(0xFF46B8FF), Color(0xFF087BFF), Color(0xFF0754D6)]
+        : const [Colors.white, Color(0xFFEAF6FF), Color(0xFFD5EAFF)];
+    return Opacity(
+      opacity: enabled ? 1 : .48,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: colors,
+          ),
+          borderRadius: BorderRadius.circular(19),
+          border: Border.all(
+            color: primary ? const Color(0xFFB7E8FF) : Colors.white,
+            width: 1.3,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF003D9E).withValues(alpha: primary ? .34 : .16),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            ),
+            const BoxShadow(
+              color: Color(0x88FFFFFF),
+              blurRadius: 1,
+              offset: Offset(0, -1),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(19),
+          child: InkWell(
+            onTap: onPressed,
+            borderRadius: BorderRadius.circular(19),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: 19, color: primary ? Colors.white : JoyTheme.accentDeep),
+                  const SizedBox(width: 9),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: primary ? Colors.white : JoyTheme.accentDeep,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 14,
+                      letterSpacing: .1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class PartySetup extends StatelessWidget {
   final int count;
   final List<String> names;
