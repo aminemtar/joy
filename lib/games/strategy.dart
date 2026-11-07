@@ -432,7 +432,7 @@ class _StrategyGameState extends State<StrategyGame> {
                       legal = reversi.captures(i, turn + 1).isNotEmpty;
                   return gameTile(
                     onTap: () => move(i),
-                    color: const Color(0xFF1A304C),
+                    color: const Color(0xFFD8EEFF),
                     child:
                         v == 0
                             ? (legal
