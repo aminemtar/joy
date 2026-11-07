@@ -344,7 +344,7 @@ class _StrategyGameState extends State<StrategyGame> {
               child: CircleAvatar(
                 radius: 22,
                 backgroundColor:
-                    i < guess.length ? colors[guess[i]] : Colors.white12,
+                    i < guess.length ? colors[guess[i]] : const Color(0xFFDBEAF9),
                 child: Text(i < guess.length ? '${guess[i] + 1}' : '?'),
               ),
             ),
