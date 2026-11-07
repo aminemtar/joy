@@ -391,9 +391,14 @@ class InfoPill extends StatelessWidget {
       border: Border.all(color: Colors.white, width: 1.2),
       boxShadow: const [
         BoxShadow(
-          color: Color(0x223B9DFF),
-          blurRadius: 10,
-          offset: Offset(0, 4),
+          color: Color(0x334078B8),
+          blurRadius: 14,
+          offset: Offset(0, 6),
+        ),
+        BoxShadow(
+          color: Color(0xCCFFFFFF),
+          blurRadius: 1,
+          offset: Offset(0, -1),
         ),
       ],
     ),
