@@ -301,7 +301,7 @@ class _StrategyGameState extends State<StrategyGame> {
                           decoration: BoxDecoration(
                             color:
                                 dots.edges[i] == 0
-                                    ? Colors.white24
+                                    ? const Color(0xFF8CBDE4)
                                     : playerColors[dots.edges[i] - 1],
                             borderRadius: BorderRadius.circular(6),
                           ),
@@ -485,7 +485,7 @@ class _StrategyGameState extends State<StrategyGame> {
                                   ? Icons.local_fire_department_rounded
                                   : Icons.water_drop_rounded)
                               : Icons.radar_rounded,
-                          color: hit ? Colors.white : Colors.white24,
+                          color: hit ? Colors.white : const Color(0xFF8CBDE4),
                         ),
                       );
                     }),
