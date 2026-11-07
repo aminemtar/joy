@@ -641,25 +641,25 @@ class _LobbyState extends State<Lobby> {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            Color(0xFF43B7FF),
-                            Color(0xFF168BFF),
-                            Color(0xFF0754D6),
+                            Color(0xFFFFFFFF),
+                            Color(0xFFF1F9FF),
+                            Color(0xFFDDEFFF),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(30),
                         border: Border.all(
-                          color: const Color(0xFF9BD7FF),
-                          width: 1.2,
+                          color: Colors.white,
+                          width: 1.4,
                         ),
                         boxShadow: const [
                           BoxShadow(
-                            color: Color(0x55397BFF),
+                            color: Color(0x66436FB8),
                             blurRadius: 32,
                             spreadRadius: 1,
                             offset: Offset(0, 12),
                           ),
                           BoxShadow(
-                            color: Color(0x33000000),
+                            color: Color(0x22436FB8),
                             blurRadius: 18,
                             offset: Offset(0, 8),
                           ),
@@ -673,8 +673,8 @@ class _LobbyState extends State<Lobby> {
                             style: TextStyle(
                               letterSpacing: 2,
                               fontSize: 11,
-                              color: Colors.white.withValues(alpha: .9),
-                              fontWeight: FontWeight.w800,
+                              color: JoyTheme.accentDeep,
+                              fontWeight: FontWeight.w900,
                             ),
                           ),
                           const SizedBox(height: 10),
@@ -682,7 +682,7 @@ class _LobbyState extends State<Lobby> {
                             'Pick a game.\nMake it a rivalry.',
                             style: TextStyle(
                               fontSize: 30,
-                              color: Colors.white,
+                              color: JoyTheme.ink,
                               fontWeight: FontWeight.w900,
                             ),
                           ),
@@ -769,6 +769,7 @@ class _LobbyState extends State<Lobby> {
                     ),
                     const SizedBox(height: 12),
                     TextButton.icon(
+                      style: TextButton.styleFrom(foregroundColor: Colors.white),
                       onPressed:
                           () => Navigator.push(
                             context,
@@ -776,7 +777,7 @@ class _LobbyState extends State<Lobby> {
                               builder: (_) => const HistoryScreen(),
                             ),
                           ),
-                      icon: const Icon(Icons.history_rounded),
+                      icon: const Icon(Icons.history_rounded, color: Colors.white),
                       label: const Text('Match history'),
                     ),
                     const SizedBox(height: 28),
@@ -786,15 +787,16 @@ class _LobbyState extends State<Lobby> {
                           child: Text(
                             'Find your next game',
                             style: TextStyle(
+                              color: Colors.white,
                               fontSize: 21,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w900,
                             ),
                           ),
                         ),
                         Text(
                           '${filtered.length} games',
                           style: const TextStyle(
-                            color: JoyTheme.muted,
+                            color: const Color(0xFFDCEEFF),
                             fontSize: 12,
                           ),
                         ),
