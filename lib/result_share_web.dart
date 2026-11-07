@@ -1,24 +1,15 @@
 import 'dart:js_interop';
-import 'dart:typed_data';
 import 'package:web/web.dart' as web;
 
-Future<String> shareImage(Uint8List bytes, String text) async {
-  final blob = web.Blob(
-    [bytes.toJS].toJS,
-    web.BlobPropertyBag(type: 'image/png'),
-  );
-  final url = web.URL.createObjectURL(blob);
-  final link =
-      web.HTMLAnchorElement()
-        ..href = url
-        ..download = 'joy-scorecard.png';
-  web.document.body!.appendChild(link);
-  link.click();
-  link.remove();
-  // Let the browser acquire the download before releasing its blob URL.
-  Future<void>.delayed(
-    const Duration(seconds: 30),
-    () => web.URL.revokeObjectURL(url),
-  );
-  return 'Scorecard downloaded';
+Future<String> shareText(String text) async {
+  try {
+    if (web.window.navigator.canShare(web.ShareData(text: text))) {
+      await web.window.navigator.share(web.ShareData(text: text)).toDart;
+      return 'Ready to share';
+    }
+  } catch (_) {
+    // Fall back to clipboard when the browser share sheet is unavailable.
+  }
+  await web.window.navigator.clipboard.writeText(text).toDart;
+  return 'Results copied to clipboard';
 }
