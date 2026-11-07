@@ -501,15 +501,17 @@ class _LobbyState extends State<Lobby> {
                             tooltip: JoySounds.instance.enabled
                                 ? 'Mute sound effects'
                                 : 'Enable sound effects',
-                            style: IconButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: JoyTheme.accentDeep,
-                              fixedSize: const Size(52, 52),
-                              elevation: 9,
-                              shadowColor: const Color(0x66003D9E),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(18),
-                                side: const BorderSide(color: Color(0xFFEAF8FF), width: 1.4),
+                            style: ButtonStyle(
+                              backgroundColor: WidgetStateProperty.all(Colors.white),
+                              foregroundColor: WidgetStateProperty.all(JoyTheme.accentDeep),
+                              fixedSize: WidgetStateProperty.all(const Size(52, 52)),
+                              elevation: WidgetStateProperty.all(9),
+                              shadowColor: WidgetStateProperty.all(const Color(0x66003D9E)),
+                              shape: WidgetStateProperty.all(
+                                RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(18),
+                                  side: const BorderSide(color: Color(0xFFEAF8FF), width: 1.4),
+                                ),
                               ),
                             ),
                             onPressed: () => JoySounds.instance.setEnabled(
@@ -524,15 +526,17 @@ class _LobbyState extends State<Lobby> {
                         ),
                         IconButton.filledTonal(
                           onPressed: _settings,
-                          style: IconButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: JoyTheme.accentDeep,
-                            fixedSize: const Size(52, 52),
-                            elevation: 9,
-                            shadowColor: const Color(0x66003D9E),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              side: const BorderSide(color: Color(0xFFEAF8FF), width: 1.4),
+                          style: ButtonStyle(
+                            backgroundColor: WidgetStateProperty.all(Colors.white),
+                            foregroundColor: WidgetStateProperty.all(JoyTheme.accentDeep),
+                            fixedSize: WidgetStateProperty.all(const Size(52, 52)),
+                            elevation: WidgetStateProperty.all(9),
+                            shadowColor: WidgetStateProperty.all(const Color(0x66003D9E)),
+                            shape: WidgetStateProperty.all(
+                              RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(18),
+                                side: const BorderSide(color: Color(0xFFEAF8FF), width: 1.4),
+                              ),
                             ),
                           ),
                           icon: const Icon(Icons.tune_rounded),
