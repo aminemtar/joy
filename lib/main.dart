@@ -632,14 +632,22 @@ class _LobbyState extends State<Lobby> {
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF213D83), Color(0xFF152447)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF315FC0), Color(0xFF1B3978), Color(0xFF112448)],
                         ),
                         borderRadius: BorderRadius.circular(30),
-                        border: Border.all(color: JoyTheme.border),
+                        border: Border.all(color: const Color(0xFF6F9FFF), width: 1.1),
                         boxShadow: const [
                           BoxShadow(
-                            color: Color(0x20507CFF),
-                            blurRadius: 24,
+                            color: Color(0x55397BFF),
+                            blurRadius: 32,
+                            spreadRadius: 1,
+                            offset: Offset(0, 12),
+                          ),
+                          BoxShadow(
+                            color: Color(0x33000000),
+                            blurRadius: 18,
                             offset: Offset(0, 8),
                           ),
                         ],
@@ -850,10 +858,11 @@ class _LobbyState extends State<Lobby> {
                         final g = entry.value;
                         return Card(
                           color: JoyTheme.surface,
-                          elevation: 0,
+                          elevation: 7,
+                          shadowColor: const Color(0x55397BFF),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(24),
-                            side: const BorderSide(color: JoyTheme.border),
+                            side: const BorderSide(color: Color(0xFF365587), width: .9),
                           ),
                           clipBehavior: Clip.antiAlias,
                           child: InkWell(
