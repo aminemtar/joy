@@ -11,6 +11,20 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "joy/share").setMethodCallHandler { call, result ->
+            if (call.method == "text") {
+                try {
+                    val text = call.argument<String>("text") ?: error("Missing share text")
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, text)
+                    }
+                    startActivity(Intent.createChooser(intent, "Share JOY results"))
+                    result.success(null)
+                } catch (e: Exception) {
+                    result.error("share_failed", e.localizedMessage, null)
+                }
+                return@setMethodCallHandler
+            }
             if (call.method != "scorecard") { result.notImplemented(); return@setMethodCallHandler }
             try {
                 val bytes = call.argument<ByteArray>("image") ?: error("Missing scorecard")
