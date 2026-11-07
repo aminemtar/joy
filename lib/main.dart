@@ -797,7 +797,7 @@ class _LobbyState extends State<Lobby> {
                       children: [
                         for (final f in ['All games', 'Favorites', 'Recent'])
                           ChoiceChip(
-                            label: Text(f),
+                            label: Text(f, style: TextStyle(color: libraryFilter == f ? Colors.white : JoyTheme.ink)),
                             selected: libraryFilter == f,
                             onSelected:
                                 (_) => setState(() => libraryFilter = f),
