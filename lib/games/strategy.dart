@@ -54,7 +54,7 @@ class _StrategyGameState extends State<StrategyGame> {
     coins = List.filled(widget.names.length, 12);
     lives = List.filled(widget.names.length, 2);
     attempts = List.filled(widget.names.length, 0);
-    history = List.generate(widget.names.length, (_) => <String>[]);
+    history = List.generate(widget.names.length, (_) => <_CodeAttempt>[]);
     fleets = [FleetBoard(random), FleetBoard(random)];
     mines = MineBoard(random);
     secrets = List.generate(
