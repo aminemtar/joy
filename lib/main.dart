@@ -42,7 +42,7 @@ class _JoyAppState extends State<JoyApp> {
   Widget build(BuildContext context) => MaterialApp(
     debugShowCheckedModeBanner: false,
     title: 'JOY',
-    theme: JoyTheme.light,
+    theme: JoyTheme.dark,
     builder:
         (context, child) => ListenableBuilder(
           listenable: PartyData.instance,
@@ -632,15 +632,13 @@ class _LobbyState extends State<Lobby> {
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFFE3F3FF), Color(0xFFB8DDFF), Color(0xFF9CCEFF)],
+                          colors: [Color(0xFF213D83), Color(0xFF152447)],
                         ),
                         borderRadius: BorderRadius.circular(30),
-                        border: Border.all(color: const Color(0xFF8FC7FA), width: 1.2),
+                        border: Border.all(color: JoyTheme.border),
                         boxShadow: const [
                           BoxShadow(
-                            color: Color(0x40509FEF),
+                            color: Color(0x20507CFF),
                             blurRadius: 24,
                             offset: Offset(0, 8),
                           ),
@@ -723,8 +721,6 @@ class _LobbyState extends State<Lobby> {
                     ),
                     const SizedBox(height: 16),
                     JoyPanel(
-                      color: const Color(0xFFE6F7FF),
-                      accentColor: const Color(0xFF59BCE5),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 4,
@@ -853,11 +849,11 @@ class _LobbyState extends State<Lobby> {
                         final entry = filtered[i];
                         final g = entry.value;
                         return Card(
-                          color: const Color(0xFF131E38),
+                          color: JoyTheme.surface,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(24),
-                            side: const BorderSide(color: Color(0xFF2A395A)),
+                            side: const BorderSide(color: JoyTheme.border),
                           ),
                           clipBehavior: Clip.antiAlias,
                           child: InkWell(
@@ -889,10 +885,6 @@ class _LobbyState extends State<Lobby> {
                                       Align(
                                         alignment: Alignment.topRight,
                                         child: IconButton.filledTonal(
-                                          style: IconButton.styleFrom(
-                                            backgroundColor: const Color(0xFF1A2948),
-                                            foregroundColor: const Color(0xFFA2ADCA),
-                                          ),
                                           tooltip:
                                               data.favorites.contains(entry.key)
                                                   ? 'Remove favorite'
@@ -920,7 +912,7 @@ class _LobbyState extends State<Lobby> {
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
                                       fontSize: 16,
-                                      color: const Color(0xFFF2F5FF),
+                                      color: JoyTheme.ink,
                                       fontWeight: FontWeight.w800,
                                     ),
                                   ),
@@ -930,7 +922,7 @@ class _LobbyState extends State<Lobby> {
                                         ? g.category
                                         : '${playerCount}P ${supportsGroupTurns(entry.key) ? 'shared turns' : 'league'}',
                                     style: const TextStyle(
-                                      color: const Color(0xFFA2ADCA),
+                                      color: JoyTheme.muted,
                                       fontSize: 12,
                                     ),
                                   ),
