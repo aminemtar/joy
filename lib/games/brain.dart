@@ -276,7 +276,7 @@ class _BrainGameState extends State<BrainGame> {
           style: TextStyle(
             fontSize: widget.id == 27 ? 38 : 25,
             fontWeight: FontWeight.w700,
-            color: ready ? Colors.amber : const Color(0xFF102B4E),
+            color: ready ? Colors.amber : Colors.white,
           ),
         ),
         if (widget.id == 24)
