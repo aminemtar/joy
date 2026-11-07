@@ -853,11 +853,11 @@ class _LobbyState extends State<Lobby> {
                         final entry = filtered[i];
                         final g = entry.value;
                         return Card(
-                          color: JoyTheme.surface,
+                          color: const Color(0xFF131E38),
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(24),
-                            side: const BorderSide(color: JoyTheme.border),
+                            side: const BorderSide(color: Color(0xFF2A395A)),
                           ),
                           clipBehavior: Clip.antiAlias,
                           child: InkWell(
@@ -889,6 +889,10 @@ class _LobbyState extends State<Lobby> {
                                       Align(
                                         alignment: Alignment.topRight,
                                         child: IconButton.filledTonal(
+                                          style: IconButton.styleFrom(
+                                            backgroundColor: const Color(0xFF1A2948),
+                                            foregroundColor: const Color(0xFFA2ADCA),
+                                          ),
                                           tooltip:
                                               data.favorites.contains(entry.key)
                                                   ? 'Remove favorite'
@@ -916,7 +920,7 @@ class _LobbyState extends State<Lobby> {
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
                                       fontSize: 16,
-                                      color: JoyTheme.ink,
+                                      color: const Color(0xFFF2F5FF),
                                       fontWeight: FontWeight.w800,
                                     ),
                                   ),
@@ -926,7 +930,7 @@ class _LobbyState extends State<Lobby> {
                                         ? g.category
                                         : '${playerCount}P ${supportsGroupTurns(entry.key) ? 'shared turns' : 'league'}',
                                     style: const TextStyle(
-                                      color: JoyTheme.muted,
+                                      color: const Color(0xFFA2ADCA),
                                       fontSize: 12,
                                     ),
                                   ),
