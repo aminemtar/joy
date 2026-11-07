@@ -57,7 +57,7 @@ class _JoySplashState extends State<JoySplash>
             gradient: RadialGradient(
               center: Alignment(0, -.25),
               radius: 1.2,
-              colors: [Color(0xFFC9E5FF), JoyTheme.background],
+              colors: [Color(0xFF243E86), JoyTheme.background],
             ),
           ),
           child: Stack(
