@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'catalog.dart';
 import 'joy_theme.dart';
+import 'lobby_widgets.dart';
 import 'games/sprites.dart';
 
 // Control demonstrations are deliberately explicit: a drag, a tap or a turn.
@@ -239,23 +240,27 @@ class _GameTutorialState extends State<GameTutorial>
               style: const TextStyle(color: JoyTheme.muted, letterSpacing: 2),
             ),
             const SizedBox(height: 20),
-            SizedBox(
-              height: 220,
-              child: AnimatedBuilder(
-                animation: controller,
-                builder:
-                    (context, _) => CustomPaint(
-                      painter: _DemoPainter(controller.value, widget.id, drag),
-                    ),
+            JoyPanel(
+              padding: const EdgeInsets.all(10),
+              child: SizedBox(
+                height: 220,
+                child: AnimatedBuilder(
+                  animation: controller,
+                  builder: (context, _) => CustomPaint(
+                    painter: _DemoPainter(controller.value, widget.id, drag),
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 24),
-            Text(
-              tutorialSteps[widget.id][step],
-              style: const TextStyle(
-                fontSize: 23,
-                fontWeight: FontWeight.w700,
-                height: 1.35,
+            JoyPanel(
+              child: Text(
+                tutorialSteps[widget.id][step],
+                style: const TextStyle(
+                  fontSize: 21,
+                  fontWeight: FontWeight.w800,
+                  height: 1.35,
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -379,7 +384,7 @@ class _DemoPainter extends CustomPainter {
       if (id == 2) {
         c.drawRect(
           Rect.fromLTWH(s.width * .65, 35, 40, 65),
-          paint..color = const Color(0xFFFFC16D).withValues(alpha: .3),
+          paint..color = JoyTheme.accentBright.withValues(alpha: .22),
         );
       } else {
         GameSprites.car(
@@ -403,7 +408,7 @@ class _DemoPainter extends CustomPainter {
           ),
           paint
             ..color =
-                Color.lerp(JoyTheme.accent, const Color(0xFFFFC16D), i / 4)!,
+                Color.lerp(JoyTheme.accent, JoyTheme.accentBright, i / 4)!,
         );
       }
       c.drawRRect(
@@ -528,9 +533,9 @@ class _DemoPainter extends CustomPainter {
     c.drawCircle(
       pos,
       15 + sin(t * pi) * 8,
-      paint..color = const Color(0xFFFFC16D).withValues(alpha: .25),
+      paint..color = JoyTheme.accent.withValues(alpha: .25),
     );
-    c.drawCircle(pos, 9, paint..color = const Color(0xFFFFC16D));
+    c.drawCircle(pos, 9, paint..color = JoyTheme.accentBright);
   }
 
   @override
