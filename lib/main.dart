@@ -1349,14 +1349,31 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
                   ),
                 ),
               )
-              : Padding(
-                padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+              : Container(
+                padding: const EdgeInsets.fromLTRB(9, 1.5, 9, 9),
+                decoration: BoxDecoration(
+                  gradient: JoyTheme.blueGradient,
+                  borderRadius: BorderRadius.circular(26),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x55397BFF),
+                      blurRadius: 25,
+                      spreadRadius: 1,
+                      offset: Offset(0, 8),
+                    ),
+                    BoxShadow(
+                      color: Color(0x66000000),
+                      blurRadius: 16,
+                      offset: Offset(0, 7),
+                    ),
+                  ],
+                ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(23),
                   child: Theme(
                     data: JoyTheme.arena,
                     child: ColoredBox(
-                      color: const Color(0xFF161C36),
+                      color: JoyTheme.background,
                       child:
                           done
                               ? const Center(
