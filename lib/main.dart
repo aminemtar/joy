@@ -268,7 +268,7 @@ class _LobbyState extends State<Lobby> {
                                 ? null
                                 : () async {
                                   update(() => sharing = true);
-                                  final message = await shareResultsText(
+                                  final message = await shareScorecard(
                                     'Party results',
                                     participants,
                                     points,
@@ -1081,7 +1081,7 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
                           ? null
                           : () async {
                             update(() => sharing = true);
-                            final message = await shareResultsText(
+                            final message = await shareScorecard(
                               '${games[widget.id].name} • match wins',
                               widget.names,
                               [
