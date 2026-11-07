@@ -224,8 +224,6 @@ abstract final class JoyTheme {
         height: 1.55,
       ),
       actionsPadding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-      actionsAlignment: MainAxisAlignment.end,
-      actionsOverflowButtonSpacing: 10,
     ),
     bottomSheetTheme: const BottomSheetThemeData(
       backgroundColor: surface,

@@ -640,10 +640,17 @@ class _LobbyState extends State<Lobby> {
                         gradient: const LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [Color(0xFF43B7FF), Color(0xFF168BFF), Color(0xFF0754D6)],
+                          colors: [
+                            Color(0xFF43B7FF),
+                            Color(0xFF168BFF),
+                            Color(0xFF0754D6),
+                          ],
                         ),
                         borderRadius: BorderRadius.circular(30),
-                        border: Border.all(color: const Color(0xFF9BD7FF), width: 1.2),
+                        border: Border.all(
+                          color: const Color(0xFF9BD7FF),
+                          width: 1.2,
+                        ),
                         boxShadow: const [
                           BoxShadow(
                             color: Color(0x55397BFF),
@@ -661,9 +668,14 @@ class _LobbyState extends State<Lobby> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'THE LOCAL MULTIPLAYER ARCADE',
-                            style: TextStyle(letterSpacing: 2, fontSize: 11, color: Colors.white.withValues(alpha: .9), fontWeight: FontWeight.w800),
+                            style: TextStyle(
+                              letterSpacing: 2,
+                              fontSize: 11,
+                              color: Colors.white.withValues(alpha: .9),
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                           const SizedBox(height: 10),
                           const Text(
@@ -870,7 +882,10 @@ class _LobbyState extends State<Lobby> {
                           shadowColor: const Color(0x88397BFF),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(24),
-                            side: const BorderSide(color: Color(0xFF507CFF), width: 1.2),
+                            side: const BorderSide(
+                              color: Color(0xFFCAE6FA),
+                              width: 1,
+                            ),
                           ),
                           clipBehavior: Clip.antiAlias,
                           child: InkWell(
@@ -1364,7 +1379,11 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
                   gradient: const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFF74CEFF), Color(0xFF168BFF), Color(0xFF0754D6)],
+                    colors: [
+                      Color(0xFF74CEFF),
+                      Color(0xFF168BFF),
+                      Color(0xFF0754D6),
+                    ],
                   ),
                   borderRadius: BorderRadius.circular(26),
                   boxShadow: const [
