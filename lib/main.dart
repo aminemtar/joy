@@ -497,136 +497,46 @@ class _LobbyState extends State<Lobby> {
                         ),
                         ListenableBuilder(
                           listenable: JoySounds.instance,
-                          builder: (c, child) {
-                            final status =
-                                JoySounds.instance.lastError ?? soundTestResult;
-                            return status == null
-                                ? const SizedBox()
-                                : Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 10,
-                                  ),
-                                  child: Text(
-                                    status,
-                                    style: TextStyle(
-                                      color:
-                                          JoySounds.instance.lastError !=
-                                                      null ||
-                                                  testFailed
-                                              ? Colors.orangeAccent
-                                              : JoyTheme.muted,
-                                    ),
-                                  ),
-                                );
-                          },
-                        ),
-                        SwitchListTile(
-                          title: const Text('Vibration'),
-                          value: haptics,
-                          onChanged: (v) => update(() => haptics = v),
-                        ),
-                        FilledButton(
-                          onPressed: () {
-                            _save();
-                            data.saveOptions();
-                            setState(() {});
-                            Navigator.pop(c);
-                          },
-                          child: const Text('Save'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-          ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final filtered =
-        games
-            .asMap()
-            .entries
-            .where(
-              (e) =>
-                  (category == 'All' || e.value.category == category) &&
-                  (!practice || practiceGames.contains(e.key)) &&
-                  (libraryFilter != 'Favorites' ||
-                      data.favorites.contains(e.key)) &&
-                  (libraryFilter != 'Recent' || data.recent.contains(e.key)) &&
-                  (search.isEmpty ||
-                      e.value.name.toLowerCase().contains(
-                        search.toLowerCase(),
-                      )),
-            )
-            .toList();
-    if (libraryFilter == 'Recent') {
-      filtered.sort(
-        (a, b) =>
-            data.recent.indexOf(a.key).compareTo(data.recent.indexOf(b.key)),
-      );
-    }
-    return Scaffold(
-      // Electric cobalt is the HOME SCREEN background, not the gameplay canvas.
-      backgroundColor: const Color(0xFF087BFF),
-      body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.all(24),
-              sliver: SliverToBoxAdapter(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(14),
-                          child: Image.asset(
-                            'assets/art/app_icon.png',
-                            width: 44,
-                            height: 44,
-                            cacheWidth: 128,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Text(
-                          'JOY',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 38,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 5,
-                            shadows: [
-                              Shadow(color: Color(0x553052A0), blurRadius: 12, offset: Offset(0, 3)),
-                            ],
-                          ),
-                        ),
-                        const Spacer(),
-                        ListenableBuilder(
-                          listenable: JoySounds.instance,
-                          builder:
-                              (context, child) => IconButton(
-                                tooltip:
-                                    JoySounds.instance.enabled
-                                        ? 'Mute sound effects'
-                                        : 'Enable sound effects',
-                                onPressed:
-                                    () => JoySounds.instance.setEnabled(
-                                      !JoySounds.instance.enabled,
-                                    ),
-                                icon: Icon(
-                                  JoySounds.instance.enabled
-                                      ? Icons.volume_up_rounded
-                                      : Icons.volume_off_rounded,
-                                ),
+                          builder: (context, child) => IconButton.filledTonal(
+                            tooltip: JoySounds.instance.enabled
+                                ? 'Mute sound effects'
+                                : 'Enable sound effects',
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: JoyTheme.accentDeep,
+                              fixedSize: const Size(52, 52),
+                              elevation: 9,
+                              shadowColor: const Color(0x66003D9E),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(18),
+                                side: const BorderSide(color: Color(0xFFEAF8FF), width: 1.4),
                               ),
+                            ),
+                            onPressed: () => JoySounds.instance.setEnabled(
+                              !JoySounds.instance.enabled,
+                            ),
+                            icon: Icon(
+                              JoySounds.instance.enabled
+                                  ? Icons.volume_up_rounded
+                                  : Icons.volume_off_rounded,
+                            ),
+                          ),
                         ),
-                        IconButton(
+                        IconButton.filledTonal(
                           onPressed: _settings,
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: JoyTheme.accentDeep,
+                            fixedSize: const Size(52, 52),
+                            elevation: 9,
+                            shadowColor: const Color(0x66003D9E),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                              side: const BorderSide(color: Color(0xFFEAF8FF), width: 1.4),
+                            ),
+                          ),
                           icon: const Icon(Icons.tune_rounded),
-                        ),
+                        )              ),
                       ],
                     ),
                     const Text(
@@ -634,41 +544,12 @@ class _LobbyState extends State<Lobby> {
                       style: TextStyle(color: Color(0xFFEAF6FF), fontSize: 17, fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 24),
-                    Container(
+                    JoyPanel(
                       padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Color(0xFFFFFFFF),
-                            Color(0xFFF1F9FF),
-                            Color(0xFFDDEFFF),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(30),
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 1.4,
-                        ),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Color(0x66436FB8),
-                            blurRadius: 32,
-                            spreadRadius: 1,
-                            offset: Offset(0, 12),
-                          ),
-                          BoxShadow(
-                            color: Color(0x22436FB8),
-                            blurRadius: 18,
-                            offset: Offset(0, 8),
-                          ),
-                        ],
-                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          const Text(
                             'THE LOCAL MULTIPLAYER ARCADE',
                             style: TextStyle(
                               letterSpacing: 2,
@@ -682,51 +563,43 @@ class _LobbyState extends State<Lobby> {
                             'Pick a game.\nMake it a rivalry.',
                             style: TextStyle(
                               fontSize: 30,
+                              height: 1.12,
                               color: JoyTheme.ink,
                               fontWeight: FontWeight.w900,
+                              letterSpacing: -.7,
                             ),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 16),
                           const Wrap(
                             spacing: 8,
                             runSpacing: 8,
                             children: [
-                              InfoPill(
-                                icon: Icons.sports_esports_rounded,
-                                label: '36 games',
-                              ),
-                              InfoPill(
-                                icon: Icons.wifi_off_rounded,
-                                label: 'Offline',
-                              ),
-                              InfoPill(
-                                icon: Icons.people_alt_rounded,
-                                label: '2–4 players',
-                              ),
+                              InfoPill(icon: Icons.sports_esports_rounded, label: '36 games'),
+                              InfoPill(icon: Icons.wifi_off_rounded, label: 'Offline'),
+                              InfoPill(icon: Icons.people_alt_rounded, label: '2–4 players'),
                             ],
                           ),
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 22),
                           Wrap(
                             spacing: 12,
-                            runSpacing: 10,
+                            runSpacing: 12,
                             children: [
-                              FilledButton.icon(
-                                onPressed:
-                                    () => _play([
-                                      practice
-                                          ? practiceGames.elementAt(
-                                            Random().nextInt(
-                                              practiceGames.length,
-                                            ),
-                                          )
-                                          : Random().nextInt(games.length),
-                                    ]),
-                                icon: const Icon(Icons.shuffle),
-                                label: const Text('Surprise me'),
+                              JoyActionButton(
+                                icon: Icons.shuffle_rounded,
+                                label: 'Surprise me',
+                                onPressed: () => _play([
+                                  practice
+                                      ? practiceGames.elementAt(
+                                          Random().nextInt(practiceGames.length),
+                                        )
+                                      : Random().nextInt(games.length),
+                                ]),
                               ),
-                              OutlinedButton(
+                              JoyActionButton(
+                                icon: Icons.groups_rounded,
+                                label: 'Party mode',
+                                primary: false,
                                 onPressed: practice ? null : _partyBuilder,
-                                child: const Text('Party mode'),
                               ),
                             ],
                           ),
@@ -803,12 +676,31 @@ class _LobbyState extends State<Lobby> {
                       ],
                     ),
                     const SizedBox(height: 14),
-                    TextField(
-                      decoration: const InputDecoration(
-                        hintText: 'Search games',
-                        prefixIcon: Icon(Icons.search_rounded),
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(19),
+                        boxShadow: const [
+                          BoxShadow(color: Color(0x55003D9E), blurRadius: 15, offset: Offset(0, 7)),
+                          BoxShadow(color: Color(0x88FFFFFF), blurRadius: 1, offset: Offset(0, -1)),
+                        ],
                       ),
-                      onChanged: (v) => setState(() => search = v),
+                      child: TextField(
+                        decoration: InputDecoration(
+                          hintText: 'Search games',
+                          prefixIcon: const Icon(Icons.search_rounded),
+                          filled: true,
+                          fillColor: const Color(0xFFF8FCFF),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(19),
+                            borderSide: const BorderSide(color: Colors.white, width: 1.3),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(19),
+                            borderSide: const BorderSide(color: Color(0xFFD7EEFF), width: 1.3),
+                          ),
+                        ),
+                        onChanged: (v) => setState(() => search = v),
+                      ),
                     ),
                     const SizedBox(height: 12),
                     Wrap(
