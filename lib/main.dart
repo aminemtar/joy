@@ -657,14 +657,15 @@ class _LobbyState extends State<Lobby> {
                         children: [
                           const Text(
                             'THE LOCAL MULTIPLAYER ARCADE',
-                            style: TextStyle(letterSpacing: 2, fontSize: 11),
+                            style: TextStyle(letterSpacing: 2, fontSize: 11, color: Colors.white.withValues(alpha: .9), fontWeight: FontWeight.w800),
                           ),
                           const SizedBox(height: 10),
                           const Text(
                             'Pick a game.\nMake it a rivalry.',
                             style: TextStyle(
                               fontSize: 30,
-                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
                             ),
                           ),
                           const SizedBox(height: 12),
