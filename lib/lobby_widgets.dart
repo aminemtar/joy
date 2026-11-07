@@ -15,62 +15,97 @@ class JoyPanel extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) => Container(
-    decoration: BoxDecoration(
-      gradient: highlighted
-          ? JoyTheme.blueGradient
-          : JoyTheme.panelGradient,
-      borderRadius: BorderRadius.circular(25),
-      border: Border.all(
-        color: highlighted ? const Color(0xFF8ACBFF) : Colors.white,
-        width: highlighted ? 1.2 : 1.1,
+  Widget build(BuildContext context) {
+    const radius = 28.0;
+    return Container(
+      decoration: BoxDecoration(
+        gradient: highlighted
+            ? const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF8BD8FF), Color(0xFF168BFF), Color(0xFF0754C8)],
+              )
+            : const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFFFFFFF), Color(0xFFF5FAFF), Color(0xFFDCEEFF)],
+                stops: [0, .52, 1],
+              ),
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(
+          color: highlighted ? const Color(0xFFBDEBFF) : Colors.white,
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF003D9E).withValues(alpha: highlighted ? .34 : .22),
+            blurRadius: highlighted ? 30 : 24,
+            spreadRadius: highlighted ? 1 : 0,
+            offset: const Offset(0, 13),
+          ),
+          BoxShadow(
+            color: const Color(0xFF62C4FF).withValues(alpha: highlighted ? .34 : .22),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+          const BoxShadow(
+            color: Color(0xAAFFFFFF),
+            blurRadius: 1,
+            offset: Offset(0, -2),
+          ),
+        ],
       ),
-      boxShadow: [
-        BoxShadow(
-          color: highlighted
-              ? const Color(0x553B9DFF)
-              : const Color(0x223D83BD),
-          blurRadius: highlighted ? 27 : 18,
-          spreadRadius: highlighted ? 1 : 0,
-          offset: const Offset(0, 9),
-        ),
-        BoxShadow(
-          color: Colors.white.withValues(alpha: highlighted ? .22 : .9),
-          blurRadius: 1,
-          offset: const Offset(0, -1),
-        ),
-      ],
-    ),
-    child: Material(
-      color: Colors.transparent,
-      clipBehavior: Clip.antiAlias,
-      borderRadius: BorderRadius.circular(25),
-      child: Stack(
-        children: [
-          Padding(padding: padding, child: child),
-          Positioned(
-            top: 0,
-            left: 24,
-            right: 24,
-            child: IgnorePointer(
-              child: Container(
-                height: 2,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.transparent,
-                      Colors.white.withValues(alpha: .9),
-                      Colors.transparent,
-                    ],
+      child: Material(
+        color: Colors.transparent,
+        clipBehavior: Clip.antiAlias,
+        borderRadius: BorderRadius.circular(radius),
+        child: Stack(
+          children: [
+            Positioned(
+              top: 0,
+              left: 22,
+              right: 22,
+              child: IgnorePointer(
+                child: Container(
+                  height: 3,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.transparent,
+                        Colors.white.withValues(alpha: highlighted ? .9 : 1),
+                        Colors.transparent,
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(4),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+            Positioned(
+              top: -42,
+              right: -34,
+              child: IgnorePointer(
+                child: Container(
+                  width: 130,
+                  height: 130,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        Colors.white.withValues(alpha: highlighted ? .22 : .72),
+                        Colors.white.withValues(alpha: 0),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Padding(padding: padding, child: child),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class PartySetup extends StatelessWidget {
