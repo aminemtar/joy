@@ -1069,79 +1069,99 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
       barrierDismissible: false,
       builder:
           (c) => StatefulBuilder(
-            builder:
-                (c, update) => PopScope(
-                  canPop: false,
-                  child: AlertDialog(
-                    title: Text(
-                      winner < 0
-                          ? 'Match tied!'
-                          : '${widget.names[winner]} wins!',
-                    ),
-                    content: Text(
-                      '${games[widget.id].name} • ${elapsed}s\nReady for another rivalry?',
-                    ),
-                    actions: [
-                      TextButton.icon(
-                        onPressed:
-                            sharing
-                                ? null
-                                : () async {
-                                  update(() => sharing = true);
-                                  final message = await shareScorecard(
-                                    '${games[widget.id].name} • match wins',
-                                    widget.names,
-                                    [
-                                      for (
-                                        var i = 0;
-                                        i < widget.names.length;
-                                        i++
-                                      )
-                                        winner == i ? 1 : 0,
-                                    ],
-                                  );
-                                  if (c.mounted) {
-                                    update(() => sharing = false);
-                                    ScaffoldMessenger.of(c).showSnackBar(
-                                      SnackBar(content: Text(message)),
-                                    );
-                                  }
-                                },
-                        icon: const Icon(Icons.ios_share_rounded),
-                        label: const Text('Share scorecard'),
-                      ),
-                      if (widget.allowRematch)
-                        OutlinedButton(
-                          onPressed: () {
-                            Navigator.pop(c);
-                            JoySounds.instance.stop();
-                            start();
+            builder: (c, update) {
+              final actions = <Widget>[
+                TextButton.icon(
+                  onPressed:
+                      sharing
+                          ? null
+                          : () async {
+                            update(() => sharing = true);
+                            final message = await shareScorecard(
+                              '${games[widget.id].name} • match wins',
+                              widget.names,
+                              [
+                                for (var i = 0; i < widget.names.length; i++)
+                                  winner == i ? 1 : 0,
+                              ],
+                            );
+                            if (c.mounted) {
+                              update(() => sharing = false);
+                              ScaffoldMessenger.of(c).showSnackBar(
+                                SnackBar(content: Text(message)),
+                              );
+                            }
                           },
-                          child: const Text('Play again'),
-                        ),
-                      if (widget.onNextGame != null)
-                        FilledButton(
-                          onPressed: () {
-                            widget.onNextGame!();
-                            Navigator.pop(c);
-                            Navigator.pop(context, winner);
-                          },
-                          child: const Text('Next game'),
-                        ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(c);
-                          Navigator.pop(context, winner);
-                        },
-                        child: Text(
-                          widget.onNextGame == null
-                              ? 'Continue'
-                              : 'Back to lobby',
-                        ),
-                      ),
-                    ],
+                  icon: const Icon(Icons.ios_share_rounded),
+                  label: const Text('Share scorecard'),
+                ),
+                if (widget.allowRematch)
+                  OutlinedButton(
+                    onPressed: () {
+                      Navigator.pop(c);
+                      JoySounds.instance.stop();
+                      start();
+                    },
+                    child: const Text('Play again'),
+                  ),
+                if (widget.onNextGame != null)
+                  FilledButton(
+                    onPressed: () {
+                      widget.onNextGame!();
+                      Navigator.pop(c);
+                      Navigator.pop(context, winner);
+                    },
+                    child: const Text('Next game'),
+                  ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(c);
+                    Navigator.pop(context, winner);
+                  },
+                  child: Text(
+                    widget.onNextGame == null
+                        ? 'Continue'
+                        : 'Back to lobby',
                   ),
                 ),
+              ];
+              return PopScope(
+                canPop: false,
+                child: AlertDialog(
+                  title: Text(
+                    winner < 0
+                        ? 'Match tied!'
+                        : '${widget.names[winner]} wins!',
+                  ),
+                  content: Text(
+                    '${games[widget.id].name} • ${elapsed}s\nReady for another rivalry?',
+                  ),
+                  actions: [
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (var i = 0; i < actions.length; i += 2)
+                          Padding(
+                            padding: EdgeInsets.only(
+                              bottom: i + 2 < actions.length ? 8 : 0,
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(child: actions[i]),
+                                const SizedBox(width: 8),
+                                if (i + 1 < actions.length)
+                                  Expanded(child: actions[i + 1])
+                                else
+                                  const Spacer(),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
     );
   }
