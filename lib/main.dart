@@ -902,7 +902,6 @@ class _LobbyState extends State<Lobby> {
                                           style: IconButton.styleFrom(
                                             backgroundColor: JoyTheme.cardRaised,
                                             foregroundColor: JoyTheme.cardAccent,
-                                            elevation: 0,
                                           ),
                                           onPressed: () async {
                                             await data.toggleFavorite(
