@@ -208,14 +208,14 @@ class _ObservationGameState extends State<ObservationGame> {
         children: [
           const Text(
             'ORIGINAL',
-            style: TextStyle(letterSpacing: 3, color: const Color(0xFF607A99)),
+            style: TextStyle(letterSpacing: 3, color: Colors.white54),
           ),
           const SizedBox(height: 8),
           pictures(left, false),
           const SizedBox(height: 20),
           const Text(
             'FIND THE DIFFERENCE',
-            style: TextStyle(letterSpacing: 2, color: const Color(0xFF607A99)),
+            style: TextStyle(letterSpacing: 2, color: Colors.white54),
           ),
           const SizedBox(height: 8),
           pictures(right, true),
