@@ -111,8 +111,8 @@ class _FlipMatchCardState extends State<FlipMatchCard>
                               widget.matched
                                   ? Colors.amber
                                   : front
-                                  ? const Color(0xFF7F9DE5)
-                                  : const Color(0xFF5479D1),
+                                  ? const Color(0xFF72B5F5)
+                                  : const Color(0xFF368DE8),
                           width: widget.matched ? 2 : 1.3,
                         ),
                         gradient:
@@ -122,11 +122,11 @@ class _FlipMatchCardState extends State<FlipMatchCard>
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                   colors: [
-                                    Color(0xFF375CB0),
-                                    Color(0xFF172B59),
+                                    Color(0xFF69B7FF),
+                                    Color(0xFF087BFF),
                                   ],
                                 ),
-                        color: front ? const Color(0xFF111C37) : null,
+                        color: front ? const Color(0xFFF8FBFF) : null,
                       ),
                       child:
                           front
