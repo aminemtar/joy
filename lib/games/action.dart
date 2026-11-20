@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'sprites.dart';
+import 'tuning.dart';
 
 class ActionGame extends StatefulWidget {
   final int id;
@@ -60,6 +61,12 @@ class _ActionGameState extends State<ActionGame>
   /// Paddle hits in the current ping-pong rally (the ball speeds up with it).
   int rally = 0;
 
+  /// Bumped every frame; only the arena canvas listens to it.
+  final repaint = ValueNotifier<int>(0);
+
+  /// Scores last drawn by build(), to rebuild the rest only when they change.
+  final shownScores = [0, 0];
+
   /// Seconds left before the ball moves again after a point.
   double serve = 0;
   @override
@@ -78,6 +85,7 @@ class _ActionGameState extends State<ActionGame>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     ticker.dispose();
+    repaint.dispose();
     super.dispose();
   }
 
@@ -136,12 +144,7 @@ class _ActionGameState extends State<ActionGame>
     options?.onScores?.call(List.of(score));
     if (widget.id == 5 && options?.computer == true) {
       final level = options!.difficulty;
-      final speed =
-          level == Difficulty.easy
-              ? .30
-              : level == Difficulty.hard
-              ? .80
-              : .48;
+      final speed = FieldTuning.botSpeed(level);
       final aim = (ball.dx +
               (level == Difficulty.easy ? sin(time * 2) * .12 : 0))
           .clamp(.10, .90);
@@ -163,7 +166,10 @@ class _ActionGameState extends State<ActionGame>
       for (final entry in aims.entries) {
         final p = entry.key;
         final delta = entry.value - players[p];
-        final follow = widget.id == 6 ? 1.2 : .65;
+        final follow =
+            widget.id == 6
+                ? FieldTuning.hockeyFollow
+                : FieldTuning.defaultFollow;
         players[p] += normal(delta) * min(delta.distance, dt * follow);
       }
     }
@@ -211,14 +217,7 @@ class _ActionGameState extends State<ActionGame>
     }
     if (field) {
       final level = options?.difficulty ?? Difficulty.normal;
-      final speed =
-          widget.id == 5
-              ? (level == Difficulty.easy
-                  ? .8
-                  : level == Difficulty.hard
-                  ? 1.25
-                  : 1.0)
-              : 1.0;
+      final speed = widget.id == 5 ? FieldTuning.ballSpeed(level) : 1.0;
       if (serve > 0) {
         serve = max(0.0, serve - dt);
       } else {
@@ -236,10 +235,11 @@ class _ActionGameState extends State<ActionGame>
             if ((p == 0 && ballV.dy > 0) || (p == 1 && ballV.dy < 0)) {
               JoySounds.instance.play(SoundEffect.hit);
               rally++;
-              final boost = min(1.4, 1 + rally * .04);
+              final hitSpeed =
+                  FieldTuning.hitSpeed * FieldTuning.rallyBoost(rally);
               ballV = Offset(
                 (ball.dx - players[p].dx) * 5,
-                (p == 0 ? -.55 : .55) * boost,
+                p == 0 ? -hitSpeed : hitSpeed,
               );
               ball = Offset(ball.dx, players[p].dy + (p == 0 ? -.06 : .06));
             }
@@ -257,7 +257,7 @@ class _ActionGameState extends State<ActionGame>
           ball = const Offset(.5, .5);
           ballV = Offset((rng.nextDouble() - .5) * .5, top ? .4 : -.4);
           rally = 0;
-          serve = .7;
+          serve = FieldTuning.serveDelay;
         } else {
           ball = Offset(ball.dx, top ? .01 : .99);
           ballV = Offset(ballV.dx, -ballV.dy);
@@ -411,7 +411,12 @@ class _ActionGameState extends State<ActionGame>
         }
       }
     }
-    setState(() {});
+    repaint.value++;
+    if (score[0] != shownScores[0] || score[1] != shownScores[1]) {
+      shownScores[0] = score[0];
+      shownScores[1] = score[1];
+      setState(() {});
+    }
   }
 
   Offset location(PointerEvent e) =>
@@ -577,18 +582,22 @@ class _ActionGameState extends State<ActionGame>
                   onPointerUp: up,
                   onPointerCancel: up,
                   child: RepaintBoundary(
-                    child: CustomPaint(
-                      size: area,
-                      painter: ArenaPainter(
-                        id: widget.id,
-                        time: time,
-                        players: players,
-                        ball: ball,
-                        shots: shots,
-                        targets: targets,
-                        snakes: snakes,
-                        food: food,
-                      ),
+                    child: ListenableBuilder(
+                      listenable: repaint,
+                      builder:
+                          (context, _) => CustomPaint(
+                            size: area,
+                            painter: ArenaPainter(
+                              id: widget.id,
+                              time: time,
+                              players: players,
+                              ball: ball,
+                              shots: shots,
+                              targets: targets,
+                              snakes: snakes,
+                              food: food,
+                            ),
+                          ),
                     ),
                   ),
                 ),

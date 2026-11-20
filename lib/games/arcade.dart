@@ -45,6 +45,29 @@ class _ArcadeGameState extends State<ArcadeGame>
   int? shootingPointer, keeperPointer;
   String notice = '';
   Size size = Size.zero;
+
+  /// Bumped every frame; only the game canvases listen to it.
+  final repaint = ValueNotifier<int>(0);
+
+  /// Fingerprint of everything build() shows outside the canvases.
+  int shownState = 0;
+
+  int get stateFingerprint => Object.hash(
+    score[0],
+    score[1],
+    turn,
+    shots,
+    notice,
+    tower.layers.length,
+  );
+
+  /// Wraps a canvas so it repaints every frame without rebuilding the page.
+  Widget live(Widget Function() canvas) => RepaintBoundary(
+    child: ListenableBuilder(
+      listenable: repaint,
+      builder: (context, _) => canvas(),
+    ),
+  );
   @override
   void initState() {
     super.initState();
@@ -57,6 +80,7 @@ class _ArcadeGameState extends State<ArcadeGame>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     ticker.dispose();
+    repaint.dispose();
     super.dispose();
   }
 
@@ -228,7 +252,12 @@ class _ArcadeGameState extends State<ArcadeGame>
         }
       }
     }
-    setState(() {});
+    repaint.value++;
+    final fingerprint = stateFingerprint;
+    if (fingerprint != shownState) {
+      shownState = fingerprint;
+      setState(() {});
+    }
   }
 
   Offset local(PointerEvent e) =>
@@ -299,9 +328,11 @@ class _ArcadeGameState extends State<ArcadeGame>
                   }
                   if (e.pointer == keeperPointer) keeperPointer = null;
                 },
-                child: CustomPaint(
-                  size: size,
-                  painter: _PenaltyPainter(ball, keeper, turn, aim),
+                child: live(
+                  () => CustomPaint(
+                    size: size,
+                    painter: _PenaltyPainter(ball, keeper, turn, aim),
+                  ),
                 ),
               ),
             );
@@ -330,11 +361,13 @@ class _ArcadeGameState extends State<ArcadeGame>
             const SizedBox(height: 8),
             AspectRatio(
               aspectRatio: 1.5,
-              child: CustomPaint(
-                painter: _TrafficPainter(
-                  cars.where((c) => c.player == p).toList(),
-                  phase[p],
-                  p,
+              child: live(
+                () => CustomPaint(
+                  painter: _TrafficPainter(
+                    cars.where((c) => c.player == p).toList(),
+                    phase[p],
+                    p,
+                  ),
                 ),
               ),
             ),
@@ -362,8 +395,10 @@ class _ArcadeGameState extends State<ArcadeGame>
     children: [
       AspectRatio(
         aspectRatio: .85,
-        child: CustomPaint(
-          painter: _TowerPainter(tower.layers, movingLeft, turn),
+        child: live(
+          () => CustomPaint(
+            painter: _TowerPainter(tower.layers, movingLeft, turn),
+          ),
         ),
       ),
       const SizedBox(height: 20),
@@ -383,8 +418,10 @@ class _ArcadeGameState extends State<ArcadeGame>
     children: [
       AspectRatio(
         aspectRatio: 1,
-        child: CustomPaint(
-          painter: _JumpPainter(height, [gapLeft(0), gapLeft(1)]),
+        child: live(
+          () => CustomPaint(
+            painter: _JumpPainter(height, [gapLeft(0), gapLeft(1)]),
+          ),
         ),
       ),
       const SizedBox(height: 24),

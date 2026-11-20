@@ -18,6 +18,12 @@ class GameStage extends StatelessWidget {
     required this.message,
     required this.child,
   });
+
+  /// Width the games are laid out at before being scaled to fit.
+  static const _layoutWidth = 540.0;
+
+  /// Largest enlargement on wide screens (1.6 × 540 ≈ 864 logical pixels).
+  static const _maxEnlarge = 1.6;
   @override
   Widget build(BuildContext context) {
     final report = MatchOptions.of(context)?.onScores;
@@ -119,14 +125,25 @@ class GameStage extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
             child: LayoutBuilder(
               builder: (context, box) {
-                final width = box.maxWidth.clamp(0.0, 540.0);
-                // Measure the content once at a known width, then scale the whole game
-                // into the remaining viewport. The canvas and its controls never scroll.
-                return SizedBox.expand(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.topCenter,
-                    child: SizedBox(width: width, child: child),
+                final width = box.maxWidth.clamp(0.0, _layoutWidth);
+                // Measure the content once at a known width, then scale the
+                // whole game into the remaining viewport. Phones only shrink
+                // it; tablets may enlarge it up to _maxEnlarge so the board is
+                // not a small island. Nothing here ever scrolls.
+                final stageWidth = box.maxWidth.clamp(
+                  0.0,
+                  _layoutWidth * _maxEnlarge,
+                );
+                return Align(
+                  alignment: Alignment.topCenter,
+                  child: SizedBox(
+                    width: stageWidth,
+                    height: box.maxHeight,
+                    child: FittedBox(
+                      fit: BoxFit.contain,
+                      alignment: Alignment.topCenter,
+                      child: SizedBox(width: width, child: child),
+                    ),
                   ),
                 );
               },
