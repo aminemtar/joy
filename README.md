@@ -21,6 +21,7 @@ A consistent navy interface with blue accents, bordered information panels, clea
 
 ## Party features (1.4)
 
+- **Result dialog:** a short entrance animation, a one-shot confetti burst for a win (none for a draw, and none with reduced motion), the players with the winner highlighted, and the next steps two per row. The primary action is filled and listed first; an odd last button spans the row, and buttons stack on narrow screens or very large text. Share feedback appears inside the dialog.
 - **Quick rematch:** replay from the result dialog without returning to the lobby. Each completed match is counted once. In a league, Continue advances the fixture instead of replaying it. Quick play also offers a random Next game.
 - **Party mode:** choose 2–4 players, 3/5/8/12 rounds and one or more categories. Playlists contain unique concepts and shorten automatically when a category has fewer games. Interrupted sessions show only completed matches. End-of-session standings and awards use actual results.
 - **Library:** heart a game, filter Favorites or Recent, and search by name. The latest eight unique games are saved.

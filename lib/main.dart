@@ -17,6 +17,7 @@ import 'lobby_widgets.dart';
 import 'party_data.dart';
 import 'party_screens.dart';
 import 'tutorial.dart';
+import 'result_dialog.dart';
 import 'result_share.dart';
 
 Future<void> main() async {
@@ -981,6 +982,10 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
   int attempt = 0, elapsed = 0, remaining = 0;
   List<int> liveScores = [];
   Timer? roundTimer;
+
+  /// The running game, built once per attempt. The one-second clock calls
+  /// setState; reusing this exact widget stops it from rebuilding the board.
+  Widget? game;
   Difficulty difficulty = PartyData.instance.difficulty;
   int roundSeconds = PartyData.instance.roundSeconds;
   @override
@@ -1021,6 +1026,15 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
       clockPaused = false;
       liveScores = List.filled(widget.names.length, 0);
       remaining = timedGames.contains(widget.id) ? roundSeconds : 0;
+      game = KeyedSubtree(
+        key: ValueKey(attempt),
+        child: buildGame(
+          id: widget.id,
+          names: widget.names,
+          onFinish: finish,
+          haptics: widget.haptics,
+        ),
+      );
     });
     roundTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted || done || backgrounded || clockPaused) return;
@@ -1064,18 +1078,39 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
     }
     if (!mounted) return;
     bool sharing = false;
+    String? status;
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder:
           (c) => StatefulBuilder(
             builder: (c, update) {
-              final actions = <Widget>[
-                FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF507CFF),
-                    foregroundColor: Colors.white,
+              final actions = <ResultAction>[
+                if (widget.allowRematch)
+                  ResultAction(
+                    label: 'Play again',
+                    icon: Icons.replay_rounded,
+                    primary: true,
+                    onPressed: () {
+                      Navigator.pop(c);
+                      JoySounds.instance.stop();
+                      start();
+                    },
                   ),
+                if (widget.onNextGame != null)
+                  ResultAction(
+                    label: 'Next game',
+                    icon: Icons.arrow_forward_rounded,
+                    primary: !widget.allowRematch,
+                    onPressed: () {
+                      widget.onNextGame!();
+                      Navigator.pop(c);
+                      Navigator.pop(context, winner);
+                    },
+                  ),
+                ResultAction(
+                  label: 'Share',
+                  icon: Icons.ios_share_rounded,
                   onPressed:
                       sharing
                           ? null
@@ -1090,99 +1125,36 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
                               ],
                             );
                             if (c.mounted) {
-                              update(() => sharing = false);
-                              ScaffoldMessenger.of(c).showSnackBar(
-                                SnackBar(content: Text(message)),
-                              );
+                              update(() {
+                                sharing = false;
+                                status = message;
+                              });
                             }
                           },
-                  icon: const Icon(Icons.ios_share_rounded),
-                  label: const Text('Share'),
                 ),
-                if (widget.allowRematch)
-                  FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF6F83),
-                      foregroundColor: Colors.white,
-                    ),
-                    onPressed: () {
-                      Navigator.pop(c);
-                      JoySounds.instance.stop();
-                      start();
-                    },
-                    icon: const Icon(Icons.replay_rounded),
-                    label: const Text('Play again'),
-                  ),
-                if (widget.onNextGame != null)
-                  FilledButton.icon(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFFFFC16D),
-                      foregroundColor: const Color(0xFF382B19),
-                    ),
-                    onPressed: () {
-                      widget.onNextGame!();
-                      Navigator.pop(c);
-                      Navigator.pop(context, winner);
-                    },
-                    icon: const Icon(Icons.arrow_forward_rounded),
-                    label: const Text('Next game'),
-                  ),
-                FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF39B8A6),
-                    foregroundColor: const Color(0xFF102C2A),
-                  ),
+                ResultAction(
+                  label:
+                      widget.onNextGame == null ? 'Continue' : 'Back to lobby',
+                  icon:
+                      widget.onNextGame == null
+                          ? Icons.check_circle_outline_rounded
+                          : Icons.home_rounded,
+                  primary: !widget.allowRematch && widget.onNextGame == null,
                   onPressed: () {
                     Navigator.pop(c);
                     Navigator.pop(context, winner);
                   },
-                  icon: Icon(
-                    widget.onNextGame == null
-                        ? Icons.check_circle_outline_rounded
-                        : Icons.home_rounded,
-                  ),
-                  label: Text(
-                    widget.onNextGame == null ? 'Continue' : 'Back to lobby',
-                  ),
                 ),
               ];
-              return _WinConfettiOverlay(
-                child: PopScope(
-                  canPop: false,
-                  child: AlertDialog(
-                  title: Text(
-                    winner < 0
-                        ? 'Match tied!'
-                        : '${widget.names[winner]} wins!',
-                  ),
-                  content: Text(
-                    '${games[widget.id].name} • ${elapsed}s\nReady for another rivalry?',
-                  ),
-                  actions: [
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        for (var i = 0; i < actions.length; i += 2)
-                          Padding(
-                            padding: EdgeInsets.only(
-                              bottom: i + 2 < actions.length ? 8 : 0,
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(child: actions[i]),
-                                const SizedBox(width: 8),
-                                if (i + 1 < actions.length)
-                                  Expanded(child: actions[i + 1])
-                                else
-                                  const Spacer(),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
-                  ),
+              return PopScope(
+                canPop: false,
+                child: MatchResultDialog(
+                  gameName: games[widget.id].name,
+                  names: widget.names,
+                  winner: winner,
+                  seconds: elapsed,
+                  actions: actions,
+                  status: status,
                 ),
               );
             },
@@ -1569,15 +1541,7 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
                                 onPause: (paused) {
                                   clockPaused = paused;
                                 },
-                                child: KeyedSubtree(
-                                  key: ValueKey(attempt),
-                                  child: buildGame(
-                                    id: widget.id,
-                                    names: widget.names,
-                                    onFinish: finish,
-                                    haptics: widget.haptics,
-                                  ),
-                                ),
+                                child: game ?? const SizedBox.shrink(),
                               ),
                     ),
                   ),
@@ -1585,98 +1549,4 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
               ),
     );
   }
-}
-
-
-class _WinConfettiOverlay extends StatefulWidget {
-  final Widget child;
-
-  const _WinConfettiOverlay({required this.child});
-
-  @override
-  State<_WinConfettiOverlay> createState() => _WinConfettiOverlayState();
-}
-
-class _WinConfettiOverlayState extends State<_WinConfettiOverlay>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 2400),
-  )..repeat();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Positioned.fill(
-          child: IgnorePointer(
-            child: AnimatedBuilder(
-              animation: _controller,
-              builder: (context, _) => CustomPaint(
-                painter: _WinConfettiPainter(_controller.value),
-              ),
-            ),
-          ),
-        ),
-        Center(child: widget.child),
-      ],
-    );
-  }
-}
-
-class _WinConfettiPainter extends CustomPainter {
-  final double progress;
-  static const colors = [
-    Color(0xFF507CFF),
-    Color(0xFFFF6F83),
-    Color(0xFFFFC16D),
-    Color(0xFF39B8A6),
-    Color(0xFFB69CFF),
-  ];
-
-  const _WinConfettiPainter(this.progress);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final random = Random(42);
-    final paint = Paint()..style = PaintingStyle.fill;
-    for (var i = 0; i < 76; i++) {
-      final x = random.nextDouble() * size.width;
-      final phase = random.nextDouble();
-      final speed = 0.65 + random.nextDouble() * 0.7;
-      final drift = (random.nextDouble() - 0.5) * 54;
-      final y = ((progress * speed + phase) % 1.18) * size.height -
-          size.height * 0.09;
-      final fade = (1 - progress * 0.45).clamp(0.0, 1.0);
-      paint.color = colors[i % colors.length].withValues(alpha: fade);
-      canvas.save();
-      canvas.translate(x + drift * progress, y);
-      canvas.rotate(progress * 7 + phase * pi * 2);
-      final width = 4.0 + random.nextDouble() * 4;
-      final height = 7.0 + random.nextDouble() * 7;
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromCenter(
-            center: Offset.zero,
-            width: width,
-            height: height,
-          ),
-          const Radius.circular(1.5),
-        ),
-        paint,
-      );
-      canvas.restore();
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _WinConfettiPainter oldDelegate) =>
-      oldDelegate.progress != progress;
 }

@@ -51,10 +51,17 @@ class _ActionGameState extends State<ActionGame>
     <Point<int>>[const Point(14, 5)],
   ];
   final dirs = [const Point(1, 0), const Point(-1, 0)];
+  final lastMoved = [const Point(1, 0), const Point(-1, 0)];
   Point<int> food = const Point(10, 10);
   Offset ball = const Offset(.5, .5), ballV = const Offset(.25, .36);
   final targets = [const Offset(.3, .7), const Offset(.7, .3)];
   Size area = Size.zero;
+
+  /// Paddle hits in the current ping-pong rally (the ball speeds up with it).
+  int rally = 0;
+
+  /// Seconds left before the ball moves again after a point.
+  double serve = 0;
   @override
   void initState() {
     super.initState();
@@ -156,7 +163,8 @@ class _ActionGameState extends State<ActionGame>
       for (final entry in aims.entries) {
         final p = entry.key;
         final delta = entry.value - players[p];
-        players[p] += normal(delta) * min(delta.distance, dt * .65);
+        final follow = widget.id == 6 ? 1.2 : .65;
+        players[p] += normal(delta) * min(delta.distance, dt * follow);
       }
     }
     if (racing) {
@@ -211,8 +219,12 @@ class _ActionGameState extends State<ActionGame>
                   ? 1.25
                   : 1.0)
               : 1.0;
-      ball += ballV * dt * speed;
-      ballV *= pow(.998, dt * 60).toDouble();
+      if (serve > 0) {
+        serve = max(0.0, serve - dt);
+      } else {
+        ball += ballV * dt * speed;
+        ballV *= pow(.998, dt * 60).toDouble();
+      }
       if (ball.dx < .025 || ball.dx > .975) {
         ballV = Offset(-ballV.dx, ballV.dy);
         ball = Offset(ball.dx.clamp(.025, .975), ball.dy);
@@ -223,9 +235,11 @@ class _ActionGameState extends State<ActionGame>
           if (widget.id == 5) {
             if ((p == 0 && ballV.dy > 0) || (p == 1 && ballV.dy < 0)) {
               JoySounds.instance.play(SoundEffect.hit);
+              rally++;
+              final boost = min(1.4, 1 + rally * .04);
               ballV = Offset(
                 (ball.dx - players[p].dx) * 5,
-                p == 0 ? -.55 : .55,
+                (p == 0 ? -.55 : .55) * boost,
               );
               ball = Offset(ball.dx, players[p].dy + (p == 0 ? -.06 : .06));
             }
@@ -242,6 +256,8 @@ class _ActionGameState extends State<ActionGame>
           point(top ? 0 : 1);
           ball = const Offset(.5, .5);
           ballV = Offset((rng.nextDouble() - .5) * .5, top ? .4 : -.4);
+          rally = 0;
+          serve = .7;
         } else {
           ball = Offset(ball.dx, top ? .01 : .99);
           ballV = Offset(ballV.dx, -ballV.dy);
@@ -266,8 +282,9 @@ class _ActionGameState extends State<ActionGame>
       if (d.distance < .10) {
         JoySounds.instance.play(SoundEffect.hit);
         final n = normal(d.distance == 0 ? const Offset(1, 0) : d);
-        players[0] -= n * .009;
-        players[1] += n * .009;
+        final push = .009 * dt * 60;
+        players[0] -= n * push;
+        players[1] += n * push;
       }
       final radius = .43;
       for (var p = 0; p < 2; p++) {
@@ -317,11 +334,18 @@ class _ActionGameState extends State<ActionGame>
             s.life = -1;
           }
         } else if (s.life <= 0) {
-          for (var p = 0; p < 2; p++) {
-            if ((s.p - players[p]).distance < .16) {
-              finish(1 - p);
-              break;
-            }
+          final hit = [
+            for (var p = 0; p < 2; p++) (s.p - players[p]).distance < .16,
+          ];
+          if (hit[0] || hit[1]) {
+            finish(
+              hit[0] && hit[1]
+                  ? -1
+                  : hit[0]
+                  ? 1
+                  : 0,
+            );
+            break;
           }
         }
       }
@@ -331,6 +355,9 @@ class _ActionGameState extends State<ActionGame>
       snakeClock += dt;
       if (snakeClock > .16) {
         snakeClock = 0;
+        for (var p = 0; p < 2; p++) {
+          lastMoved[p] = dirs[p];
+        }
         final heads = [
           for (var p = 0; p < 2; p++)
             Point(snakes[p].first.x + dirs[p].x, snakes[p].first.y + dirs[p].y),
@@ -475,7 +502,9 @@ class _ActionGameState extends State<ActionGame>
   }
 
   void direction(int p, Point<int> d) {
-    if (d.x != -dirs[p].x || d.y != -dirs[p].y) dirs[p] = d;
+    // Compare with the last step taken, so two quick taps cannot reverse
+    // the snake into its own body before it has moved.
+    if (d.x != -lastMoved[p].x || d.y != -lastMoved[p].y) dirs[p] = d;
   }
 
   Widget controls(int p) => Row(
@@ -547,17 +576,19 @@ class _ActionGameState extends State<ActionGame>
                   onPointerMove: move,
                   onPointerUp: up,
                   onPointerCancel: up,
-                  child: CustomPaint(
-                    size: area,
-                    painter: ArenaPainter(
-                      id: widget.id,
-                      time: time,
-                      players: players,
-                      ball: ball,
-                      shots: shots,
-                      targets: targets,
-                      snakes: snakes,
-                      food: food,
+                  child: RepaintBoundary(
+                    child: CustomPaint(
+                      size: area,
+                      painter: ArenaPainter(
+                        id: widget.id,
+                        time: time,
+                        players: players,
+                        ball: ball,
+                        shots: shots,
+                        targets: targets,
+                        snakes: snakes,
+                        food: food,
+                      ),
                     ),
                   ),
                 ),
