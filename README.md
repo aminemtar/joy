@@ -59,7 +59,7 @@ Active gameplay has no scrolling parent. Boards and their controls are laid out 
 | 8 | Penalty Shootout | Flick shots while the opposing player actively drags the keeper. Roles alternate. |
 | 9 | Basket Shots | Time taps to align a moving basketball with the hoop. |
 | 10 | Mini Golf | Pull back and release to putt; use wall bounces and controlled speed. |
-| 11 | Sumo Ring | Push the rival outside a fixed ring while keeping your body inside. |
+| 11 | Sumo Ring | Hold the arrow buttons (or arrow keys / WASD) to charge. Push the rival outside the ring and stay inside yourself. |
 | 12 | Tank Battle | Move and fire traveling projectiles to land five hits. |
 | 13 | Snake Duel | Steer a growing trail around food, walls and the opponent. |
 | 14 | Bomber Arena | Place delayed area blasts; escape both your own and your rival's bombs. |

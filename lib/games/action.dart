@@ -1,3 +1,5 @@
+import '../joy_theme.dart';
+import '../players.dart';
 import '../sound.dart';
 import '../party_data.dart';
 import 'dart:math';
@@ -5,6 +7,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'arrow_pad.dart';
 import 'sprites.dart';
 import 'tuning.dart';
 
@@ -69,6 +72,14 @@ class _ActionGameState extends State<ActionGame>
 
   /// Seconds left before the ball moves again after a point.
   double serve = 0;
+
+  /// Arrow directions each player holds, in screen coordinates. Sumo reads
+  /// them as a joystick; Snake turns on the press instead.
+  final held = [<Point<int>>{}, <Point<int>>{}];
+
+  /// Whether the two Sumo wrestlers were touching on the previous frame.
+  bool touching = false;
+  final focus = FocusNode(debugLabel: 'arena');
   @override
   void initState() {
     super.initState();
@@ -86,6 +97,7 @@ class _ActionGameState extends State<ActionGame>
     WidgetsBinding.instance.removeObserver(this);
     ticker.dispose();
     repaint.dispose();
+    focus.dispose();
     super.dispose();
   }
 
@@ -99,6 +111,9 @@ class _ActionGameState extends State<ActionGame>
   bool get racing => widget.id == 0;
   bool get field => [5, 6].contains(widget.id);
   bool get ring => widget.id == 10;
+
+  /// Sumo and Snake are played with arrow buttons or the keyboard, not touch.
+  bool get arrows => widget.id == 10 || widget.id == 12;
   Offset normal(Offset o) {
     final d = o.distance;
     return d == 0 ? Offset.zero : o / d;
@@ -278,21 +293,45 @@ class _ActionGameState extends State<ActionGame>
       }
     }
     if (ring) {
+      for (var p = 0; p < 2; p++) {
+        final want = heldVector(p) * FieldTuning.sumoSpeed;
+        final blend = 1 - exp(-dt * FieldTuning.sumoGrip);
+        velocity[p] = Offset.lerp(velocity[p], want, blend)!;
+        players[p] = clamp(players[p] + velocity[p] * dt);
+      }
       final d = players[1] - players[0];
       if (d.distance < .10) {
-        JoySounds.instance.play(SoundEffect.hit);
+        if (!touching) {
+          JoySounds.instance.play(SoundEffect.hit);
+          if (widget.haptics) HapticFeedback.lightImpact();
+        }
+        touching = true;
         final n = normal(d.distance == 0 ? const Offset(1, 0) : d);
         final push = .009 * dt * 60;
-        players[0] -= n * push;
-        players[1] += n * push;
+        // Charging into the rival adds weight to the shove, so a good timing
+        // beats simply leaning on the other wrestler.
+        double charge(Offset v, Offset toward) =>
+            max(0.0, v.dx * toward.dx + v.dy * toward.dy) *
+            FieldTuning.sumoShove *
+            dt;
+        players[0] -= n * (push + charge(velocity[1], -n));
+        players[1] += n * (push + charge(velocity[0], n));
+      } else {
+        touching = false;
       }
-      final radius = .43;
-      for (var p = 0; p < 2; p++) {
-        final relative = players[p] - const Offset(.5, .5);
-        if (relative.distance > radius) {
-          finish(1 - p);
-          break;
-        }
+      const radius = .43;
+      final out = [
+        for (var p = 0; p < 2; p++)
+          (players[p] - const Offset(.5, .5)).distance > radius,
+      ];
+      if (out[0] || out[1]) {
+        finish(
+          out[0] && out[1]
+              ? -1
+              : out[0]
+              ? 1
+              : 0,
+        );
       }
     }
     if (widget.id == 8) {
@@ -422,7 +461,7 @@ class _ActionGameState extends State<ActionGame>
   Offset location(PointerEvent e) =>
       Offset(e.localPosition.dx / area.width, e.localPosition.dy / area.height);
   void down(PointerDownEvent e) {
-    if (paused || over || countdown > 0) return;
+    if (paused || over || countdown > 0 || arrows) return;
     final v = location(e);
     final p = v.dy > .5 ? 0 : 1;
     if (pointers.containsValue(p) ||
@@ -512,54 +551,116 @@ class _ActionGameState extends State<ActionGame>
     if (d.x != -lastMoved[p].x || d.y != -lastMoved[p].y) dirs[p] = d;
   }
 
-  Widget controls(int p) => Row(
-    mainAxisAlignment: MainAxisAlignment.center,
-    children:
-        widget.id == 12
-            ? [
-              for (final d in [
-                const Point(-1, 0),
-                const Point(0, -1),
-                const Point(0, 1),
-                const Point(1, 0),
-              ])
-                IconButton(
-                  onPressed: () => direction(p, d),
-                  icon: Icon(
-                    d.x == -1
-                        ? Icons.arrow_back
-                        : d.x == 1
-                        ? Icons.arrow_forward
-                        : d.y == -1
-                        ? Icons.arrow_upward
-                        : Icons.arrow_downward,
-                  ),
-                ),
-            ]
-            : [
-              if (widget.id == 11 || widget.id == 13)
-                FilledButton(
-                  onPressed: () => fire(p),
-                  child: Text(widget.id == 13 ? 'DROP BOMB' : 'FIRE'),
-                )
-              else
-                Text(
-                  '${PartyData.instance.colorSymbols ? 'P${p + 1} ' : ''}${widget.names[p]} • ${score[p]}',
-                  style: TextStyle(
-                    color:
-                        p == 0
-                            ? const Color(0xFF709AFF)
-                            : const Color(0xFFFF8CA4),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-            ],
-  );
+  /// Turns a direction seen from player [p]'s side into screen coordinates.
+  /// The pad of the player across the table is rotated by 180 degrees.
+  Point<int> screen(int p, Point<int> d) => p == 0 ? d : Point(-d.x, -d.y);
+
+  /// The direction player [p] is holding, as a unit vector (or zero).
+  Offset heldVector(int p) {
+    var x = 0, y = 0;
+    for (final d in held[p]) {
+      x += d.x;
+      y += d.y;
+    }
+    return normal(Offset(x.toDouble(), y.toDouble()));
+  }
+
+  void press(int p, Point<int> d) {
+    if (widget.id == 12) {
+      direction(p, d);
+    } else {
+      held[p].add(d);
+    }
+  }
+
+  void release(int p, Point<int> d) => held[p].remove(d);
+
+  static final _arrowKeys = <LogicalKeyboardKey, Point<int>>{
+    LogicalKeyboardKey.arrowLeft: const Point(-1, 0),
+    LogicalKeyboardKey.arrowUp: const Point(0, -1),
+    LogicalKeyboardKey.arrowDown: const Point(0, 1),
+    LogicalKeyboardKey.arrowRight: const Point(1, 0),
+  };
+  static final _wasdKeys = <LogicalKeyboardKey, Point<int>>{
+    LogicalKeyboardKey.keyA: const Point(-1, 0),
+    LogicalKeyboardKey.keyW: const Point(0, -1),
+    LogicalKeyboardKey.keyS: const Point(0, 1),
+    LogicalKeyboardKey.keyD: const Point(1, 0),
+  };
+
+  /// Keyboard play: the bottom player uses the arrow keys, the top one WASD.
+  KeyEventResult onKey(FocusNode node, KeyEvent e) {
+    if (!arrows) return KeyEventResult.ignored;
+    for (var p = 0; p < 2; p++) {
+      final d = (p == 0 ? _arrowKeys : _wasdKeys)[e.logicalKey];
+      if (d == null) continue;
+      if (e is KeyDownEvent) {
+        press(p, d);
+      } else if (e is KeyUpEvent) {
+        release(p, d);
+      }
+      return KeyEventResult.handled;
+    }
+    return KeyEventResult.ignored;
+  }
+
+  Widget controls(int p) {
+    final color = playerColors[p];
+    if (arrows) {
+      return ArrowPad(
+        player: p,
+        color: color,
+        onPress: (d) => press(p, screen(p, d)),
+        onRelease: (d) => release(p, screen(p, d)),
+      );
+    }
+    if (widget.id == 11 || widget.id == 13) {
+      return Center(
+        child: FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: color,
+            foregroundColor: JoyTheme.background,
+            minimumSize: const Size(160, 44),
+          ),
+          onPressed: () => fire(p),
+          child: Text(widget.id == 13 ? 'DROP BOMB' : 'FIRE'),
+        ),
+      );
+    }
+    final label =
+        '${PartyData.instance.colorSymbols ? 'P${p + 1} ' : ''}'
+        '${widget.names[p]} • ${score[p]}';
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: .14),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withValues(alpha: .55)),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: Color.lerp(color, Colors.white, .35),
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) => Column(
+  Widget build(BuildContext context) => Focus(
+    focusNode: focus,
+    autofocus: true,
+    onKeyEvent: onKey,
+    child: arena(),
+  );
+
+  Widget arena() => Column(
     children: [
       SizedBox(
-        height: 48,
+        height: arrows ? 58 : 48,
         child: Row(
           children: [
             Expanded(child: RotatedBox(quarterTurns: 2, child: controls(1))),
@@ -628,7 +729,7 @@ class _ActionGameState extends State<ActionGame>
           },
         ),
       ),
-      SizedBox(height: 64, child: controls(0)),
+      SizedBox(height: arrows ? 72 : 64, child: controls(0)),
     ],
   );
 }
@@ -653,6 +754,97 @@ class ArenaPainter extends CustomPainter {
   });
   final brush = Paint();
 
+  /// Draws the Sumo ring. It is the same ellipse the physics uses (radius .43
+  /// of the arena), with a clay floor, a straw rope and a red edge warning.
+  void dohyo(Canvas c, Size s) {
+    const radius = .43;
+    final rect = Rect.fromCenter(
+      center: s.center(Offset.zero),
+      width: radius * 2 * s.width,
+      height: radius * 2 * s.height,
+    );
+    c.drawOval(
+      rect.shift(const Offset(0, 8)).inflate(4),
+      Paint()
+        ..color = Colors.black.withValues(alpha: .35)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14),
+    );
+    c.drawOval(
+      rect,
+      Paint()
+        ..shader = const RadialGradient(
+          colors: [Color(0xFF3B4F82), Color(0xFF263760)],
+        ).createShader(rect),
+    );
+    final ripple =
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.2
+          ..color = Colors.white.withValues(alpha: .07);
+    for (final f in const [.35, .6, .82]) {
+      c.drawOval(
+        Rect.fromCenter(
+          center: rect.center,
+          width: rect.width * f,
+          height: rect.height * f,
+        ),
+        ripple,
+      );
+    }
+    // Starting lines, one in each player's colour.
+    for (var p = 0; p < 2; p++) {
+      c.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(
+            center: Offset(s.width * .5, s.height * (p == 0 ? .82 : .18)),
+            width: s.width * .16,
+            height: 4,
+          ),
+          const Radius.circular(2),
+        ),
+        Paint()..color = playerColors[p].withValues(alpha: .45),
+      );
+    }
+    final reach = players
+        .map((p) => (p - const Offset(.5, .5)).distance / radius)
+        .reduce(max);
+    final danger = ((reach - .72) / .28).clamp(0.0, 1.0);
+    if (danger > 0) {
+      c.drawOval(
+        rect,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 14
+          ..color = const Color(0xFFFF6F83).withValues(alpha: danger * .7)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7),
+      );
+    }
+    c.drawOval(
+      rect,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 10
+        ..color = const Color(0xFFD9B26A),
+    );
+    c.drawOval(
+      rect.deflate(3),
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..color = Colors.white.withValues(alpha: .35),
+    );
+    final knot = Paint()..color = const Color(0xFF8C6A32);
+    for (var i = 0; i < 28; i++) {
+      final angle = 2 * pi * i / 28;
+      c.drawCircle(
+        rect.center +
+            Offset(cos(angle) * rect.width / 2, sin(angle) * rect.height / 2),
+        1.8,
+        knot,
+      );
+    }
+  }
+
   @override
   void paint(Canvas c, Size s) {
     Offset at(Offset p) => Offset(p.dx * s.width, p.dy * s.height);
@@ -667,46 +859,17 @@ class ArenaPainter extends CustomPainter {
           ..strokeWidth = 1,
       );
     }
-    c.drawLine(
-      Offset(0, s.height / 2),
-      Offset(s.width, s.height / 2),
-      brush
-        ..color = Colors.white24
-        ..strokeWidth = 2,
-    );
-    if (id == 10) {
-      final radius =
-          .43; // Physics uses normalized arena coordinates, so render the same ellipse.
-      c.drawOval(
-        Rect.fromCenter(
-          center: at(const Offset(.5, .5)),
-          width: radius * 2 * s.width,
-          height: radius * 2 * s.height,
-        ),
-        brush..color = const Color(0xFF283861),
+    if (id != 10) {
+      c.drawLine(
+        Offset(0, s.height / 2),
+        Offset(s.width, s.height / 2),
+        brush
+          ..color = Colors.white24
+          ..strokeWidth = 2,
       );
     }
     if (id == 10) {
-      final radius = .43;
-      final ring = Rect.fromCenter(
-        center: at(const Offset(.5, .5)),
-        width: radius * 2 * s.width,
-        height: radius * 2 * s.height,
-      );
-      c.drawOval(
-        ring,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 7
-          ..color = const Color(0xFF6387D3),
-      );
-      c.drawOval(
-        ring.deflate(10),
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5
-          ..color = Colors.white.withValues(alpha: .15),
-      );
+      dohyo(c, s);
     }
     if (id == 6) {
       final lines =
@@ -836,6 +999,22 @@ class ArenaPainter extends CustomPainter {
             atan2(direction.dy, direction.dx) + pi / 2,
           );
         } else if (id == 10) {
+          c.drawOval(
+            Rect.fromCenter(
+              center: center + Offset(0, r * 1.05),
+              width: r * 2.4,
+              height: r * .8,
+            ),
+            Paint()..color = Colors.black.withValues(alpha: .3),
+          );
+          c.drawCircle(
+            center,
+            r * 1.5,
+            Paint()
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 2
+              ..color = color.withValues(alpha: .45),
+          );
           GameSprites.wrestler(c, center, r, color);
         } else if (id == 8) {
           GameSprites.ball(c, center, r, basketball: true);

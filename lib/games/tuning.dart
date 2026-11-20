@@ -29,6 +29,15 @@ abstract final class FieldTuning {
   /// Air Hockey strikers follow faster: the puck moves at .7 per second.
   static const hockeyFollow = 1.2;
 
+  /// Top speed of a Sumo wrestler held on an arrow, per second.
+  static const sumoSpeed = .6;
+
+  /// How quickly a wrestler reaches that speed (higher is snappier).
+  static const sumoGrip = 9.0;
+
+  /// Extra shove, per second, for each unit of speed charged into the rival.
+  static const sumoShove = .45;
+
   /// Multiplier on [hitSpeed] for the current rally length.
   static double rallyBoost(int rally) => min(rallyCap, 1 + rally * rallyStep);
 

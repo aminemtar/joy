@@ -82,7 +82,7 @@ const games = <GameInfo>[
     "💥",
     "Arena",
     Family.action,
-    "Drag your wrestler into your rival and push them outside the ring. Stay inside yourself.",
+    "Hold the arrow buttons (or arrow keys / WASD) to charge your rival and push them outside the ring. Stay inside yourself.",
   ),
   GameInfo(
     "Tank Battle",

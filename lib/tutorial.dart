@@ -57,8 +57,8 @@ const tutorialSteps = <List<String>>[
     'Use gentle shots and wall bounces to reach the cup.',
   ],
   [
-    'Touch your sumo wrestler.',
-    'Drag to push your opponent.',
+    'Your wrestler starts on your line of the ring.',
+    'Hold the arrow buttons to charge. On a keyboard use the arrow keys or WASD.',
     'Stay inside the ring while pushing them outside.',
   ],
   [
@@ -260,7 +260,9 @@ class _GameTutorialState extends State<GameTutorial>
             ),
             const SizedBox(height: 12),
             Text(
-              drag
+              const {10, 12}.contains(widget.id)
+                  ? 'Demonstration: hold an arrow button to move.'
+                  : drag
                   ? 'Demonstration: drag the highlighted control.'
                   : 'Demonstration: tap a highlighted target when it is your turn.',
               style: const TextStyle(color: JoyTheme.muted),
