@@ -319,7 +319,7 @@ class _ActionGameState extends State<ActionGame>
       } else {
         touching = false;
       }
-      const radius = .43;
+      final radius = FieldTuning.sumoRadius(time);
       final out = [
         for (var p = 0; p < 2; p++)
           (players[p] - const Offset(.5, .5)).distance > radius,
@@ -755,9 +755,9 @@ class ArenaPainter extends CustomPainter {
   final brush = Paint();
 
   /// Draws the Sumo ring. It is the same ellipse the physics uses (radius .43
-  /// of the arena), with a clay floor, a straw rope and a red edge warning.
+  /// of the arena, shrinking after a few seconds), with a clay floor, a straw rope and a red edge warning.
   void dohyo(Canvas c, Size s) {
-    const radius = .43;
+    final radius = FieldTuning.sumoRadius(time);
     final rect = Rect.fromCenter(
       center: s.center(Offset.zero),
       width: radius * 2 * s.width,

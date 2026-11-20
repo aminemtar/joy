@@ -285,56 +285,103 @@ class _LobbyState extends State<Lobby> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
+                        const SizedBox(height: 12),
                         for (var i = 0; i < playerCount; i++)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: TextFormField(
-                              initialValue: names[i],
-                              maxLength: 16,
-                              decoration: InputDecoration(
-                                labelText: 'Player ${i + 1}',
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: playerColors[i].withValues(alpha: .10),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: playerColors[i].withValues(alpha: .55),
                               ),
-                              onChanged: (v) {
-                                names[i] =
-                                    v.trim().isEmpty
-                                        ? 'Player ${i + 1}'
-                                        : v.trim();
-                              },
                             ),
-                          ),
-                        for (var i = 0; i < playerCount; i++)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: Row(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Expanded(
-                                  child: Text(
-                                    '${names[i]} avatar',
-                                    overflow: TextOverflow.ellipsis,
+                                TextFormField(
+                                  initialValue: names[i],
+                                  maxLength: 16,
+                                  decoration: InputDecoration(
+                                    labelText: 'Player ${i + 1}',
+                                    counterText: '',
                                   ),
-                                ),
-                                DropdownButton<int>(
-                                  value: data.avatars[i],
-                                  items: [
-                                    for (
-                                      var a = 0;
-                                      a < profileAvatars.length;
-                                      a++
-                                    )
-                                      DropdownMenuItem(
-                                        value: a,
-                                        child: Text(profileAvatars[a]),
-                                      ),
-                                  ],
                                   onChanged: (v) {
-                                    if (v != null) {
-                                      update(() => data.avatars[i] = v);
-                                    }
+                                    names[i] =
+                                        v.trim().isEmpty
+                                            ? 'Player ${i + 1}'
+                                            : v.trim();
                                   },
+                                ),
+                                const SizedBox(height: 10),
+                                SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    children: [
+                                      for (
+                                        var a = 0;
+                                        a < profileAvatars.length;
+                                        a++
+                                      )
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                            right: 8,
+                                          ),
+                                          child: Semantics(
+                                            button: true,
+                                            selected: data.avatars[i] == a,
+                                            label: 'Avatar ${a + 1}',
+                                            excludeSemantics: true,
+                                            child: InkWell(
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                              onTap:
+                                                  () => update(
+                                                    () => data.avatars[i] = a,
+                                                  ),
+                                              child: Container(
+                                                width: 48,
+                                                height: 48,
+                                                alignment: Alignment.center,
+                                                decoration: BoxDecoration(
+                                                  color:
+                                                      data.avatars[i] == a
+                                                          ? playerColors[i]
+                                                              .withValues(
+                                                                alpha: .35,
+                                                              )
+                                                          : JoyTheme.surface,
+                                                  borderRadius:
+                                                      BorderRadius.circular(14),
+                                                  border: Border.all(
+                                                    color:
+                                                        data.avatars[i] == a
+                                                            ? playerColors[i]
+                                                            : JoyTheme.border,
+                                                    width:
+                                                        data.avatars[i] == a
+                                                            ? 2
+                                                            : 1,
+                                                  ),
+                                                ),
+                                                child: Text(
+                                                  profileAvatars[a],
+                                                  style: const TextStyle(
+                                                    fontSize: 24,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
                           ),
+                        const _SettingsHeading('Accessibility'),
                         SwitchListTile(
                           title: const Text('Reduced motion'),
                           subtitle: const Text(
@@ -365,6 +412,7 @@ class _LobbyState extends State<Lobby> {
                             data.saveOptions();
                           },
                         ),
+                        const _SettingsHeading('Sound'),
                         ListenableBuilder(
                           listenable: JoyMusic.instance,
                           builder:
@@ -482,6 +530,7 @@ class _LobbyState extends State<Lobby> {
                                 );
                           },
                         ),
+                        const _SettingsHeading('Feel'),
                         SwitchListTile(
                           title: const Text('Vibration'),
                           value: haptics,
@@ -802,88 +851,15 @@ class _LobbyState extends State<Lobby> {
                 builder:
                     (c, constraints) => SliverGrid(
                       delegate: SliverChildBuilderDelegate((c, i) {
-                        final entry = filtered[i];
-                        final g = entry.value;
-                        return Card(
-                          color: JoyTheme.surface,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24),
-                            side: const BorderSide(color: JoyTheme.border),
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: InkWell(
-                            onTap: () => _play([entry.key]),
-                            child: Padding(
-                              padding: const EdgeInsets.all(14),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Stack(
-                                    children: [
-                                      Center(
-                                        child: Hero(
-                                          tag: 'game-${entry.key}',
-                                          child: Material(
-                                            color: Colors.transparent,
-                                            child: ClipRRect(
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                              child: GameArt(
-                                                id: entry.key,
-                                                size: 100,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Align(
-                                        alignment: Alignment.topRight,
-                                        child: IconButton.filledTonal(
-                                          tooltip:
-                                              data.favorites.contains(entry.key)
-                                                  ? 'Remove favorite'
-                                                  : 'Add favorite',
-                                          onPressed: () async {
-                                            await data.toggleFavorite(
-                                              entry.key,
-                                            );
-                                            if (mounted) setState(() {});
-                                          },
-                                          icon: Icon(
-                                            data.favorites.contains(entry.key)
-                                                ? Icons.favorite_rounded
-                                                : Icons.favorite_border_rounded,
-                                            size: 18,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const Spacer(),
-                                  Text(
-                                    g.name,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      color: JoyTheme.ink,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    g.category,
-                                    style: const TextStyle(
-                                      color: JoyTheme.muted,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
+                        final id = filtered[i].key;
+                        return GameCard(
+                          id: id,
+                          favorite: data.favorites.contains(id),
+                          onPlay: () => _play([id]),
+                          onFavorite: () async {
+                            await data.toggleFavorite(id);
+                            if (mounted) setState(() {});
+                          },
                         );
                       }, childCount: filtered.length),
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -893,7 +869,11 @@ class _LobbyState extends State<Lobby> {
                         ),
                         mainAxisSpacing: 10,
                         crossAxisSpacing: 10,
-                        mainAxisExtent: 260,
+                        mainAxisExtent:
+                            252 +
+                            44 *
+                                (MediaQuery.textScalerOf(c).scale(1) - 1)
+                                    .clamp(0.0, 1.0),
                       ),
                     ),
               ),
@@ -903,6 +883,31 @@ class _LobbyState extends State<Lobby> {
       ),
     );
   }
+}
+
+/// A small section title inside the settings sheet.
+class _SettingsHeading extends StatelessWidget {
+  final String label;
+  const _SettingsHeading(this.label);
+  @override
+  Widget build(BuildContext context) => Align(
+    alignment: AlignmentDirectional.centerStart,
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(4, 14, 0, 4),
+      child: Semantics(
+        header: true,
+        child: Text(
+          label.toUpperCase(),
+          style: const TextStyle(
+            color: JoyTheme.muted,
+            fontSize: 12,
+            letterSpacing: 1.6,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 class MatchScreen extends StatefulWidget {

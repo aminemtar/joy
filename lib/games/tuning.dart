@@ -30,13 +30,28 @@ abstract final class FieldTuning {
   static const hockeyFollow = 1.2;
 
   /// Top speed of a Sumo wrestler held on an arrow, per second.
-  static const sumoSpeed = .6;
+  static const sumoSpeed = .7;
 
   /// How quickly a wrestler reaches that speed (higher is snappier).
-  static const sumoGrip = 9.0;
+  static const sumoGrip = 10.0;
 
   /// Extra shove, per second, for each unit of speed charged into the rival.
-  static const sumoShove = .45;
+  static const sumoShove = 1.6;
+
+  /// Seconds of play before the Sumo ring starts to shrink.
+  static const sumoShrinkStart = 8.0;
+
+  /// How fast the ring edge closes in once it shrinks, per second.
+  static const sumoShrinkRate = .015;
+
+  /// How far the ring can close in, so a stalemate always ends.
+  static const sumoShrinkMax = .15;
+
+  /// Radius of the Sumo ring after [seconds] of play (normalized arena units).
+  static double sumoRadius(double seconds) {
+    final closed = max(0.0, seconds - sumoShrinkStart) * sumoShrinkRate;
+    return .43 - min(sumoShrinkMax, closed);
+  }
 
   /// Multiplier on [hitSpeed] for the current rally length.
   static double rallyBoost(int rally) => min(rallyCap, 1 + rally * rallyStep);

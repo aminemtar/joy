@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'catalog.dart';
+import 'game_art.dart';
 import 'joy_theme.dart';
+import 'tutorial_scenes.dart';
 import 'players.dart';
 import 'party_data.dart';
 
@@ -163,4 +166,161 @@ class InfoPill extends StatelessWidget {
       ],
     ),
   );
+}
+
+/// One accent color per game category, used for the card edge and label.
+Color categoryColor(String category) => switch (category) {
+  'Cars' => const Color(0xFFFF8A5B),
+  'Sports' => const Color(0xFF4CD08A),
+  'Arena' => const Color(0xFFFF6F83),
+  'Puzzles' => const Color(0xFF6FD3FF),
+  'Memory' => const Color(0xFFA08AFF),
+  'Brain' => const Color(0xFFFFC16D),
+  'Words' => const Color(0xFFFF9EDB),
+  'Strategy' => const Color(0xFF91ACFF),
+  _ => const Color(0xFFFFD166),
+};
+
+/// How a game is controlled, shown on its card.
+(IconData, String) controlBadge(int id) {
+  if (tutorialArrowGames.contains(id)) {
+    return (Icons.gamepad_rounded, 'Arrows');
+  }
+  if (tutorialDragGames.contains(id)) {
+    return (Icons.swipe_rounded, 'Drag');
+  }
+  return (Icons.touch_app_rounded, 'Tap');
+}
+
+/// A lobby tile: artwork, name, category and how the game is controlled.
+///
+/// Wrapped in a repaint boundary so scrolling the grid never repaints the
+/// neighbouring tiles.
+class GameCard extends StatelessWidget {
+  final int id;
+  final bool favorite;
+  final VoidCallback onPlay, onFavorite;
+  const GameCard({
+    super.key,
+    required this.id,
+    required this.favorite,
+    required this.onPlay,
+    required this.onFavorite,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final game = games[id];
+    final color = categoryColor(game.category);
+    final (icon, control) = controlBadge(id);
+    return RepaintBoundary(
+      child: Semantics(
+        button: true,
+        label: '${game.name}, ${game.category}, $control controls',
+        excludeSemantics: true,
+        onTap: onPlay,
+        child: Material(
+          color: JoyTheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+            side: BorderSide(color: color.withValues(alpha: .35)),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: onPlay,
+            child: Stack(
+              children: [
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  height: 4,
+                  child: ColoredBox(color: color),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 16, 14, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Hero(
+                          tag: 'game-$id',
+                          child: Material(
+                            color: Colors.transparent,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: GameArt(id: id, size: 100),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        game.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: JoyTheme.ink,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: color,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              game.category,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: JoyTheme.muted,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                          Icon(icon, size: 14, color: JoyTheme.muted),
+                          const SizedBox(width: 3),
+                          Text(
+                            control,
+                            style: const TextStyle(
+                              color: JoyTheme.muted,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 6,
+                  child: IconButton.filledTonal(
+                    tooltip: favorite ? 'Remove favorite' : 'Add favorite',
+                    onPressed: onFavorite,
+                    icon: Icon(
+                      favorite
+                          ? Icons.favorite_rounded
+                          : Icons.favorite_border_rounded,
+                      size: 18,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

@@ -46,4 +46,17 @@ void main() {
   test('Air Hockey strikers are quicker than the puck they chase', () {
     expect(FieldTuning.hockeyFollow, greaterThan(.7));
   });
+
+  test('The Sumo ring holds, then closes in, then stops shrinking', () {
+    expect(FieldTuning.sumoRadius(0), .43);
+    expect(FieldTuning.sumoRadius(FieldTuning.sumoShrinkStart), .43);
+    expect(
+      FieldTuning.sumoRadius(FieldTuning.sumoShrinkStart + 4),
+      lessThan(.43),
+    );
+    expect(
+      FieldTuning.sumoRadius(600),
+      closeTo(.43 - FieldTuning.sumoShrinkMax, 1e-9),
+    );
+  });
 }

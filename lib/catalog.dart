@@ -82,7 +82,7 @@ const games = <GameInfo>[
     "💥",
     "Arena",
     Family.action,
-    "Hold the arrow buttons (or arrow keys / WASD) to charge your rival and push them outside the ring. Stay inside yourself.",
+    "Hold the arrow buttons (or arrow keys / WASD) to charge your rival and push them outside the ring. Stay inside yourself: after a few seconds the ring starts to shrink.",
   ),
   GameInfo(
     "Tank Battle",
