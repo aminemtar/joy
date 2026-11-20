@@ -11,7 +11,6 @@ import 'sound.dart';
 import 'music.dart';
 import 'splash.dart';
 import 'players.dart';
-import 'party_league.dart';
 import 'joy_theme.dart';
 import 'lobby_widgets.dart';
 import 'party_data.dart';
@@ -91,9 +90,8 @@ class _LobbyState extends State<Lobby> {
   String search = '';
   bool practice = false;
   final data = PartyData.instance;
-  final names = ['Blue', 'Coral', 'Amber', 'Violet'];
-  int playerCount = 2;
-  final wins = [0, 0, 0, 0];
+  final names = ['Blue', 'Coral'];
+  final wins = [0, 0];
   bool haptics = true;
   bool busy = false;
   @override
@@ -107,34 +105,29 @@ class _LobbyState extends State<Lobby> {
     await data.initialize();
     if (!mounted) return;
     setState(() {
-      for (var i = 0; i < 4; i++) {
+      for (var i = 0; i < playerCount; i++) {
         names[i] = p.getString('name$i') ?? names[i];
         wins[i] = p.getInt('wins$i') ?? 0;
       }
-      playerCount = (p.getInt('playerCount') ?? 2).clamp(2, 4);
       haptics = p.getBool('haptics') ?? true;
     });
   }
 
   Future<void> _save() async {
     final p = await SharedPreferences.getInstance();
-    for (var i = 0; i < 4; i++) {
+    for (var i = 0; i < playerCount; i++) {
       await p.setString('name$i', names[i]);
       await p.setInt('wins$i', wins[i]);
     }
-    await p.setInt('playerCount', playerCount);
     await p.setBool('haptics', haptics);
   }
 
   Future<void> _partyBuilder() async {
     final plan = await Navigator.of(context).push<PartyPlan>(
-      MaterialPageRoute(builder: (_) => PartyBuilder(players: playerCount)),
+      MaterialPageRoute(builder: (_) => const PartyBuilder()),
     );
     if (plan == null || !mounted) return;
-    setState(() {
-      playerCount = plan.players;
-      practice = false;
-    });
+    setState(() => practice = false);
     await _save();
     if (!mounted) return;
     await _play(partyPlaylist(plan.categories, plan.rounds));
@@ -146,7 +139,7 @@ class _LobbyState extends State<Lobby> {
     final queue = List<int>.of(playlist);
     final solo = practice;
     final participants =
-        solo ? [names[0], 'Computer'] : names.take(playerCount).toList();
+        solo ? [names[0], 'Computer'] : List.of(names);
     final points = List.filled(participants.length, 0);
     final completed = <MatchRecord>[];
     JoySounds.instance.play(SoundEffect.tap);
@@ -169,62 +162,30 @@ class _LobbyState extends State<Lobby> {
         if (solo && !practiceGames.contains(id)) continue;
         await data.opened(id);
         if (!mounted) break;
-        final league = participants.length > 2 && !supportsGroupTurns(id);
-        final started = DateTime.now();
         final winner = await Navigator.of(context).push<int>(
           MaterialPageRoute(
             builder:
-                (_) =>
-                    league
-                        ? PartyLeagueScreen(
-                          gameId: id,
-                          names: participants,
-                          duelBuilder:
-                              (pair) => MatchScreen(
-                                id: id,
-                                names: pair,
-                                haptics: haptics,
-                                allowRematch: false,
-                              ),
-                        )
-                        : MatchScreen(
-                          id: id,
-                          names: participants,
-                          haptics: haptics,
-                          computer: solo,
-                          onResult: (r) => accept(r),
-                          onNextGame:
-                              playlist.length == 1
-                                  ? () {
-                                    final pool =
-                                        solo
-                                            ? practiceGames.toList()
-                                            : List.generate(
-                                              games.length,
-                                              (i) => i,
-                                            );
-                                    pool.remove(id);
-                                    queue.add(
-                                      pool[Random().nextInt(pool.length)],
-                                    );
-                                  }
-                                  : null,
-                        ),
+                (_) => MatchScreen(
+                  id: id,
+                  names: participants,
+                  haptics: haptics,
+                  computer: solo,
+                  onResult: (r) => accept(r),
+                  onNextGame:
+                      playlist.length == 1
+                          ? () {
+                            final pool =
+                                solo
+                                    ? practiceGames.toList()
+                                    : List.generate(games.length, (i) => i);
+                            pool.remove(id);
+                            queue.add(pool[Random().nextInt(pool.length)]);
+                          }
+                          : null,
+                ),
           ),
         );
         if (winner == null) break;
-        if (league) {
-          await accept(
-            MatchRecord(
-              game: id,
-              names: List.of(participants),
-              winner: winner,
-              seconds: DateTime.now().difference(started).inSeconds,
-              date: DateTime.now(),
-            ),
-            persist: false,
-          );
-        }
       }
     } finally {
       busy = false;
@@ -396,7 +357,7 @@ class _LobbyState extends State<Lobby> {
                         SwitchListTile(
                           title: const Text('Player symbols'),
                           subtitle: const Text(
-                            'P1–P4 labels and distinct board symbols',
+                            'P1/P2 labels and distinct board symbols',
                           ),
                           value: data.colorSymbols,
                           onChanged: (v) {
@@ -675,7 +636,7 @@ class _LobbyState extends State<Lobby> {
                               ),
                               InfoPill(
                                 icon: Icons.people_alt_rounded,
-                                label: '2–4 players',
+                                label: '2 players',
                               ),
                             ],
                           ),
@@ -709,16 +670,10 @@ class _LobbyState extends State<Lobby> {
                     ),
                     const SizedBox(height: 20),
                     PartySetup(
-                      count: playerCount,
                       names: names,
                       wins: wins,
                       avatars: data.avatars,
                       onEdit: _settings,
-                      onChanged: (value) {
-                        JoySounds.instance.play(SoundEffect.tap);
-                        setState(() => playerCount = value);
-                        _save();
-                      },
                     ),
                     const SizedBox(height: 16),
                     JoyPanel(
@@ -919,9 +874,7 @@ class _LobbyState extends State<Lobby> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    playerCount == 2
-                                        ? g.category
-                                        : '${playerCount}P ${supportsGroupTurns(entry.key) ? 'shared turns' : 'league'}',
+                                    g.category,
                                     style: const TextStyle(
                                       color: JoyTheme.muted,
                                       fontSize: 12,

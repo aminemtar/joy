@@ -262,7 +262,7 @@ void main() {
                       plan = await Navigator.push<PartyPlan>(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const PartyBuilder(players: 2),
+                          builder: (_) => const PartyBuilder(),
                         ),
                       );
                     },
@@ -274,7 +274,6 @@ void main() {
       );
       await tester.tap(find.text('Open'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('4 players'));
       await tester.tap(find.text('3 rounds'));
       for (final category in games.map((g) => g.category).toSet()) {
         await tester.ensureVisible(find.text(category));
@@ -296,7 +295,7 @@ void main() {
       await tester.ensureVisible(find.text('Start party'));
       await tester.tap(find.text('Start party'));
       await tester.pumpAndSettle();
-      expect(plan!.players, 4);
+      expect(find.text('3 players'), findsNothing);
       expect(plan!.rounds, 3);
       expect(plan!.categories, {'Words'});
     },
@@ -396,14 +395,14 @@ void main() {
     expect(find.text('STEP 2 OF 3'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
   });
-  testWidgets('Shareable scorecard is a valid PNG for four players', (
+  testWidgets('Shareable scorecard is a valid PNG for two players', (
     tester,
   ) async {
     final bytes = await tester.runAsync(
       () => scorecardImage(
         'Party results',
-        ['A', 'B', 'C', 'D'],
-        [3, 2, 1, 0],
+        ['A', 'B'],
+        [3, 2],
         awards: {0: 'Party champion'},
       ),
     );
@@ -412,7 +411,7 @@ void main() {
       final codec = await ui.instantiateImageCodec(bytes);
       final frame = await codec.getNextFrame();
       expect(frame.image.width, 900);
-      expect(frame.image.height, 710);
+      expect(frame.image.height, 510);
       frame.image.dispose();
       codec.dispose();
     });

@@ -23,20 +23,17 @@ class JoyPanel extends StatelessWidget {
   );
 }
 
+/// The two players, face to face: who is playing and the running win count.
 class PartySetup extends StatelessWidget {
-  final int count;
   final List<String> names;
   final List<int> wins;
   final List<int>? avatars;
-  final ValueChanged<int> onChanged;
   final VoidCallback onEdit;
   const PartySetup({
     super.key,
-    required this.count,
     required this.names,
     required this.wins,
     this.avatars,
-    required this.onChanged,
     required this.onEdit,
   });
   @override
@@ -48,7 +45,7 @@ class PartySetup extends StatelessWidget {
           children: [
             const Expanded(
               child: Text(
-                'Your party',
+                'Tonight\'s duel',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
               ),
             ),
@@ -60,124 +57,82 @@ class PartySetup extends StatelessWidget {
           ],
         ),
         const Text(
-          'How many are playing?',
+          'One phone, two players.',
           style: TextStyle(color: JoyTheme.muted, fontSize: 13),
         ),
         const SizedBox(height: 16),
         Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            for (var n = 2; n <= 4; n++) ...[
-              if (n > 2) const SizedBox(width: 8),
-              Expanded(
-                child: Semantics(
-                  selected: count == n,
-                  button: true,
-                  child: Material(
-                    color: count == n ? JoyTheme.accent : JoyTheme.background,
-                    borderRadius: BorderRadius.circular(16),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(16),
-                      onTap: () => onChanged(n),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 180),
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 16,
-                          horizontal: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color:
-                                count == n
-                                    ? const Color(0xFF91ACFF)
-                                    : JoyTheme.border,
-                          ),
-                        ),
-                        child: Column(
-                          children: [
-                            Icon(
-                              n == 2
-                                  ? Icons.people_alt_rounded
-                                  : n == 3
-                                  ? Icons.groups_rounded
-                                  : Icons.diversity_3_rounded,
-                              color: count == n ? Colors.white : JoyTheme.muted,
-                              size: 25,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              '$n players',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: JoyTheme.ink,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+            Expanded(child: _Contender(index: 0, setup: this)),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10),
+              child: Center(
+                child: Text(
+                  'VS',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.5,
+                    color: JoyTheme.muted,
                   ),
                 ),
               ),
-            ],
-          ],
-        ),
-        const SizedBox(height: 18),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (var i = 0; i < count; i++)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: JoyTheme.raised,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (avatars != null)
-                      Padding(
-                        padding: const EdgeInsets.only(right: 6),
-                        child: Text(profileAvatars[avatars![i]]),
-                      ),
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: BoxDecoration(
-                        color: playerColors[i],
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 7),
-                    Text(
-                      names[i],
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${wins[i]} wins',
-                      style: const TextStyle(
-                        color: JoyTheme.muted,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            ),
+            Expanded(child: _Contender(index: 1, setup: this)),
           ],
         ),
       ],
     ),
   );
+}
+
+class _Contender extends StatelessWidget {
+  final int index;
+  final PartySetup setup;
+  const _Contender({required this.index, required this.setup});
+  @override
+  Widget build(BuildContext context) {
+    final color = playerColors[index];
+    final avatar = setup.avatars;
+    return Semantics(
+      label: '${setup.names[index]}, ${setup.wins[index]} wins',
+      excludeSemantics: true,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: .12),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: color.withValues(alpha: .6)),
+        ),
+        child: Column(
+          children: [
+            if (avatar != null)
+              Text(
+                profileAvatars[avatar[index]],
+                style: const TextStyle(fontSize: 30),
+              ),
+            const SizedBox(height: 6),
+            Text(
+              setup.names[index],
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: JoyTheme.ink,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              '${setup.wins[index]} wins',
+              style: const TextStyle(color: JoyTheme.muted, fontSize: 12),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class InfoPill extends StatelessWidget {

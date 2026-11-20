@@ -65,7 +65,7 @@ Future<Uint8List> scorecardImage(
     label('${scores[i]}', 772, y + 20, 32, const Color(0xFFFFC16D), bold: true);
   }
   label(
-    'One phone. Up to four friends. Instant fun. Offline.',
+    'One phone. Two players. Instant fun. Offline.',
     54,
     height - 65,
     20,
@@ -89,7 +89,7 @@ Future<String> shareScorecard(
   Map<int, String> awards = const {},
 }) async {
   final text =
-      'JOY • $title\n${[for (var i = 0; i < names.length; i++) '${names[i]}: ${scores[i]}${awards[i] != null ? ' • ${awards[i]}' : ''}'].join('\n')}\nOne phone. Up to four friends. Instant fun. Offline.';
+      'JOY • $title\n${[for (var i = 0; i < names.length; i++) '${names[i]}: ${scores[i]}${awards[i] != null ? ' • ${awards[i]}' : ''}'].join('\n')}\nOne phone. Two players. Instant fun. Offline.';
   try {
     final bytes = await scorecardImage(title, names, scores, awards: awards);
     return await platform.shareImage(bytes, text);

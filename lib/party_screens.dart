@@ -5,20 +5,18 @@ import 'lobby_widgets.dart';
 import 'party_data.dart';
 
 class PartyPlan {
-  final int players, rounds;
+  final int rounds;
   final Set<String> categories;
-  const PartyPlan(this.players, this.rounds, this.categories);
+  const PartyPlan(this.rounds, this.categories);
 }
 
 class PartyBuilder extends StatefulWidget {
-  final int players;
-  const PartyBuilder({super.key, required this.players});
+  const PartyBuilder({super.key});
   @override
   State<PartyBuilder> createState() => _PartyBuilderState();
 }
 
 class _PartyBuilderState extends State<PartyBuilder> {
-  late int players = widget.players;
   int rounds = 5;
   final categories = games.map((g) => g.category).toSet();
   @override
@@ -31,27 +29,13 @@ class _PartyBuilderState extends State<PartyBuilder> {
         padding: const EdgeInsets.all(24),
         children: [
           const Text(
-            'Your people. Your playlist.',
+            'Your duel. Your playlist.',
             style: TextStyle(fontSize: 27, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 8),
           const Text(
             'Pick categories and a session size. Every round is a different game.',
             style: TextStyle(color: JoyTheme.muted),
-          ),
-          const SizedBox(height: 24),
-          const Text('Players'),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            children: [
-              for (final n in [2, 3, 4])
-                ChoiceChip(
-                  label: Text('$n players'),
-                  selected: players == n,
-                  onSelected: (_) => setState(() => players = n),
-                ),
-            ],
           ),
           const SizedBox(height: 24),
           const Text('Session length'),
@@ -93,7 +77,7 @@ class _PartyBuilderState extends State<PartyBuilder> {
             child: Text(
               available == 0
                   ? 'Select at least one category.'
-                  : '${rounds.clamp(0, available)} different games • $players players\n${players > 2 ? 'Two-sided games include everyone in a league.' : 'Shared screen, offline, ready to play.'}',
+                  : '${rounds.clamp(0, available)} different games • 2 players\nShared screen, offline, ready to play.',
             ),
           ),
           const SizedBox(height: 24),
@@ -103,7 +87,7 @@ class _PartyBuilderState extends State<PartyBuilder> {
                     ? null
                     : () => Navigator.pop(
                       context,
-                      PartyPlan(players, rounds, Set.of(categories)),
+                      PartyPlan(rounds, Set.of(categories)),
                     ),
             icon: const Icon(Icons.play_arrow_rounded),
             label: const Text('Start party'),

@@ -1,6 +1,6 @@
 # JOY — one screen, big rivalries
 
-36 offline mini-games for 2–4 people sharing an Android phone, iPhone or tablet. Includes a searchable illustrated lobby, favorites and recent games, custom party playlists, local profiles, saved results, and optional vibration. Four games also offer solo computer practice. Real-time games support simultaneous touch; strategy and word games use alternating turns.
+36 offline two-player mini-games for two people sharing an Android phone, iPhone or tablet. Includes a searchable illustrated lobby, favorites and recent games, custom party playlists, local profiles, saved results, and optional vibration. Four games also offer solo computer practice. Real-time games support simultaneous touch; strategy and word games use alternating turns.
 
 Tested with Flutter 3.47.8 / Dart 3.13.7. Use the current stable Flutter SDK.
 
@@ -22,24 +22,22 @@ A consistent navy interface with blue accents, bordered information panels, clea
 ## Party features (1.4)
 
 - **Result dialog:** a short entrance animation, a one-shot confetti burst for a win (none for a draw, and none with reduced motion), the players with the winner highlighted, and the next steps two per row. The primary action is filled and listed first; an odd last button spans the row, and buttons stack on narrow screens or very large text. Share feedback appears inside the dialog.
-- **Quick rematch:** replay from the result dialog without returning to the lobby. Each completed match is counted once. In a league, Continue advances the fixture instead of replaying it. Quick play also offers a random Next game.
-- **Party mode:** choose 2–4 players, 3/5/8/12 rounds and one or more categories. Playlists contain unique concepts and shorten automatically when a category has fewer games. Interrupted sessions show only completed matches. End-of-session standings and awards use actual results.
+- **Quick rematch:** replay from the result dialog without returning to the lobby. Each completed match is counted once. Quick play also offers a random Next game.
+- **Party mode:** choose 3/5/8/12 rounds and one or more categories. Playlists contain unique concepts and shorten automatically when a category has fewer games. Interrupted sessions show only completed matches. End-of-session standings and awards use actual results.
 - **Library:** heart a game, filter Favorites or Recent, and search by name. The latest eight unique games are saved.
-- **Profiles and history:** edit the four local nicknames and avatars in Settings. The latest 100 completed results include participants, winner/draw, duration and practice status. No account or internet is required. Computer wins never increase a human profile’s total.
+- **Profiles and history:** edit the two local nicknames and avatars in Settings. The latest 100 completed results include participants, winner/draw, duration and practice status. No account or internet is required. Computer wins never increase a human profile’s total.
 - **Tutorials:** all 36 games have a three-step animated control guide before first play, with Skip and a Watch tutorial replay button. Guides illustrate controls; the actual game begins after dismissal.
 - **Computer practice:** Ping Pong, Tic Tac Toe, Connect Four and Rock Paper Scissors. Board bots make legal moves; normal bots win/block immediate threats, hard Tic Tac Toe uses minimax, and hard Connect Four avoids immediate losing replies. RPS chooses randomly without inspecting the human choice.
 - **Difficulty:** Easy/Normal/Hard affects Ping Pong ball/bot speed, board bot strength in practice, Simon sequence length/flash speed, cup shuffle speed, and Math Sprint number ranges. Other concepts retain their standard rules.
 - **Round duration:** Untimed or 60/120/180 seconds on score-based games (racing, parking, paddles, baskets, picture pairs, observation searches, riddles, math, reaction, scramble and crossword). Expiry compares live scores; equal leaders draw. The clock pauses in the background and during action-game countdown/manual pause. Other games use their natural finish condition.
-- **Accessibility:** saved reduced motion and larger text settings, P1–P4 scoreboard labels, and distinct Connect Four shapes. Existing Simon pads are numbered and Tic Tac Toe uses cross/circle shapes.
+- **Accessibility:** saved reduced motion and larger text settings, P1/P2 scoreboard labels, and distinct Connect Four shapes. Existing Simon pads are numbered and Tic Tac Toe uses cross/circle shapes.
 - **Scorecards:** share a PNG from match or party results. Android/iOS open the native share sheet; browsers download the image. Unsupported platform sharing falls back to copying the result text. Images are generated locally; nothing is posted automatically.
 
 ## Opening and player choice
 
 The native launch surfaces use JOY’s navy background, followed by an animated logo, orbiting particles and a short loading transition. The splash can be skipped and respects reduced-motion settings.
 
-Choose **2 players**, **3 players** or **4 players** in the lobby. The selection, four player names and individual win totals are saved. The 16 group games use shared turns or individual reaction pads: Treasure Auction, Sliding Puzzle, Picture Pairs, Spot the Difference, Hidden Objects, Simon Echo, Follow the Cup, Riddle Duel, Math Sprint, Reaction Duel, Word Scramble, Crossword Duel, Word Search, Dots and Boxes, Code Breaker and Minesweeper Duel.
-
-The remaining 20 games are two-sided contests. With 3 or 4 players they run as an explicit **round-robin league**, including every unique pair (3 matches for 3 players, 6 for 4). Wins award 3 league points; draws award 1 point to each opponent. The standings select the game’s overall winner. The lobby labels group games as shared turns and the others as leagues. Three/four simultaneous controls are not claimed for those two-sided arenas.
+Joy is a **two-player** game: two people, one phone. The lobby shows both players face to face; their names, avatars and win totals are saved. Every game is a duel, played with simultaneous controls or alternating turns.
 
 ## Fixed play areas and paddle input
 
@@ -103,7 +101,7 @@ The sound service throttles repeated contacts and serializes native resource cha
 ## Structure and artwork
 
 - `lib/catalog.dart`, `lib/game_factory.dart`: catalog, instructions and explicit engine routing.
-- `lib/players.dart`, `lib/party_league.dart`: group-turn compatibility, unique-pair fixtures and league standings.
+- `lib/players.dart`: the fixed player count, player colors and tie-aware leader helper.
 - `lib/music.dart`, `lib/splash.dart`: app-opening music and animated entry.
 - `lib/party_data.dart`, `party_screens.dart`: saved library/history/options, party playlists and awards.
 - `lib/practice_ai.dart`, `tutorial.dart`: legal computer moves and the 36 first-play guides.

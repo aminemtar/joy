@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'catalog.dart';
+import 'players.dart';
 
 enum Difficulty { easy, normal, hard }
 
@@ -68,7 +69,7 @@ class PartyData extends ChangeNotifier {
   final favorites = <int>{}, seen = <int>{};
   final recent = <int>[];
   final history = <MatchRecord>[];
-  final avatars = [0, 1, 2, 3];
+  final avatars = [0, 1];
   bool reducedMotion = false, largeText = false, colorSymbols = false;
   Difficulty difficulty = Difficulty.normal;
   int roundSeconds = 0;
@@ -92,7 +93,7 @@ class PartyData extends ChangeNotifier {
       } catch (_) {}
     }
     if (history.length > 100) history.removeRange(100, history.length);
-    for (var i = 0; i < 4; i++) {
+    for (var i = 0; i < playerCount; i++) {
       avatars[i] = (_prefs!.getInt('avatar$i') ?? i).clamp(
         0,
         profileAvatars.length - 1,
@@ -159,7 +160,7 @@ class PartyData extends ChangeNotifier {
     await _prefs!.setBool('playerSymbols', colorSymbols);
     await _prefs!.setInt('difficulty', difficulty.index);
     await _prefs!.setInt('roundSeconds', roundSeconds);
-    for (var i = 0; i < 4; i++) {
+    for (var i = 0; i < playerCount; i++) {
       await _prefs!.setInt('avatar$i', avatars[i]);
     }
   }
