@@ -47,7 +47,7 @@ const games = <GameInfo>[
     "🏓",
     "Sports",
     Family.action,
-    "Drag your paddle horizontally. Deflect the ball past the opposite baseline. First to five points.",
+    "Drag your paddle, or tap where you want it to glide. Deflect the ball past the opposite baseline. First to five points.",
   ),
   GameInfo(
     "Air Hockey",
@@ -75,7 +75,7 @@ const games = <GameInfo>[
     "⛳",
     "Sports",
     Family.action,
-    "Drag back from your ball, then release to putt. Bank off the walls and roll slowly into three holes.",
+    "Drag back from your ball and release to putt, or tap a spot to roll toward it. Bank off the walls and roll slowly into three holes.",
   ),
   GameInfo(
     "Sumo Ring",
