@@ -2,8 +2,10 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@color/joy_launch" />
     <item>
+        <!-- The artwork has its own transparent padding and is drawn at its
+             natural size, centred: never scaled, so it cannot stretch. -->
         <bitmap
             android:gravity="center"
-            android:src="@mipmap/ic_launcher" />
+            android:src="@drawable/splash_icon" />
     </item>
 </layer-list>
