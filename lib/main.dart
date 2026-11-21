@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'catalog.dart';
 import 'game_factory.dart';
 import 'game_art.dart';
+import 'games/juice.dart' show JoyEffects;
 import 'haptics.dart';
 import 'sound.dart';
 import 'music.dart';
@@ -112,6 +113,7 @@ class _LobbyState extends State<Lobby> {
       }
       haptics = p.getBool('haptics') ?? true;
       JoyHaptics.enabled = haptics;
+      JoyEffects.enabled = p.getBool('effects') ?? true;
     });
   }
 
@@ -122,6 +124,7 @@ class _LobbyState extends State<Lobby> {
       await p.setInt('wins$i', wins[i]);
     }
     await p.setBool('haptics', haptics);
+    await p.setBool('effects', JoyEffects.enabled);
   }
 
   Future<void> _partyBuilder() async {
@@ -544,6 +547,12 @@ class _LobbyState extends State<Lobby> {
                             // Let the player feel what they just switched on.
                             JoyHaptics.buzz(Buzz.medium);
                           }),
+                        ),
+                        SwitchListTile(
+                          title: const Text('Hit effects'),
+                          subtitle: const Text('Sparks, floating points, screen shake'),
+                          value: JoyEffects.enabled,
+                          onChanged: (v) => update(() => JoyEffects.enabled = v),
                         ),
                         FilledButton(
                           onPressed: () {

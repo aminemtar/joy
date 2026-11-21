@@ -2,6 +2,13 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+/// The player's choice for sparks, floating texts and screen shake, separate
+/// from vibration and sound so each channel can be switched off on its own.
+abstract final class JoyEffects {
+  /// Whether hit effects are switched on in Settings.
+  static bool enabled = true;
+}
+
 /// One short-lived spark of an impact burst, in arena coordinates (0 to 1).
 class Spark {
   Offset position;

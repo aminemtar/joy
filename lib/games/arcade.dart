@@ -195,7 +195,9 @@ class _ArcadeGameState extends State<ArcadeGame>
     final now = elapsed.inMicroseconds / 1e6,
         dt = (now - previous).clamp(0.0, .033);
     previous = now;
-    juice.enabled = !(MediaQuery.maybeDisableAnimationsOf(context) ?? false);
+    juice.enabled =
+        JoyEffects.enabled &&
+        !(MediaQuery.maybeDisableAnimationsOf(context) ?? false);
     juice.step(dt);
     if ((done || paused) && juice.active) repaint.value++;
     if (done || paused) return;

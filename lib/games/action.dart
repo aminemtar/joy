@@ -190,7 +190,9 @@ class _ActionGameState extends State<ActionGame>
     final now = elapsed.inMicroseconds / 1e6;
     final dt = (now - last).clamp(0.0, .033);
     last = now;
-    juice.enabled = !(MediaQuery.maybeDisableAnimationsOf(context) ?? false);
+    juice.enabled =
+        JoyEffects.enabled &&
+        !(MediaQuery.maybeDisableAnimationsOf(context) ?? false);
     juice.step(dt);
     if (paused || over || area.isEmpty) {
       if (over && juice.active) repaint.value++;

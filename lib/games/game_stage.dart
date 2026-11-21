@@ -51,7 +51,13 @@ class GameStage extends StatelessWidget {
                   for (var p = 0; p < names.length; p++)
                     SizedBox(
                       width: width,
-                      child: AnimatedContainer(
+                      child: Semantics(
+                        label:
+                            '${names[p]}, ${scores[p]} '
+                            '${scores[p] == 1 ? 'point' : 'points'}'
+                            '${turn == p ? ', your turn' : ''}',
+                        excludeSemantics: true,
+                        child: AnimatedContainer(
                         duration: const Duration(milliseconds: 180),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,
@@ -101,6 +107,7 @@ class GameStage extends StatelessWidget {
                         ),
                       ),
                     ),
+                    ),
                 ],
               );
             },
@@ -115,7 +122,7 @@ class GameStage extends StatelessWidget {
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
-              fontSize: 13,
+              fontSize: 14,
             ),
           ),
         ),
