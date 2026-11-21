@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 export '../players.dart' show playerColors;
@@ -91,12 +93,9 @@ class GameStage extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            Text(
-                              '${scores[p]}',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
-                              ),
+                            _ScoreNumber(
+                              value: scores[p],
+                              color: playerColors[p],
                             ),
                           ],
                         ),
@@ -195,3 +194,81 @@ Widget gameTile({
     ),
   ),
 );
+
+/// The score of one player. When it goes up the number swells and a "+N"
+/// floats away, so every game gets scoring feedback without extra code.
+class _ScoreNumber extends StatefulWidget {
+  final int value;
+  final Color color;
+  const _ScoreNumber({required this.value, required this.color});
+  @override
+  State<_ScoreNumber> createState() => _ScoreNumberState();
+}
+
+class _ScoreNumberState extends State<_ScoreNumber>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 650),
+    value: 1,
+  );
+  int gained = 0;
+
+  @override
+  void didUpdateWidget(_ScoreNumber old) {
+    super.didUpdateWidget(old);
+    if (widget.value > old.value) {
+      gained = widget.value - old.value;
+      controller.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final still = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) {
+        final t = still ? 1.0 : controller.value;
+        final swell = 1 + .5 * sin(pi * t);
+        return Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            Transform.scale(
+              scale: swell,
+              child: Text(
+                '${widget.value}',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+            if (t < 1)
+              Positioned(
+                top: -18 * t - 6,
+                child: Opacity(
+                  opacity: (1 - t).clamp(0.0, 1.0),
+                  child: Text(
+                    '+$gained',
+                    style: TextStyle(
+                      color: widget.color,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
