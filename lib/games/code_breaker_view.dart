@@ -296,8 +296,7 @@ class _AttemptDots extends StatelessWidget {
 class _Orb extends StatelessWidget {
   final int color;
   final double size;
-  final bool glyph;
-  const _Orb({required this.color, required this.size, this.glyph = true});
+  const _Orb({required this.color, required this.size});
 
   @override
   Widget build(BuildContext context) {
@@ -326,18 +325,15 @@ class _Orb extends StatelessWidget {
           ),
         ],
       ),
-      child:
-          glyph
-              ? Text(
-                codeGlyphs[color],
-                style: TextStyle(
-                  fontSize: size * .42,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                  shadows: const [Shadow(color: Colors.black45, blurRadius: 3)],
-                ),
-              )
-              : null,
+      child: Text(
+        codeGlyphs[color],
+        style: TextStyle(
+          fontSize: size * .42,
+          color: Colors.white,
+          fontWeight: FontWeight.w900,
+          shadows: const [Shadow(color: Colors.black45, blurRadius: 3)],
+        ),
+      ),
     );
   }
 }

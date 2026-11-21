@@ -4,6 +4,7 @@ import '../party_data.dart';
 import '../practice_ai.dart';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'bot_skill.dart';
 import 'flip_card.dart';

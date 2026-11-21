@@ -1294,7 +1294,3 @@ void _mines(_Pen p) {
   }
   p.finger(target.center, tap: p.t < .55);
 }
-
-extension on Rect {
-  Rect shift(Offset o) => translate(o.dx, o.dy);
-}
