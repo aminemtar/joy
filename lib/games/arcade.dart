@@ -722,6 +722,7 @@ class _ArcadeGameState extends State<ArcadeGame>
             (context, child) =>
                 Transform.translate(offset: juice.offset, child: child),
         child: GameStage(
+          id: widget.id,
         names: widget.names,
         scores: score,
         turn: widget.id == 3 || widget.id == 14 ? -1 : turn,

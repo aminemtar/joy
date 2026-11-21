@@ -404,6 +404,7 @@ class _PuzzleGameState extends State<PuzzleGame> {
   Widget build(BuildContext context) {
     if (widget.id == 20) {
       return GameStage(
+        id: widget.id,
         names: widget.names,
         scores: score,
         turn: turn,
@@ -456,6 +457,7 @@ class _PuzzleGameState extends State<PuzzleGame> {
       );
     }
     return GameStage(
+      id: widget.id,
       names: widget.names,
       scores: score,
       turn: turn,

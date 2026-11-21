@@ -3,6 +3,7 @@ import '../players.dart';
 import '../sound.dart';
 import '../party_data.dart';
 import 'dart:math';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -1355,20 +1356,181 @@ class ArenaPainter extends CustomPainter {
     }
   }
 
+  /// Floors are recorded once per game and size, then replayed every frame,
+  /// so gradients and patterns cost nothing while the game runs.
+  static final _floors = <(int, Size), ui.Picture>{};
+
+  static ui.Picture _floor(int id, Size s) {
+    if (_floors.length > 12) _floors.clear();
+    return _floors.putIfAbsent((id, s), () {
+      final recorder = ui.PictureRecorder();
+      _paintFloor(Canvas(recorder), id, s);
+      return recorder.endRecording();
+    });
+  }
+
+  /// The surface each game is played on: a table, a rink, a court, a lawn.
+  static void _paintFloor(Canvas c, int id, Size s) {
+    final all = Offset.zero & s;
+    final unit = min(s.width, s.height);
+    final paint = Paint();
+    void fill(Color a, Color b) {
+      c.drawRect(
+        all,
+        paint
+          ..shader = LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [a, b, a],
+          ).createShader(all),
+      );
+      paint.shader = null;
+    }
+
+    switch (id) {
+      case 5: // table tennis table
+        fill(const Color(0xFF0F5C86), const Color(0xFF0A3F61));
+        c.drawRRect(
+          RRect.fromRectAndRadius(all.deflate(8), const Radius.circular(10)),
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 3
+            ..color = Colors.white.withValues(alpha: .55),
+        );
+        c.drawLine(
+          Offset(s.width / 2, 8),
+          Offset(s.width / 2, s.height - 8),
+          Paint()
+            ..strokeWidth = 1.5
+            ..color = Colors.white.withValues(alpha: .2),
+        );
+      case 6: // ice rink
+        fill(const Color(0xFF244F7A), const Color(0xFF2E6A9A));
+        for (var i = 0; i < 26; i++) {
+          // Faint skate scratches, the same every time.
+          final r = Random(i + 7);
+          final x = r.nextDouble() * s.width, y = r.nextDouble() * s.height;
+          c.drawLine(
+            Offset(x, y),
+            Offset(x + 30 + r.nextDouble() * 60, y + r.nextDouble() * 14 - 7),
+            Paint()
+              ..strokeWidth = 1
+              ..color = Colors.white.withValues(alpha: .07),
+          );
+        }
+        c.drawRect(
+          Rect.fromCenter(
+            center: s.center(Offset.zero),
+            width: s.width,
+            height: 5,
+          ),
+          Paint()..color = const Color(0xFFFF6F83).withValues(alpha: .55),
+        );
+      case 8: // wooden court
+        fill(const Color(0xFF9A6630), const Color(0xFF7A4B20));
+        for (var x = 0.0; x < s.width; x += 30) {
+          c.drawLine(
+            Offset(x, 0),
+            Offset(x, s.height),
+            Paint()
+              ..strokeWidth = 1
+              ..color = Colors.black.withValues(alpha: .12),
+          );
+        }
+        final line =
+            Paint()
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 2.5
+              ..color = Colors.white.withValues(alpha: .6);
+        c.drawCircle(s.center(Offset.zero), unit * .14, line);
+        for (final top in [true, false]) {
+          c.drawRect(
+            Rect.fromCenter(
+              center: Offset(s.width / 2, top ? s.height * .17 : s.height * .83),
+              width: unit * .36,
+              height: s.height * .3,
+            ),
+            line,
+          );
+        }
+      case 9: // lawn with mowing stripes
+        fill(const Color(0xFF2E7D3C), const Color(0xFF256B31));
+        for (var y = 0.0; y < s.height; y += 44) {
+          c.drawRect(
+            Rect.fromLTWH(0, y, s.width, 22),
+            Paint()..color = Colors.white.withValues(alpha: .045),
+          );
+        }
+        c.drawRRect(
+          RRect.fromRectAndRadius(all.deflate(3), const Radius.circular(8)),
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 6
+            ..color = const Color(0xFF8B5A2B),
+        );
+      case 2: // asphalt car park
+        fill(const Color(0xFF2B303B), const Color(0xFF222731));
+        for (var x = 0.0; x < s.width; x += 36) {
+          c.drawRect(
+            Rect.fromLTWH(x, s.height / 2 - 1, 18, 2),
+            Paint()..color = const Color(0xFFFFC16D).withValues(alpha: .35),
+          );
+        }
+      case 11 || 13: // tiled battlefield
+        c.drawRect(all, paint..color = const Color(0xFF16213A));
+        const tile = 40.0;
+        for (var y = 0; y * tile < s.height; y++) {
+          for (var x = 0; x * tile < s.width; x++) {
+            if ((x + y).isOdd) {
+              c.drawRect(
+                Rect.fromLTWH(x * tile, y * tile, tile, tile),
+                paint..color = Colors.white.withValues(alpha: .03),
+              );
+            }
+          }
+        }
+      case 12: // snake board
+        c.drawRect(all, paint..color = const Color(0xFF111C37));
+        final w = s.width / 20, h = s.height / 20;
+        for (var y = 0; y < 20; y++) {
+          for (var x = 0; x < 20; x++) {
+            if ((x + y).isOdd) {
+              c.drawRect(
+                Rect.fromLTWH(x * w, y * h, w, h),
+                paint..color = Colors.white.withValues(alpha: .035),
+              );
+            }
+          }
+        }
+      default:
+        c.drawRect(all, paint..color = const Color(0xFF111C37));
+        for (var x = 0.0; x < s.width; x += 32) {
+          c.drawLine(
+            Offset(x, 0),
+            Offset(x, s.height),
+            Paint()
+              ..color = Colors.white.withValues(alpha: .025)
+              ..strokeWidth = 1,
+          );
+        }
+    }
+    // A soft vignette keeps the eye on the middle of the arena.
+    c.drawRect(
+      all,
+      Paint()
+        ..shader = RadialGradient(
+          radius: .95,
+          colors: [Colors.transparent, Colors.black.withValues(alpha: .28)],
+          stops: const [.6, 1],
+        ).createShader(all),
+    );
+  }
+
   @override
   void paint(Canvas c, Size s) {
     Offset at(Offset p) => Offset(p.dx * s.width, p.dy * s.height);
     final unit = min(s.width, s.height);
-    c.drawRect(Offset.zero & s, brush..color = const Color(0xFF111C37));
-    for (var x = 0.0; x < s.width; x += 32) {
-      c.drawLine(
-        Offset(x, 0),
-        Offset(x, s.height),
-        brush
-          ..color = Colors.white.withValues(alpha: .025)
-          ..strokeWidth = 1,
-      );
-    }
+    c.drawPicture(_floor(id, s));
     if (id != 10) {
       c.drawLine(
         Offset(0, s.height / 2),

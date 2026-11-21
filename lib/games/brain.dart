@@ -320,6 +320,7 @@ class _BrainGameState extends State<BrainGame> {
 
   @override
   Widget build(BuildContext context) => GameStage(
+    id: widget.id,
     names: widget.names,
     scores: score,
     turn: widget.id == 27 ? -1 : turn,

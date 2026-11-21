@@ -3,10 +3,15 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 export '../players.dart' show playerColors;
-import '../players.dart';
+import '../catalog.dart';
+import '../lobby_widgets.dart' show categoryColor;
 import '../party_data.dart';
+import '../players.dart';
 
 class GameStage extends StatelessWidget {
+  /// The game being played; gives the screen its category colour and the
+  /// faint emblem behind the board. Optional so the stage can be used alone.
+  final int? id;
   final List<String> names;
   final List<int> scores;
   final int turn;
@@ -14,6 +19,7 @@ class GameStage extends StatelessWidget {
   final Widget child;
   const GameStage({
     super.key,
+    this.id,
     required this.names,
     required this.scores,
     required this.turn,
@@ -35,7 +41,9 @@ class GameStage extends StatelessWidget {
         if (context.mounted) report(snapshot);
       });
     }
-    return Column(
+    return _Backdrop(
+      id: id,
+      child: Column(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 6, 12, 0),
@@ -157,6 +165,7 @@ class GameStage extends StatelessWidget {
           ),
         ),
       ],
+    ),
     );
   }
 }
@@ -276,6 +285,55 @@ class _ScoreNumberState extends State<_ScoreNumber>
           ],
         );
       },
+    );
+  }
+}
+
+/// The tinted backdrop behind every board: a wash of the game category's
+/// colour from the top, and the game's emblem as a faint watermark.
+class _Backdrop extends StatelessWidget {
+  final int? id;
+  final Widget child;
+  const _Backdrop({required this.id, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final game = id == null ? null : games[id!];
+    if (game == null) return child;
+    final color = categoryColor(game.category);
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: IgnorePointer(
+            child: RepaintBoundary(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      color.withValues(alpha: .16),
+                      color.withValues(alpha: .04),
+                      Colors.transparent,
+                    ],
+                    stops: const [0, .45, 1],
+                  ),
+                ),
+                child: Align(
+                  alignment: const Alignment(1.15, .85),
+                  child: ExcludeSemantics(
+                    child: Opacity(
+                      opacity: .07,
+                      child: Text(game.icon, style: const TextStyle(fontSize: 230)),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        child,
+      ],
     );
   }
 }

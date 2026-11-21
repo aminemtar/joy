@@ -448,6 +448,7 @@ class _StrategyGameState extends State<StrategyGame> {
     }
     if (id == 35) message = 'Shields ${lives.join(' / ')} • $notice';
     return GameStage(
+      id: widget.id,
       names: widget.names,
       scores: score,
       turn: turn,

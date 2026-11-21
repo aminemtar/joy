@@ -637,6 +637,7 @@ class _WordsGameState extends State<WordsGame> {
   );
   @override
   Widget build(BuildContext context) => GameStage(
+    id: widget.id,
     names: widget.names,
     scores: scores,
     turn: turn,

@@ -335,6 +335,7 @@ class _ObservationGameState extends State<ObservationGame> {
       );
     }
     return GameStage(
+      id: widget.id,
       names: widget.names,
       scores: score,
       turn: turn,
