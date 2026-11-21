@@ -29,7 +29,7 @@ Future<void> main() async {
   runApp(const JoyApp());
 }
 
-const blue = Color(0xFF507CFF), coral = Color(0xFFFF6F83);
+const blue = JoyTheme.accent, coral = Color(0xFFFF6F83);
 
 class JoyApp extends StatefulWidget {
   const JoyApp({super.key});
@@ -1294,10 +1294,10 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
                                     width: 38,
                                     height: 38,
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFF507CFF).withValues(alpha: 0.14),
+                                      color: JoyTheme.accent.withValues(alpha: 0.14),
                                       borderRadius: BorderRadius.circular(12),
                                       border: Border.all(
-                                        color: const Color(0xFF507CFF).withValues(alpha: 0.28),
+                                        color: JoyTheme.accent.withValues(alpha: 0.28),
                                       ),
                                     ),
                                     child: const Icon(
@@ -1380,7 +1380,7 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
                                                     ? const LinearGradient(
                                                         begin: Alignment.topLeft,
                                                         end: Alignment.bottomRight,
-                                                        colors: [Color(0xFF315CCB), Color(0xFF507CFF)],
+                                                        colors: [Color(0xFF315CCB), JoyTheme.accent],
                                                       )
                                                     : null,
                                                 color: selected ? null : const Color(0xFF202A49),
@@ -1393,7 +1393,7 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
                                                 boxShadow: selected
                                                     ? [
                                                         BoxShadow(
-                                                          color: const Color(0xFF507CFF).withValues(alpha: 0.24),
+                                                          color: JoyTheme.accent.withValues(alpha: 0.24),
                                                           blurRadius: 16,
                                                           offset: const Offset(0, 5),
                                                         ),
