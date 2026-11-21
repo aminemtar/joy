@@ -1,9 +1,11 @@
+import '../joy_theme.dart';
 import '../sound.dart';
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'bot_skill.dart';
 import 'code_breaker_view.dart';
+import 'board_cells.dart';
 import 'game_stage.dart';
 import '../players.dart' show leadingPlayer;
 import 'strategy_bot.dart';
@@ -298,22 +300,83 @@ class _StrategyGameState extends State<StrategyGame> {
 
   Widget auctionView() => Column(
     children: [
-      const Icon(Icons.diamond_rounded, size: 90, color: Color(0xFFFFC16D)),
-      Text(
-        '$value GEM TREASURE',
-        style: const TextStyle(fontSize: 25, fontWeight: FontWeight.w900),
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF3A2C6E), Color(0xFF1E1B45)],
+          ),
+          border: Border.all(
+            color: const Color(0xFFFFC16D).withValues(alpha: .5),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFFFC16D).withValues(alpha: .18),
+              blurRadius: 24,
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            const Icon(
+              Icons.diamond_rounded,
+              size: 72,
+              color: Color(0xFFFFC16D),
+              shadows: [Shadow(color: Color(0xFFFFC16D), blurRadius: 24)],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '$value GEM TREASURE',
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+            ),
+            Text(
+              'Auction $round of 6',
+              style: const TextStyle(color: JoyTheme.muted),
+            ),
+          ],
+        ),
       ),
-      Text('Auction $round of 6 • Coins: ${coins.join(' / ')}'),
-      const SizedBox(height: 24),
+      const SizedBox(height: 14),
+      Row(
+        children: [
+          for (var p = 0; p < 2; p++)
+            Expanded(
+              child: Container(
+                margin: EdgeInsets.only(left: p == 1 ? 8 : 0),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  color: playerColors[p].withValues(alpha: .14),
+                  border: Border.all(
+                    color: playerColors[p].withValues(alpha: .5),
+                  ),
+                ),
+                child: Text(
+                  '${widget.names[p]}  🪙 ${coins[p]}',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+              ),
+            ),
+        ],
+      ),
+      const SizedBox(height: 22),
       Text('${widget.names[turn]}, place a secret bid'),
+      const SizedBox(height: 12),
       Wrap(
-        spacing: 10,
+        spacing: 12,
+        runSpacing: 12,
+        alignment: WrapAlignment.center,
         children: [
           for (var i = 0; i <= min(4, coins[turn]); i++)
-            ChoiceChip(
-              label: Text('$i coins'),
+            CoinButton(
+              value: i,
               selected: bid == i,
-              onSelected: (_) => setState(() => bid = i),
+              onTap: () => setState(() => bid = i),
             ),
         ],
       ),
@@ -323,6 +386,10 @@ class _StrategyGameState extends State<StrategyGame> {
       Text(notice, textAlign: TextAlign.center),
     ],
   );
+  /// The first letter of [name], for the box a player has closed.
+  String _initial(String name) =>
+      name.isEmpty ? '' : String.fromCharCode(name.runes.first).toUpperCase();
+
   Widget dotsView() => AspectRatio(
     aspectRatio: 1,
     child: LayoutBuilder(
@@ -347,9 +414,29 @@ class _StrategyGameState extends State<StrategyGame> {
                           dots.owners[i] == 0
                               ? Colors.white.withValues(alpha: .025)
                               : playerColors[dots.owners[i] - 1].withValues(
-                                alpha: .5,
+                                alpha: .45,
                               ),
+                      border: Border.all(
+                        color:
+                            dots.owners[i] == 0
+                                ? Colors.transparent
+                                : playerColors[dots.owners[i] - 1],
+                        width: 2,
+                      ),
                     ),
+                    child:
+                        dots.owners[i] == 0
+                            ? null
+                            : Center(
+                              child: Text(
+                                _initial(widget.names[dots.owners[i] - 1]),
+                                style: TextStyle(
+                                  fontSize: unit * .34,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white.withValues(alpha: .9),
+                                ),
+                              ),
+                            ),
                   ),
                 ),
               ),
@@ -377,6 +464,16 @@ class _StrategyGameState extends State<StrategyGame> {
                                     ? Colors.white24
                                     : playerColors[dots.edges[i] - 1],
                             borderRadius: BorderRadius.circular(6),
+                            boxShadow:
+                                dots.edges[i] == 0
+                                    ? null
+                                    : [
+                                      BoxShadow(
+                                        color: playerColors[dots.edges[i] - 1]
+                                            .withValues(alpha: .6),
+                                        blurRadius: 8,
+                                      ),
+                                    ],
                           ),
                         ),
                       ),
@@ -478,68 +575,34 @@ class _StrategyGameState extends State<StrategyGame> {
               )
               : switch (id) {
                 1 => auctionView(),
-                16 => boardGrid(36, 6, (i) {
-                  final v = reversi.cells[i],
-                      legal = reversi.captures(i, turn + 1).isNotEmpty;
-                  return gameTile(
-                    onTap: () => move(i),
-                    color: const Color(0xFF1A304C),
-                    child:
-                        v == 0
-                            ? (legal
-                                ? Container(
-                                  width: 9,
-                                  height: 9,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.white38,
-                                    shape: BoxShape.circle,
-                                  ),
-                                )
-                                : const SizedBox())
-                            : AnimatedContainer(
-                              duration: const Duration(milliseconds: 250),
-                              margin: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: RadialGradient(
-                                  center: const Alignment(-.4, -.5),
-                                  colors: [
-                                    Color.lerp(
-                                      playerColors[v - 1],
-                                      Colors.white,
-                                      .5,
-                                    )!,
-                                    playerColors[v - 1],
-                                  ],
-                                ),
-                              ),
-                            ),
-                  );
-                }),
+                16 => ReversiFrame(
+                  child: boardGrid(
+                    36,
+                    6,
+                    (i) => ReversiCell(
+                      owner: reversi.cells[i],
+                      turn: turn + 1,
+                      legal: reversi.captures(i, turn + 1).isNotEmpty,
+                      onTap: () => move(i),
+                    ),
+                    spacing: 0,
+                  ),
+                ),
                 32 => dotsView(),
                 33 => Column(
                   children: [
                     boardGrid(36, 6, (i) {
-                      final board = fleets[1 - viewer],
-                          hit = board.shots.contains(i);
-                      return gameTile(
+                      final board = fleets[1 - viewer];
+                      return SeaCell(
+                        state:
+                            !board.shots.contains(i)
+                                ? 0
+                                : board.ships.contains(i)
+                                ? 2
+                                : 1,
                         onTap: () => move(i),
-                        color:
-                            hit
-                                ? (board.ships.contains(i)
-                                    ? const Color(0xFF704356)
-                                    : const Color(0xFF1D3954))
-                                : const Color(0xFF162844),
-                        child: Icon(
-                          hit
-                              ? (board.ships.contains(i)
-                                  ? Icons.local_fire_department_rounded
-                                  : Icons.water_drop_rounded)
-                              : Icons.radar_rounded,
-                          color: hit ? Colors.white : Colors.white24,
-                        ),
                       );
-                    }),
+                    }, spacing: 4),
                     const SizedBox(height: 16),
                     Text(
                       'Your fleet: ${fleets[viewer].ships.length - fleets[viewer].shots.where(fleets[viewer].ships.contains).length} hull cells remaining',
@@ -552,43 +615,18 @@ class _StrategyGameState extends State<StrategyGame> {
                 34 => codeView(),
                 _ => Column(
                   children: [
-                    boardGrid(36, 6, (i) {
-                      final open = mines.revealed.contains(i),
-                          bomb = mines.mines.contains(i),
-                          flag = mines.flags.contains(i),
-                          n = mines.clue(i);
-                      return gameTile(
+                    boardGrid(
+                      36,
+                      6,
+                      (i) => MineCell(
+                        open: mines.revealed.contains(i),
+                        bomb: mines.mines.contains(i),
+                        flag: mines.flags.contains(i),
+                        clue: mines.clue(i),
                         onTap: () => move(i),
-                        color:
-                            open
-                                ? const Color(0xFF28354B)
-                                : const Color(0xFF1C294A),
-                        child:
-                            open
-                                ? (bomb
-                                    ? const Icon(
-                                      Icons.blur_on,
-                                      color: Colors.orange,
-                                    )
-                                    : Text(
-                                      n == 0 ? '' : '$n',
-                                      style: TextStyle(
-                                        fontSize: 23,
-                                        fontWeight: FontWeight.w900,
-                                        color: colors[n % 6],
-                                      ),
-                                    ))
-                                : flag
-                                ? const Icon(
-                                  Icons.flag_rounded,
-                                  color: Colors.amber,
-                                )
-                                : const Icon(
-                                  Icons.square_rounded,
-                                  color: Colors.white10,
-                                ),
-                      );
-                    }),
+                      ),
+                      spacing: 4,
+                    ),
                     SwitchListTile(
                       title: const Text('Flag mode'),
                       subtitle: const Text(

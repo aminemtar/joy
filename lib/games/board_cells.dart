@@ -370,3 +370,316 @@ class MazeCell extends StatelessWidget {
     ),
   );
 }
+
+/// The green felt of Reversi.
+class ReversiFrame extends StatelessWidget {
+  final Widget child;
+  const ReversiFrame({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(6),
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(20),
+      gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFF237A54), Color(0xFF165C3E)],
+      ),
+      border: Border.all(color: const Color(0xFF0D3B27), width: 3),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: .4),
+          blurRadius: 16,
+          offset: const Offset(0, 8),
+        ),
+      ],
+    ),
+    child: child,
+  );
+}
+
+/// One square of Reversi: a felt square, an optional hint ring showing where
+/// the current player may play, and a disc that turns over when it changes.
+class ReversiCell extends StatelessWidget {
+  /// 0 empty, 1 or 2 a disc.
+  final int owner;
+
+  /// The player (1 or 2) whose turn it is, for the colour of the hint ring.
+  final int turn;
+  final bool legal;
+  final VoidCallback onTap;
+  const ReversiCell({
+    super.key,
+    required this.owner,
+    required this.turn,
+    required this.legal,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    onTap: onTap,
+    child: DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: .08),
+        border: Border.all(color: Colors.black.withValues(alpha: .28)),
+      ),
+      child: Center(
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 320),
+          switchInCurve: Curves.easeOutBack,
+          transitionBuilder:
+              (child, animation) => ScaleTransition(
+                scale: animation,
+                child: FadeTransition(opacity: animation, child: child),
+              ),
+          child:
+              owner != 0
+                  ? _Stone(key: ValueKey(owner), owner: owner)
+                  : legal
+                  ? Container(
+                    key: const ValueKey('hint'),
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: playerColors[turn - 1].withValues(alpha: .8),
+                        width: 2,
+                      ),
+                    ),
+                  )
+                  : const SizedBox.shrink(key: ValueKey('none')),
+        ),
+      ),
+    ),
+  );
+}
+
+class _Stone extends StatelessWidget {
+  final int owner;
+  const _Stone({super.key, required this.owner});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = playerColors[owner - 1];
+    return Container(
+      margin: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          center: const Alignment(-.4, -.5),
+          colors: [
+            Color.lerp(color, Colors.white, .5)!,
+            color,
+            Color.lerp(color, Colors.black, .3)!,
+          ],
+          stops: const [0, .6, 1],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: .45),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One square of the sea in Battleship Duel.
+class SeaCell extends StatelessWidget {
+  /// 0 not shot yet, 1 a miss (water), 2 a hit.
+  final int state;
+  final VoidCallback onTap;
+  const SeaCell({super.key, required this.state, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    onTap: onTap,
+    child: DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors:
+              state == 2
+                  ? const [Color(0xFF5A2A3C), Color(0xFF3B1A28)]
+                  : const [Color(0xFF1D4A7A), Color(0xFF12335A)],
+        ),
+        border: Border.all(color: Colors.white.withValues(alpha: .08)),
+      ),
+      child: Center(
+        child: switch (state) {
+          1 => Container(
+            width: 16,
+            height: 16,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.white.withValues(alpha: .7),
+                width: 2,
+              ),
+            ),
+          ),
+          2 => const Text('💥', style: TextStyle(fontSize: 22)),
+          _ => Icon(
+            Icons.add_rounded,
+            size: 16,
+            color: Colors.white.withValues(alpha: .16),
+          ),
+        },
+      ),
+    ),
+  );
+}
+
+/// One square of Minesweeper Duel: a raised tile that sinks when opened.
+class MineCell extends StatelessWidget {
+  final bool open, bomb, flag;
+
+  /// Number of neighbouring mines, shown on an open safe square.
+  final int clue;
+  final VoidCallback onTap;
+  const MineCell({
+    super.key,
+    required this.open,
+    required this.bomb,
+    required this.flag,
+    required this.clue,
+    required this.onTap,
+  });
+
+  static const _numberColors = [
+    Colors.transparent,
+    Color(0xFF6FD3FF),
+    Color(0xFF4CD08A),
+    Color(0xFFFF6F83),
+    Color(0xFFA08AFF),
+    Color(0xFFFFC16D),
+    Color(0xFFFF9EDB),
+    Colors.white,
+    Colors.white,
+  ];
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    onTap: onTap,
+    child: DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        gradient:
+            open
+                ? null
+                : const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF3A5088), Color(0xFF26396A)],
+                ),
+        color:
+            open
+                ? (bomb
+                    ? const Color(0xFF7A2D2D)
+                    : Colors.black.withValues(alpha: .28))
+                : null,
+        boxShadow:
+            open
+                ? null
+                : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: .4),
+                    offset: const Offset(0, 2),
+                    blurRadius: 2,
+                  ),
+                ],
+      ),
+      child: Center(
+        child:
+            open
+                ? (bomb
+                    ? const Text('💣', style: TextStyle(fontSize: 22))
+                    : clue == 0
+                    ? null
+                    : Text(
+                      '$clue',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: _numberColors[clue],
+                      ),
+                    ))
+                : flag
+                ? const Text('🚩', style: TextStyle(fontSize: 20))
+                : null,
+      ),
+    ),
+  );
+}
+
+/// A gold coin button used to choose a bid in Treasure Auction.
+class CoinButton extends StatelessWidget {
+  final int value;
+  final bool selected;
+  final VoidCallback onTap;
+  const CoinButton({
+    super.key,
+    required this.value,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    selected: selected,
+    label: '$value ${value == 1 ? 'coin' : 'coins'}',
+    excludeSemantics: true,
+    onTap: onTap,
+    child: GestureDetector(
+      onTap: onTap,
+      child: AnimatedScale(
+        scale: selected ? 1.15 : 1,
+        duration: const Duration(milliseconds: 160),
+        child: Container(
+          width: 56,
+          height: 56,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: const RadialGradient(
+              center: Alignment(-.3, -.4),
+              colors: [Color(0xFFFFE08A), Color(0xFFE2A93A), Color(0xFFB07A1E)],
+              stops: [0, .6, 1],
+            ),
+            border: Border.all(
+              color: selected ? Colors.white : const Color(0xFF8A5E16),
+              width: selected ? 3 : 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFFFFC16D).withValues(
+                  alpha: selected ? .6 : .15,
+                ),
+                blurRadius: selected ? 14 : 4,
+              ),
+            ],
+          ),
+          child: Text(
+            '$value',
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF5A3A08),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
