@@ -599,6 +599,7 @@ class _LobbyState extends State<Lobby> {
     return Scaffold(
       body: SafeArea(
         child: CustomScrollView(
+          cacheExtent: 600,
           slivers: [
             SliverPadding(
               padding: const EdgeInsets.all(24),
