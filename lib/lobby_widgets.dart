@@ -64,26 +64,28 @@ class PartySetup extends StatelessWidget {
           style: TextStyle(color: JoyTheme.muted, fontSize: 13),
         ),
         const SizedBox(height: 16),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(child: _Contender(index: 0, setup: this)),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 10),
-              child: Center(
-                child: Text(
-                  'VS',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.5,
-                    color: JoyTheme.muted,
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: _Contender(index: 0, setup: this)),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 10),
+                child: Center(
+                  child: Text(
+                    'VS',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.5,
+                      color: JoyTheme.muted,
+                    ),
                   ),
                 ),
               ),
-            ),
-            Expanded(child: _Contender(index: 1, setup: this)),
-          ],
+              Expanded(child: _Contender(index: 1, setup: this)),
+            ],
+          ),
         ),
       ],
     ),
