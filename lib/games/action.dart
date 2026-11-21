@@ -9,6 +9,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'arrow_pad.dart';
 import 'bot_skill.dart';
+import 'juice.dart';
 import 'sprites.dart';
 import 'tuning.dart';
 
@@ -64,6 +65,15 @@ class _ActionGameState extends State<ActionGame>
 
   /// Paddle hits in the current ping-pong rally (the ball speeds up with it).
   int rally = 0;
+
+  /// Sparks and screen shake that make hits and goals feel solid.
+  final juice = Juice();
+
+  /// Sound, sparks and shake for one impact at [at].
+  void impact(Offset at, Color color, {int count = 8, double shake = 0}) {
+    juice.burst(at, color, count: count);
+    if (shake > 0) juice.kick(shake);
+  }
 
   /// Bumped every frame; only the arena canvas listens to it.
   final repaint = ValueNotifier<int>(0);
@@ -132,7 +142,10 @@ class _ActionGameState extends State<ActionGame>
       13 => SoundEffect.blast,
       _ => null,
     };
-    if (ending != null) JoySounds.instance.play(ending);
+    if (ending != null) {
+      JoySounds.instance.play(ending);
+      juice.kick(1);
+    }
     widget.onFinish(p);
   }
 
@@ -143,6 +156,16 @@ class _ActionGameState extends State<ActionGame>
       11 => SoundEffect.blast,
       _ => SoundEffect.correct,
     });
+    impact(
+      switch (widget.id) {
+        5 || 6 => ball,
+        11 => players[1 - p],
+        _ => players[p],
+      },
+      playerColors[p],
+      count: 16,
+      shake: widget.id == 5 || widget.id == 6 || widget.id == 11 ? .6 : .3,
+    );
     score[p]++;
     if (score[p] >= goal) finish(p);
   }
@@ -151,7 +174,10 @@ class _ActionGameState extends State<ActionGame>
     final now = elapsed.inMicroseconds / 1e6;
     final dt = (now - last).clamp(0.0, .033);
     last = now;
+    juice.enabled = !(MediaQuery.maybeDisableAnimationsOf(context) ?? false);
+    juice.step(dt);
     if (paused || over || area.isEmpty) {
+      if (over && juice.active) repaint.value++;
       MatchOptions.read(context)?.onPause?.call(true);
       return;
     }
@@ -260,6 +286,7 @@ class _ActionGameState extends State<ActionGame>
         ballV = Offset(-ballV.dx, ballV.dy);
         ball = Offset(ball.dx.clamp(.025, .975), ball.dy);
         JoySounds.instance.play(SoundEffect.wall);
+        impact(ball, Colors.white70, count: 4);
       }
       for (var p = 0; p < 2; p++) {
         final d = ball - players[p];
@@ -267,6 +294,7 @@ class _ActionGameState extends State<ActionGame>
           if (widget.id == 5) {
             if ((p == 0 && ballV.dy > 0) || (p == 1 && ballV.dy < 0)) {
               JoySounds.instance.play(SoundEffect.paddle);
+              impact(ball, playerColors[p], count: 6 + min(rally, 8));
               rally++;
               final hitSpeed =
                   FieldTuning.hitSpeed * FieldTuning.rallyBoost(rally);
@@ -278,6 +306,7 @@ class _ActionGameState extends State<ActionGame>
             }
           } else {
             JoySounds.instance.play(SoundEffect.puck);
+            impact(ball, playerColors[p], count: 8);
             ballV = normal(d) * .7;
             ball = players[p] + normal(d) * .08;
           }
@@ -322,6 +351,12 @@ class _ActionGameState extends State<ActionGame>
       if (d.distance < .10) {
         if (!touching) {
           JoySounds.instance.play(SoundEffect.bump);
+          impact(
+            Offset.lerp(players[0], players[1], .5)!,
+            Colors.white70,
+            count: 10,
+            shake: .35,
+          );
         }
         touching = true;
         final n = normal(d.distance == 0 ? const Offset(1, 0) : d);
@@ -843,6 +878,7 @@ class _ActionGameState extends State<ActionGame>
     if (paused || over || countdown > 0 || cooldown[p] > 0) return;
     cooldown[p] = widget.id == 13 ? 1 : .5;
     JoySounds.instance.play(SoundEffect.shoot);
+    impact(players[p], playerColors[p], count: 5);
     shots.add(
       Shot(
         players[p],
@@ -1009,17 +1045,21 @@ class _ActionGameState extends State<ActionGame>
                     child: ListenableBuilder(
                       listenable: repaint,
                       builder:
-                          (context, _) => CustomPaint(
-                            size: area,
-                            painter: ArenaPainter(
-                              id: widget.id,
-                              time: time,
-                              players: players,
-                              ball: ball,
-                              shots: shots,
-                              targets: targets,
-                              snakes: snakes,
-                              food: food,
+                          (context, _) => Transform.translate(
+                            offset: juice.offset,
+                            child: CustomPaint(
+                              size: area,
+                              painter: ArenaPainter(
+                                id: widget.id,
+                                time: time,
+                                players: players,
+                                ball: ball,
+                                shots: shots,
+                                targets: targets,
+                                snakes: snakes,
+                                food: food,
+                              ),
+                              foregroundPainter: JuicePainter(juice),
                             ),
                           ),
                     ),
