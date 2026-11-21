@@ -603,7 +603,7 @@ class _LobbyState extends State<Lobby> {
             SliverPadding(
               padding: const EdgeInsets.all(24),
               sliver: SliverToBoxAdapter(
-                child: Column(
+                child: RepaintBoundary(child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
@@ -851,7 +851,7 @@ class _LobbyState extends State<Lobby> {
                     ),
                     const SizedBox(height: 8),
                   ],
-                ),
+                )),
               ),
             ),
             if (filtered.isEmpty)
@@ -866,35 +866,42 @@ class _LobbyState extends State<Lobby> {
               ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-              sliver: SliverLayoutBuilder(
-                builder:
-                    (c, constraints) => SliverGrid(
-                      delegate: SliverChildBuilderDelegate((c, i) {
-                        final id = filtered[i].key;
-                        return GameCard(
-                          id: id,
-                          favorite: data.favorites.contains(id),
-                          onPlay: () => _play([id]),
-                          onFavorite: () async {
-                            await data.toggleFavorite(id);
-                            if (mounted) setState(() {});
-                          },
-                        );
-                      }, childCount: filtered.length),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: max(
-                          2,
-                          (constraints.crossAxisExtent / 220).floor(),
-                        ),
-                        mainAxisSpacing: 10,
-                        crossAxisSpacing: 10,
-                        mainAxisExtent:
-                            252 +
-                            44 *
-                                (MediaQuery.textScalerOf(c).scale(1) - 1)
-                                    .clamp(0.0, 1.0),
-                      ),
-                    ),
+              // The column count comes from the screen width, not from a
+              // SliverLayoutBuilder: that one rebuilds every grid tile on
+              // every scroll frame.
+              sliver: SliverGrid(
+                delegate: SliverChildBuilderDelegate(
+                  (c, i) {
+                    final id = filtered[i].key;
+                    return GameCard(
+                      key: ValueKey(id),
+                      id: id,
+                      favorite: data.favorites.contains(id),
+                      onPlay: () => _play([id]),
+                      onFavorite: () async {
+                        await data.toggleFavorite(id);
+                        if (mounted) setState(() {});
+                      },
+                    );
+                  },
+                  childCount: filtered.length,
+                  addAutomaticKeepAlives: false,
+                  addRepaintBoundaries: false,
+                  addSemanticIndexes: false,
+                ),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: max(
+                    2,
+                    ((MediaQuery.sizeOf(context).width - 48) / 220).floor(),
+                  ),
+                  mainAxisSpacing: 10,
+                  crossAxisSpacing: 10,
+                  mainAxisExtent:
+                      252 +
+                      44 *
+                          (MediaQuery.textScalerOf(context).scale(1) - 1)
+                              .clamp(0.0, 1.0),
+                ),
               ),
             ),
           ],

@@ -751,7 +751,10 @@ class _ArcadeGameState extends State<ArcadeGame>
             child: ListenableBuilder(
               listenable: repaint,
               builder:
-                  (context, _) => CustomPaint(painter: JuicePainter(juice)),
+                  (context, _) =>
+                      juice.active
+                          ? CustomPaint(painter: JuicePainter(juice))
+                          : const SizedBox.expand(),
             ),
           ),
         ),
