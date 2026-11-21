@@ -52,6 +52,54 @@ class _ActionGameState extends State<ActionGame>
   /// is an alternative to dragging, so nobody has to slide a finger.
   final tapTarget = <int, double>{};
 
+  /// Basket Shots: balls in flight, baskets in a row, how fast each hoop
+  /// slides (it speeds up with every basket) and where it is in its sweep.
+  final flights = <BasketFlight>[];
+  final streak = [0, 0];
+  final hoopRate = [1.0, 1.0];
+  final hoopPhase = [0.0, 2.2];
+  static const flightSeconds = .55;
+  static const basketGoal = 11;
+
+  /// Where player [p]'s hoop will be [ahead] seconds from now (0 to 1 wide).
+  double hoopAt(int p, [double ahead = 0]) =>
+      .5 + sin(hoopPhase[p] + hoopRate[p] * ahead) * .3;
+
+  /// Throws player [p]'s ball at the spot it is aimed at right now.
+  void launch(int p) {
+    cooldown[p] = .8;
+    flights.add(BasketFlight(p, players[p], players[p].dx));
+    JoySounds.instance.play(SoundEffect.shoot);
+  }
+
+  /// Judges a ball that has reached the hoop: swish, basket or rim-out.
+  void resolveShot(BasketFlight f) {
+    final p = f.player;
+    final miss = (f.aimX - hoopAt(p)).abs();
+    final color = playerColors[p];
+    final spot = targets[p];
+    if (miss < .07) {
+      f.made = true;
+      streak[p]++;
+      final swish = miss < .03, fire = streak[p] >= 3;
+      hoopRate[p] = min(2.2, hoopRate[p] * 1.07);
+      juice.pop(
+        spot.translate(0, p == 0 ? .09 : -.09),
+        swish
+            ? 'SWISH!'
+            : fire
+            ? 'ON FIRE'
+            : 'NICE',
+        fire ? const Color(0xFFFFA24C) : color,
+      );
+      point(p, basketGoal, (swish ? 3 : 2) + (fire ? 1 : 0));
+    } else {
+      streak[p] = 0;
+      JoySounds.instance.play(SoundEffect.wall);
+      juice.burst(spot, Colors.white70, count: 5);
+    }
+  }
+
   /// Mini Golf: where each pointer first touched, to tell a tap from a pull.
   final downAt = <int, Offset>{};
   final strokes = [0, 0];
@@ -163,7 +211,7 @@ class _ActionGameState extends State<ActionGame>
     widget.onFinish(p);
   }
 
-  void point(int p, [int goal = 5]) {
+  void point(int p, [int goal = 5, int gain = 1]) {
     JoySounds.instance.play(switch (widget.id) {
       5 || 6 => SoundEffect.goal,
       8 => SoundEffect.swish,
@@ -173,6 +221,7 @@ class _ActionGameState extends State<ActionGame>
     impact(
       switch (widget.id) {
         5 || 6 => ball,
+        8 => targets[p],
         11 => players[1 - p],
         _ => players[p],
       },
@@ -183,13 +232,14 @@ class _ActionGameState extends State<ActionGame>
     juice.pop(
       switch (widget.id) {
         5 || 6 => ball,
+        8 => targets[p],
         11 => players[1 - p],
         _ => players[p],
       },
-      '+1',
+      '+$gain',
       playerColors[p],
     );
-    score[p]++;
+    score[p] += gain;
     if (score[p] >= goal) finish(p);
   }
 
@@ -427,8 +477,18 @@ class _ActionGameState extends State<ActionGame>
     }
     if (widget.id == 8) {
       for (var p = 0; p < 2; p++) {
-        players[p] = Offset(.5 + sin(time * 2.2 + p) * .4, p == 0 ? .75 : .25);
+        hoopPhase[p] += dt * hoopRate[p];
+        players[p] = Offset(.5 + sin(time * 2.2 + p) * .4, p == 0 ? .82 : .18);
+        targets[p] = Offset(hoopAt(p), p == 0 ? .56 : .44);
       }
+      for (final f in flights) {
+        f.t += dt / flightSeconds;
+        if (!f.resolved && f.t >= 1) {
+          f.resolved = true;
+          resolveShot(f);
+        }
+      }
+      flights.removeWhere((f) => f.t > 1.6);
     }
     if (widget.id == 9) {
       for (var p = 0; p < 2; p++) {
@@ -660,27 +720,23 @@ class _ActionGameState extends State<ActionGame>
     keepTopHalf();
   }
 
-  /// Basket Shots: tap when the sweeping ball lines up with the hoop.
+  /// Basket Shots: shoot when the sweeping aim meets the moving hoop.
   void botBasket() {
     if (cooldown[1] > 0 || botWait > 0) return;
     final slack = switch (botSkill.level) {
-      Difficulty.easy => .14,
-      Difficulty.normal => .095,
-      Difficulty.hard => .07,
+      Difficulty.easy => .11,
+      Difficulty.normal => .06,
+      Difficulty.hard => .03,
     };
-    final gap = (players[1].dx - targets[1].dx).abs();
+    // Lead the hoop: release when the aim meets where the hoop will be.
+    final gap = (players[1].dx - hoopAt(1, flightSeconds)).abs();
     if (gap > slack) return;
     if (!botSkill.succeeds(rng)) {
       botWait = .5;
       return;
     }
-    cooldown[1] = .45;
     botWait = thinkSeconds(.9);
-    if (gap < .10) {
-      point(1);
-    } else {
-      JoySounds.instance.play(SoundEffect.wall);
-    }
+    launch(1);
   }
 
   /// Mini Golf: once the ball rests, putt it toward the cup with a little
@@ -867,13 +923,7 @@ class _ActionGameState extends State<ActionGame>
       return;
     }
     if (widget.id == 8) {
-      if (cooldown[p] > 0) return;
-      cooldown[p] = .45;
-      if ((players[p].dx - targets[p].dx).abs() < .10) {
-        point(p);
-      } else {
-        JoySounds.instance.play(SoundEffect.wall);
-      }
+      if (cooldown[p] <= 0) launch(p);
       return;
     }
     if (widget.id == 9) {
@@ -1125,6 +1175,8 @@ class _ActionGameState extends State<ActionGame>
                                 snakes: snakes,
                                 food: food,
                                 trail: trail,
+                                flights: flights,
+                                streak: streak,
                                 pulse: hitPulse,
                                 serve: serve,
                               ),
@@ -1166,6 +1218,19 @@ class _ActionGameState extends State<ActionGame>
   );
 }
 
+/// One basketball in the air (Basket Shots). It was aimed at [aimX] the moment
+/// it left the hand and is judged against the hoop when it arrives.
+class BasketFlight {
+  final int player;
+  final Offset from;
+  final double aimX;
+
+  /// 0 when thrown, 1 on arrival, then the rebound or the drop up to 1.6.
+  double t = 0;
+  bool resolved = false, made = false;
+  BasketFlight(this.player, this.from, this.aimX);
+}
+
 class ArenaPainter extends CustomPainter {
   final int id;
   final double time;
@@ -1178,6 +1243,10 @@ class ArenaPainter extends CustomPainter {
   /// Recent ball positions, hit swell (0 to 1) and seconds of serve delay.
   final List<Offset> trail;
   final double pulse, serve;
+
+  /// Basket Shots: balls in the air and each player's streak of baskets.
+  final List<BasketFlight> flights;
+  final List<int> streak;
   ArenaPainter({
     required this.id,
     required this.time,
@@ -1190,6 +1259,8 @@ class ArenaPainter extends CustomPainter {
     this.trail = const [],
     this.pulse = 0,
     this.serve = 0,
+    this.flights = const [],
+    this.streak = const [0, 0],
   });
   final brush = Paint();
 
@@ -1393,7 +1464,9 @@ class ArenaPainter extends CustomPainter {
     }
     for (var p = 0; p < 2; p++) {
       final color = p == 0 ? const Color(0xFF507CFF) : const Color(0xFFFF6F83);
-      if ([2, 8, 9].contains(id)) {
+      if (id == 8) {
+        _hoop(c, at(targets[p]), unit, p, color);
+      } else if ([2, 9].contains(id)) {
         c.drawCircle(
           at(targets[p]),
           unit * .05,
@@ -1456,6 +1529,15 @@ class ArenaPainter extends CustomPainter {
           );
           GameSprites.wrestler(c, center, r, color);
         } else if (id == 8) {
+          if (streak[p] >= 3) {
+            c.drawCircle(
+              center,
+              r * 1.7,
+              Paint()
+                ..color = const Color(0xFFFFA24C).withValues(alpha: .35)
+                ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+            );
+          }
           GameSprites.ball(c, center, r, basketball: true);
         } else if (id == 9) {
           GameSprites.ball(c, center, r * .65);
@@ -1472,6 +1554,7 @@ class ArenaPainter extends CustomPainter {
         }
       }
     }
+    if (id == 8) _flights(c, s, unit);
     if ([5, 6].contains(id)) {
       for (var i = 0; i < trail.length; i++) {
         final k = (i + 1) / (trail.length + 1);
@@ -1525,6 +1608,84 @@ class ArenaPainter extends CustomPainter {
       }
     }
   }
+
+  /// A hoop seen from above: backboard, orange rim and a short net.
+  void _hoop(Canvas c, Offset center, double unit, int p, Color color) {
+    final away = p == 0 ? -1.0 : 1.0; // the backboard is far from the shooter
+    c.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(
+          center: center.translate(0, away * unit * .06),
+          width: unit * .2,
+          height: unit * .022,
+        ),
+        Radius.circular(unit * .01),
+      ),
+      Paint()..color = color.withValues(alpha: .85),
+    );
+    final rim = Rect.fromCenter(
+      center: center,
+      width: unit * .12,
+      height: unit * .05,
+    );
+    final net =
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.2
+          ..color = Colors.white.withValues(alpha: .55);
+    for (var i = 0; i < 5; i++) {
+      final x = rim.left + rim.width * i / 4;
+      c.drawLine(
+        Offset(x, center.dy),
+        Offset(center.dx + (x - center.dx) * .55, center.dy - away * unit * .045),
+        net,
+      );
+    }
+    c.drawOval(
+      rim,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3
+        ..color = const Color(0xFFFF8A3D),
+    );
+  }
+
+  /// The balls in the air: they grow as they rise, drop through the net when
+  /// they score and bounce off the rim when they miss.
+  void _flights(Canvas c, Size s, double unit) {
+    for (final f in flights) {
+      final p = f.player;
+      final hoopY = p == 0 ? .56 : .44;
+      final goal = Offset(f.aimX * s.width, hoopY * s.height);
+      final from = Offset(f.from.dx * s.width, f.from.dy * s.height);
+      var pos = Offset.lerp(from, goal, Curves.easeOut.transform(min(f.t, 1)))!;
+      var scale = 1 + .55 * sin(pi * min(f.t, 1));
+      var alpha = 1.0;
+      if (f.t > 1) {
+        final k = ((f.t - 1) / .6).clamp(0.0, 1.0);
+        if (f.made) {
+          scale = 1 - .5 * k;
+          alpha = 1 - k;
+          pos = pos.translate(0, (p == 0 ? 1 : -1) * unit * .05 * k);
+        } else {
+          final side = f.aimX >= hoopAtDraw(p) ? 1.0 : -1.0;
+          pos = pos.translate(
+            side * unit * .18 * k,
+            (p == 0 ? 1 : -1) * unit * .2 * k * k,
+          );
+        }
+      }
+      c.saveLayer(
+        Rect.fromCircle(center: pos, radius: unit * .1),
+        Paint()..color = Colors.white.withValues(alpha: alpha),
+      );
+      GameSprites.ball(c, pos, unit * .034 * scale, basketball: true);
+      c.restore();
+    }
+  }
+
+  /// The hoop's current x, read back from the painted target.
+  double hoopAtDraw(int p) => targets[p].dx;
 
   @override
   bool shouldRepaint(covariant ArenaPainter oldDelegate) => true;

@@ -512,30 +512,29 @@ void _penalty(_Pen p) {
 
 void _basket(_Pen p) {
   final cx = p.mid.dx;
+  // The hoop slides slowly; the ball sweeps faster and is shot where the
+  // hoop is going, not where it is.
+  final hoopX = cx + sin(p.t * pi * 2 - 1) * p.w * .22;
   p.rrect(
-    Rect.fromCenter(center: Offset(cx, 34), width: 90, height: 40),
+    Rect.fromCenter(center: Offset(hoopX, 30), width: 90, height: 12),
     Colors.white12,
     radius: 6,
     stroke: Colors.white54,
   );
   p.rrect(
-    Rect.fromCenter(center: Offset(cx, 58), width: 44, height: 8),
-    _coral,
-    radius: 4,
+    Rect.fromCenter(center: Offset(hoopX, 48), width: 50, height: 12),
+    const Color(0xFFFF8A3D),
+    radius: 6,
   );
-  final sweep = cx + p.wave() * p.w * .3;
+  final sweep = cx + p.wave(times: 2) * p.w * .3;
   final shot = p.ease(.5, .8);
-  final pos = p.t < .5 || p.t > .85
-      ? Offset(sweep, p.h - 46)
-      : _lerp(Offset(cx, p.h - 46), Offset(cx, 62), shot);
-  GameSprites.ball(p.c, pos, 14, basketball: true);
-  p.line(
-    Offset(cx, 72),
-    Offset(cx, p.h - 84),
-    Colors.white12,
-    width: 1,
-  );
-  if ((p.t - .5).abs() < .12) p.finger(Offset(cx, p.h - 22), tap: true);
+  final target = Offset(cx + sin(.8 * pi * 2 - 1) * p.w * .22, 52);
+  final pos =
+      p.t < .5 || p.t > .85
+          ? Offset(sweep, p.h - 46)
+          : _lerp(Offset(cx + p.wave(times: 2, phase: .5 - .25) * p.w * .3, p.h - 46), target, shot);
+  GameSprites.ball(p.c, pos, 14 + 6 * sin(pi * shot), basketball: true);
+  if ((p.t - .5).abs() < .12) p.finger(Offset(pos.dx, p.h - 22), tap: true);
 }
 
 void _golf(_Pen p) {

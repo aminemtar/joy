@@ -46,9 +46,9 @@ const tutorialSteps = <List<String>>[
     'Swap roles each shot. Score the most after five each.',
   ],
   [
-    'Watch the moving basketball.',
-    'Tap your half when it aligns with the hoop.',
-    'Time five successful shots to win.',
+    'Your ball sweeps side to side, the hoop slides.',
+    'Tap to shoot and lead the hoop: the ball takes a moment to fly.',
+    'Swish 3, basket 2, three in a row is on fire. First to 11 wins.',
   ],
   [
     'Touch near your golf ball.',

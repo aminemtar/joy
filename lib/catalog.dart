@@ -68,7 +68,7 @@ const games = <GameInfo>[
     "🏀",
     "Sports",
     Family.action,
-    "Tap your half when the moving basketball aligns with the hoop. First to five baskets.",
+    "Tap to shoot when your sweeping aim meets the sliding hoop: lead it, because the ball takes a moment to fly. Swish 3, basket 2, three in a row sets you on fire (+1). The hoop speeds up with every basket. First to 11.",
   ),
   GameInfo(
     "Mini Golf",
