@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'arcade_models.dart';
+import 'bot_skill.dart';
 import 'game_stage.dart';
 import 'sprites.dart';
 
@@ -45,6 +46,15 @@ class _ArcadeGameState extends State<ArcadeGame>
   int? shootingPointer, keeperPointer;
   String notice = '';
   Size size = Size.zero;
+
+  /// Computer opponent state. The computer always plays as player 1.
+  double botTimer = -1, botWait = 0, botAge = 0, botDelay = -1, botReact = 0;
+  double? botAimX, botJumpAt;
+  bool? botSlip;
+  bool botArmed = true, botPlanned = false;
+
+  /// Whether player 1 is the computer for this match.
+  bool get vsComputer => BotSkill.isComputer(context);
 
   /// Bumped every frame; only the game canvases listen to it.
   final repaint = ValueNotifier<int>(0);
@@ -106,8 +116,9 @@ class _ArcadeGameState extends State<ArcadeGame>
     );
   }
 
-  void drop() {
+  void drop({bool bot = false}) {
     if (paused || done || countdown > 0) return;
+    if (vsComputer && turn == 1 && !bot) return;
     setState(() {
       final accuracy = tower.drop(movingLeft, turn);
       JoySounds.instance.play(
@@ -123,8 +134,9 @@ class _ArcadeGameState extends State<ArcadeGame>
     });
   }
 
-  void jump(int player) {
+  void jump(int player, {bool bot = false}) {
     if (paused || done || countdown > 0 || height[player] > 0) return;
+    if (vsComputer && player == 1 && !bot) return;
     JoySounds.instance.play(SoundEffect.jump);
     setState(() => jumpVelocity[player] = 1.4);
   }
@@ -156,6 +168,7 @@ class _ArcadeGameState extends State<ArcadeGame>
       return;
     }
     time += dt;
+    if (vsComputer) botThink(dt);
     if (widget.id == 3) {
       spawn += dt;
       if (spawn >= 1.15) {
@@ -260,18 +273,194 @@ class _ArcadeGameState extends State<ArcadeGame>
     }
   }
 
+  /// Lets the computer act, using the same actions a human has.
+  void botThink(double dt) {
+    final skill = BotSkill.of(context);
+    switch (widget.id) {
+      case 3:
+        botTraffic(dt, skill);
+      case 4:
+        botTower(dt, skill);
+      case 7:
+        botPenalty(dt, skill);
+      case 14:
+        botRunner(skill);
+    }
+  }
+
+  /// Opens the other road when cars queue, but only when nothing is about to
+  /// cross. Easy occasionally switches too early and crashes.
+  void botTraffic(double dt, BotSkill skill) {
+    botTimer -= dt;
+    if (botTimer > 0) return;
+    final interval = skill.think(random, seconds: .3).inMilliseconds / 1000;
+    botTimer = interval;
+    final mine = cars.where((c) => c.player == 1).toList();
+    final open = phase[1];
+    final queued = mine.where(
+      (c) => c.axis != open && c.progress > .1 && c.progress <= .37,
+    );
+    if (queued.isEmpty) {
+      botWait = 0;
+      return;
+    }
+    botWait += interval;
+    final approaching = mine.any(
+      (c) => c.axis == open && c.progress > 0 && c.progress <= .36,
+    );
+    if (approaching && botWait < 1.3) return;
+    final crossing = mine.any(
+      (c) => c.axis == open && c.progress > .36 && c.progress < .52,
+    );
+    final reckless = random.nextDouble() < (1 - skill.accuracy) * .35;
+    if (crossing && !reckless) return;
+    botWait = 0;
+    JoySounds.instance.play(SoundEffect.tap);
+    setState(() => phase[1] = 1 - phase[1]);
+  }
+
+  /// Waits for the sliding block to line up with the tower, then drops it
+  /// after a short reaction delay. A "slip" drops it at a random moment.
+  void botTower(double dt, BotSkill skill) {
+    if (turn != 1) {
+      botAge = 0;
+      botDelay = -1;
+      botSlip = null;
+      return;
+    }
+    botAge += dt;
+    if (botDelay >= 0) {
+      botDelay -= dt;
+      if (botDelay <= 0) {
+        botDelay = -1;
+        botSlip = null;
+        botAge = 0;
+        drop(bot: true);
+      }
+      return;
+    }
+    if (botAge < .6) return;
+    final top = tower.layers.last;
+    botSlip ??= random.nextDouble() < (1 - skill.accuracy) * .3;
+    final tolerance = botSlip! ? 1.0 : (1 - skill.accuracy) * .5 * top.width;
+    if ((movingLeft - top.left).abs() <= tolerance) {
+      botDelay = skill.think(random, seconds: .08).inMilliseconds / 1000;
+    }
+  }
+
+  /// Shoots when it is the computer's turn and keeps when it is the human's.
+  void botPenalty(double dt, BotSkill skill) {
+    if (done) return;
+    if (turn == 1) {
+      if (flying || cooldown > 0) {
+        botTimer = -1;
+        return;
+      }
+      if (botTimer < 0) {
+        botTimer = skill.think(random, seconds: 1.1).inMilliseconds / 1000;
+        return;
+      }
+      botTimer -= dt;
+      if (botTimer <= 0) {
+        botTimer = -1;
+        botShoot(skill);
+      }
+      return;
+    }
+    if (!flying) {
+      botPlanned = false;
+      if (cooldown <= 0) keeperTarget = .5 + sin(time * 1.3) * .12;
+      return;
+    }
+    if (!botPlanned) {
+      botPlanned = true;
+      final travel = (ball.dy - .14) / max(.01, -ballVelocity.dy);
+      final predicted = ball.dx + ballVelocity.dx * travel;
+      final guess = random.nextBool() ? .32 : .68;
+      final noise = (random.nextDouble() - .5) * (1 - skill.accuracy) * .5;
+      botAimX = skill.succeeds(random) ? predicted + noise : guess;
+      botReact = skill.think(random, seconds: .38).inMilliseconds / 1000;
+    }
+    botReact -= dt;
+    if (botReact <= 0 && botAimX != null) {
+      keeperTarget = botAimX!.clamp(.15, .85);
+    }
+  }
+
+  /// Aims for the side away from the human keeper, with a little scatter.
+  void botShoot(BotSkill skill) {
+    final away = keeper < .5 ? 1.0 : -1.0;
+    final wrong = random.nextBool() ? 1.0 : -1.0;
+    final side = skill.succeeds(random) ? away : wrong;
+    var x = .5 + side * (.2 + random.nextDouble() * .14);
+    x += (random.nextDouble() - .5) * (1 - skill.accuracy) * .5;
+    launch(Offset(x.clamp(.17, .83) - .5, .14 - .85));
+  }
+
+  /// Jumps when the gap is the right distance away. The distance is jittered
+  /// per gap, so Easy mistimes now and then and Hard almost never does.
+  void botRunner(BotSkill skill) {
+    final gap = gapLeft(1);
+    if (!botArmed) {
+      if (gap > 1) botArmed = true;
+      return;
+    }
+    if (botJumpAt == null) {
+      final spread = (1 - skill.accuracy) * .5;
+      final jitter = (random.nextDouble() + random.nextDouble() - 1) * spread;
+      botJumpAt = .2 + .38 * (.155 + jitter);
+    }
+    if (gap <= botJumpAt!) {
+      botArmed = false;
+      botJumpAt = null;
+      jump(1, bot: true);
+    }
+  }
+
+  /// A small label shown where the computer's controls would be.
+  Widget computerPill() => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    decoration: BoxDecoration(
+      color: playerColors[1].withValues(alpha: .18),
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: playerColors[1].withValues(alpha: .6)),
+    ),
+    child: const Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.smart_toy_rounded, size: 14),
+        SizedBox(width: 6),
+        Text(
+          'Computer',
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+        ),
+      ],
+    ),
+  );
+
+  void launch(Offset direction) {
+    ballVelocity = direction / direction.distance * 1.25;
+    flightTime = 0;
+    flying = true;
+    JoySounds.instance.play(SoundEffect.shoot);
+    aim = null;
+  }
+
   Offset local(PointerEvent e) =>
       Offset(e.localPosition.dx / size.width, e.localPosition.dy / size.height);
   void down(PointerDownEvent e) {
     if (done || paused || countdown > 0 || widget.id != 7) return;
     final p = local(e);
+    final computer = vsComputer;
     if (p.dy < .4 && keeperPointer == null) {
+      if (computer && turn == 0) return;
       keeperPointer = e.pointer;
       keeperTarget = p.dx.clamp(.15, .85);
     } else if (p.dy > .55 &&
         !flying &&
         cooldown <= 0 &&
         shootingPointer == null) {
+      if (computer && turn == 1) return;
       shootingPointer = e.pointer;
       aim = p;
     }
@@ -280,7 +469,9 @@ class _ArcadeGameState extends State<ArcadeGame>
   void move(PointerEvent e) {
     if (done || paused) return;
     final p = local(e);
-    if (e.pointer == keeperPointer) keeperTarget = p.dx.clamp(.15, .85);
+    if (e.pointer == keeperPointer && !(vsComputer && turn == 0)) {
+      keeperTarget = p.dx.clamp(.15, .85);
+    }
     if (e.pointer == shootingPointer && !flying) aim = p;
   }
 
@@ -289,16 +480,13 @@ class _ArcadeGameState extends State<ArcadeGame>
     if (e.pointer != shootingPointer) return;
     shootingPointer = null;
     if (paused || done || flying || cooldown > 0) return;
+    if (vsComputer && turn == 1) return;
     final target = local(e), direction = target - const Offset(.5, .85);
     if (direction.dy >= -.12) {
       setState(() => notice = 'Flick upward from the ball toward the goal.');
       return;
     }
-    ballVelocity = direction / direction.distance * 1.25;
-    flightTime = 0;
-    flying = true;
-    JoySounds.instance.play(SoundEffect.shoot);
-    aim = null;
+    launch(direction);
   }
 
   Widget penalty() => Column(
@@ -340,10 +528,20 @@ class _ArcadeGameState extends State<ArcadeGame>
         ),
       ),
       const SizedBox(height: 12),
-      const Text(
-        'Keeper: drag the upper half. Shooter: flick the ball upward.\nRoles switch after each shot.',
-        textAlign: TextAlign.center,
-      ),
+      if (vsComputer) ...[
+        computerPill(),
+        const SizedBox(height: 6),
+        Text(
+          turn == 0
+              ? 'Your shot: flick the ball upward. The computer keeps.'
+              : 'Computer shoots: drag the upper half to guard the goal.',
+          textAlign: TextAlign.center,
+        ),
+      ] else
+        const Text(
+          'Keeper: drag the upper half. Shooter: flick the ball upward.\nRoles switch after each shot.',
+          textAlign: TextAlign.center,
+        ),
     ],
   );
   Widget traffic() => Column(
@@ -371,11 +569,15 @@ class _ArcadeGameState extends State<ArcadeGame>
                 ),
               ),
             ),
+            if (vsComputer && p == 1) computerPill(),
             FilledButton.tonal(
-              onPressed: () {
-                JoySounds.instance.play(SoundEffect.tap);
-                setState(() => phase[p] = 1 - phase[p]);
-              },
+              onPressed:
+                  vsComputer && p == 1
+                      ? null
+                      : () {
+                        JoySounds.instance.play(SoundEffect.tap);
+                        setState(() => phase[p] = 1 - phase[p]);
+                      },
               child: Text(
                 phase[p] == 0
                     ? 'East–west open • Switch to north–south'
@@ -402,8 +604,9 @@ class _ArcadeGameState extends State<ArcadeGame>
         ),
       ),
       const SizedBox(height: 20),
+      if (vsComputer && turn == 1) computerPill(),
       FilledButton.icon(
-        onPressed: drop,
+        onPressed: vsComputer && turn == 1 ? null : () => drop(),
         icon: const Icon(Icons.arrow_downward),
         label: Text('${widget.names[turn]} — drop block'),
       ),
@@ -431,17 +634,23 @@ class _ArcadeGameState extends State<ArcadeGame>
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(5),
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: playerColors[p],
-                    minimumSize: const Size(0, 90),
-                  ),
-                  onPressed: () => jump(p),
-                  child: Text(
-                    '${widget.names[p]}\nJUMP',
-                    textAlign: TextAlign.center,
-                  ),
-                ),
+                child:
+                    vsComputer && p == 1
+                        ? SizedBox(
+                          height: 90,
+                          child: Center(child: computerPill()),
+                        )
+                        : FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: playerColors[p],
+                            minimumSize: const Size(0, 90),
+                          ),
+                          onPressed: () => jump(p),
+                          child: Text(
+                            '${widget.names[p]}\nJUMP',
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
               ),
             ),
         ],

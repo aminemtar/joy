@@ -73,4 +73,11 @@ abstract final class FieldTuning {
   /// Seconds the ball needs to cross the court at a given rally length.
   static double crossingSeconds(Difficulty level, int rally) =>
       courtLength / (hitSpeed * rallyBoost(rally) * ballSpeed(level));
+
+  /// How fast the computer drags its piece, compared with a human finger.
+  static double botPace(Difficulty level) => switch (level) {
+    Difficulty.easy => .6,
+    Difficulty.normal => .85,
+    Difficulty.hard => 1.0,
+  };
 }

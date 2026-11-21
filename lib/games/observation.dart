@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../game_art.dart';
 import 'game_stage.dart';
 import '../players.dart' show leadingPlayer;
+import 'bot_skill.dart';
 
 class ObservationGame extends StatefulWidget {
   final int id;
@@ -32,7 +33,7 @@ class _ObservationGameState extends State<ObservationGame> {
       sequenceIndex = 0,
       input = 0;
   bool watching = false, locked = false, done = false;
-  Timer? timer;
+  Timer? timer, botTimer;
   List<int> left = [], right = [], sequence = [];
   String message = '';
   static const art = [0, 5, 8, 11, 12, 19, 22, 29];
@@ -52,11 +53,52 @@ class _ObservationGameState extends State<ObservationGame> {
   @override
   void dispose() {
     timer?.cancel();
+    botTimer?.cancel();
     super.dispose();
+  }
+
+  /// Whether the match is against the computer, which plays as player 2.
+  bool get vsComputer => BotSkill.isComputer(context);
+
+  /// Whether the computer is the one answering right now.
+  bool get botTurn => vsComputer && turn == 1 && !done;
+
+  /// Plans the computer's next action. It never fires once the round is over.
+  void scheduleBot() {
+    botTimer?.cancel();
+    if (!botTurn || locked || watching) return;
+    final skill = BotSkill.of(context);
+    final seconds =
+        widget.id == 21
+            ? 3.2
+            : widget.id == 22
+            ? 3.8
+            : .55;
+    botTimer = Timer(skill.think(random, seconds: seconds), botMove);
+  }
+
+  void botMove() {
+    if (!mounted || !botTurn || locked || watching) return;
+    final skill = BotSkill.of(context);
+    if (widget.id == 23) {
+      // A little forgiving per step: the whole pattern is the real test.
+      final stepAccuracy = 1 - (1 - skill.accuracy) / 2;
+      final right = random.nextDouble() < stepAccuracy;
+      final correct = sequence[input];
+      tap(right ? correct : (correct + 1 + random.nextInt(3)) % 4, bot: true);
+      if (!locked && !done) scheduleBot();
+      return;
+    }
+    var pick = difference;
+    if (!skill.succeeds(random)) {
+      pick = (difference + 1 + random.nextInt(left.length - 1)) % left.length;
+    }
+    tap(pick, bot: true);
   }
 
   void newRound() {
     timer?.cancel();
+    botTimer?.cancel();
     locked = false;
     input = 0;
     lit = -1;
@@ -89,7 +131,9 @@ class _ObservationGameState extends State<ObservationGame> {
       watching = true;
       message = 'Watch the whole sequence';
       timer = Timer(const Duration(milliseconds: 700), flash);
+      return;
     }
+    scheduleBot();
   }
 
   void flash() {
@@ -100,6 +144,7 @@ class _ObservationGameState extends State<ObservationGame> {
         lit = -1;
         message = 'Repeat all ${sequence.length} colors in order';
       });
+      scheduleBot();
       return;
     }
     JoySounds.instance.play(
@@ -131,6 +176,7 @@ class _ObservationGameState extends State<ObservationGame> {
 
   void end() {
     done = true;
+    botTimer?.cancel();
     widget.onFinish(leadingPlayer(score));
   }
 
@@ -157,8 +203,9 @@ class _ObservationGameState extends State<ObservationGame> {
     });
   }
 
-  void tap(int i) {
+  void tap(int i, {bool bot = false}) {
     if (done || locked || watching) return;
+    if (!bot && vsComputer && turn == 1) return;
     setState(() {
       if (widget.id == 23) {
         if (i != sequence[input]) {
@@ -218,7 +265,7 @@ class _ObservationGameState extends State<ObservationGame> {
             style: TextStyle(letterSpacing: 2, color: Colors.white54),
           ),
           const SizedBox(height: 8),
-          pictures(right, true),
+          pictures(right, !botTurn),
         ],
       );
     } else if (widget.id == 22) {
@@ -226,7 +273,7 @@ class _ObservationGameState extends State<ObservationGame> {
         children: [
           const Text('Find this object in the collection'),
           GameArt(id: art[target], size: 100),
-          pictures(left, true),
+          pictures(left, !botTurn),
         ],
       );
     } else {
@@ -264,7 +311,7 @@ class _ObservationGameState extends State<ObservationGame> {
               ),
               child: InkWell(
                 borderRadius: BorderRadius.circular(24),
-                onTap: () => tap(i),
+                onTap: botTurn ? null : () => tap(i),
                 child: Center(
                   child: Text(
                     '${i + 1}',
@@ -299,7 +346,35 @@ class _ObservationGameState extends State<ObservationGame> {
                   ? 'find the one matching object'
                   : 'watch and repeat the complete pattern'}'
               : message,
-      child: content,
+      child: IgnorePointer(
+        ignoring: botTurn,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [if (botTurn) const _ComputerPill(), content],
+        ),
+      ),
     );
   }
+}
+
+/// Shows that the computer, not a person, is answering this turn.
+class _ComputerPill extends StatelessWidget {
+  const _ComputerPill();
+  @override
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.only(bottom: 10),
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: .08),
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: const Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.smart_toy_rounded, size: 16),
+        SizedBox(width: 6),
+        Text('Computer is playing'),
+      ],
+    ),
+  );
 }

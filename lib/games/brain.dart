@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'bot_skill.dart';
 import 'game_stage.dart';
 
 class BrainGame extends StatefulWidget {
@@ -29,6 +30,7 @@ class _BrainGameState extends State<BrainGame> {
   bool hidden = false, ready = false, locked = false, finished = false;
   int? secret;
   Timer? timer;
+  Timer? botTimer;
   final cups = [0, 1, 2];
   int cupStep = 0;
   bool cupRevealed = true;
@@ -54,11 +56,63 @@ class _BrainGameState extends State<BrainGame> {
   @override
   void dispose() {
     timer?.cancel();
+    botTimer?.cancel();
     super.dispose();
+  }
+
+  /// Whether this match is played against the computer.
+  bool get vsComputer => MatchOptions.read(context)?.computer == true;
+
+  /// Whether it is the computer's turn to answer (not the reaction duel).
+  bool get botTurn => vsComputer && turn == 1 && widget.id != 27;
+
+  /// Riddle, Math and Follow the Cup: the computer answers after a pause,
+  /// and is right with a probability that depends on the difficulty.
+  void scheduleBot() {
+    if (!vsComputer || finished || turn != 1) return;
+    if (![24, 25, 26].contains(widget.id)) return;
+    final skill = BotSkill.of(context);
+    botTimer?.cancel();
+    botTimer = Timer(
+      skill.think(rng, seconds: widget.id == 24 ? 1.0 : 2.3),
+      () {
+        if (!mounted || finished || locked || turn != 1) return;
+        var pick = answer;
+        if (!skill.succeeds(rng)) {
+          final wrong = [
+            for (var i = 0; i < options.length; i++)
+              if (i != answer) i,
+          ];
+          pick = wrong[rng.nextInt(wrong.length)];
+        }
+        choose(pick, bot: true);
+      },
+    );
+  }
+
+  /// Reaction Duel: presses a human-like moment after the signal.
+  void botReact() {
+    if (!vsComputer) return;
+    botTimer?.cancel();
+    botTimer = Timer(BotSkill.of(context).think(rng, seconds: .55), () {
+      if (mounted && !finished && !locked && ready) react(1, bot: true);
+    });
+  }
+
+  /// On Easy the computer sometimes jumps the gun before the signal.
+  void botFalseStart(int wait) {
+    if (!vsComputer) return;
+    final skill = BotSkill.of(context);
+    if (skill.level != Difficulty.easy || rng.nextDouble() >= .12) return;
+    botTimer?.cancel();
+    botTimer = Timer(Duration(milliseconds: 500 + rng.nextInt(wait - 900)), () {
+      if (mounted && !finished && !locked && !ready) react(1, bot: true);
+    });
   }
 
   void next() {
     timer?.cancel();
+    botTimer?.cancel();
     round++;
     hidden = false;
     locked = false;
@@ -68,14 +122,17 @@ class _BrainGameState extends State<BrainGame> {
     if (id == 27) {
       prompt = 'WAIT…';
       options = [];
-      timer = Timer(Duration(milliseconds: 1600 + rng.nextInt(2800)), () {
+      final wait = 1600 + rng.nextInt(2800);
+      timer = Timer(Duration(milliseconds: wait), () {
         if (mounted) {
           setState(() {
             ready = true;
             prompt = 'NOW!';
           });
+          botReact();
         }
       });
+      botFalseStart(wait);
       return;
     }
     if (id == 29) {
@@ -152,6 +209,7 @@ class _BrainGameState extends State<BrainGame> {
                 answer = cups.indexOf(0);
                 locked = false;
                 prompt = 'Where is the diamond?';
+                scheduleBot();
                 return;
               }
               final a = rng.nextInt(3), b = (a + 1 + rng.nextInt(2)) % 3;
@@ -164,6 +222,7 @@ class _BrainGameState extends State<BrainGame> {
         );
       });
     }
+    if (id == 25 || id == 26) scheduleBot();
   }
 
   void winPoint(int p, {bool playCue = true}) {
@@ -237,10 +296,11 @@ class _BrainGameState extends State<BrainGame> {
     if (mounted && !finished) setState(next);
   }
 
-  void react(int p) async {
-    if (locked || finished) return;
+  void react(int p, {bool bot = false}) async {
+    if (locked || finished || (vsComputer && p == 1 && !bot)) return;
     locked = true;
     timer?.cancel();
+    botTimer?.cancel();
     if (ready) {
       winPoint(p);
       setState(() => prompt = '${widget.names[p]} was faster!');
@@ -305,7 +365,9 @@ class _BrainGameState extends State<BrainGame> {
           ),
         const SizedBox(height: 22),
         Text(
-          feedback,
+          feedback.isEmpty && botTurn && !locked
+              ? '🤖 Computer is thinking…'
+              : feedback,
           textAlign: TextAlign.center,
           style: const TextStyle(color: Colors.amber, fontSize: 20),
         ),
@@ -315,8 +377,11 @@ class _BrainGameState extends State<BrainGame> {
             widget.names.length,
             2,
             (p) => FilledButton(
-              style: FilledButton.styleFrom(backgroundColor: playerColors[p]),
-              onPressed: () => react(p),
+              style: FilledButton.styleFrom(
+                backgroundColor: playerColors[p],
+                disabledBackgroundColor: playerColors[p].withValues(alpha: .35),
+              ),
+              onPressed: vsComputer && p == 1 ? null : () => react(p),
               child: Text(widget.names[p], textAlign: TextAlign.center),
             ),
           )
@@ -332,7 +397,7 @@ class _BrainGameState extends State<BrainGame> {
                         width: (box.maxWidth - 10) / 2,
                         height: 76,
                         child: FilledButton.tonal(
-                          onPressed: locked ? null : () => choose(i),
+                          onPressed: locked || botTurn ? null : () => choose(i),
                           child: Text(
                             options[i],
                             textAlign: TextAlign.center,

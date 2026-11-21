@@ -1,16 +1,14 @@
 import '../sound.dart';
 import '../joy_theme.dart';
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'bot_skill.dart';
+import 'code_breaker_view.dart';
 import 'game_stage.dart';
 import '../players.dart' show leadingPlayer;
+import 'strategy_bot.dart';
 import 'strategy_models.dart';
-
-class _CodeAttempt {
-  final List<int> pegs;
-  final int exact, misplaced;
-  const _CodeAttempt(this.pegs, this.exact, this.misplaced);
-}
 
 class StrategyGame extends StatefulWidget {
   final int id;
@@ -38,15 +36,19 @@ class _StrategyGameState extends State<StrategyGame> {
   late final MineBoard mines;
   late final List<List<int>> secrets;
   final guess = <int>[];
-  late final List<List<_CodeAttempt>> history;
-  static const colors = [
-    Color(0xFF507CFF),
-    Color(0xFFFF6F83),
-    Color(0xFFFFC16D),
-    Color(0xFFA08AFF),
-    Color(0xFF63D7F1),
-    Color(0xFFFF9366),
-  ];
+  late final List<List<CodeAttempt>> history;
+  static const colors = codeColors;
+
+  /// The computer's solver for its own secret code (Code Breaker).
+  final solver = CodeSolver();
+  Timer? botTimer;
+
+  /// Whether the second player is the computer.
+  bool get vsComputer => BotSkill.isComputer(context);
+
+  /// The player whose board is on screen: always the human against the
+  /// computer, otherwise whoever's turn it is.
+  int get viewer => vsComputer ? 0 : turn;
   @override
   void initState() {
     super.initState();
@@ -54,7 +56,7 @@ class _StrategyGameState extends State<StrategyGame> {
     coins = List.filled(widget.names.length, 12);
     lives = List.filled(widget.names.length, 2);
     attempts = List.filled(widget.names.length, 0);
-    history = List.generate(widget.names.length, (_) => <_CodeAttempt>[]);
+    history = List.generate(widget.names.length, (_) => <CodeAttempt>[]);
     fleets = [FleetBoard(random), FleetBoard(random)];
     mines = MineBoard(random);
     secrets = List.generate(
@@ -64,9 +66,52 @@ class _StrategyGameState extends State<StrategyGame> {
     value = 3 + random.nextInt(7);
   }
 
+  @override
+  void dispose() {
+    botTimer?.cancel();
+    super.dispose();
+  }
+
+  /// Schedules the computer's move when it is its turn.
+  void scheduleBot() {
+    botTimer?.cancel();
+    if (!mounted || done || !vsComputer || turn != 1 || widget.id == 1) return;
+    final skill = BotSkill.of(context);
+    botTimer = Timer(
+      skill.think(random, seconds: widget.id == 34 ? 1.5 : 1.0),
+      botMove,
+    );
+  }
+
+  void botMove() {
+    if (!mounted || done || turn != 1) return;
+    final skill = BotSkill.of(context);
+    switch (widget.id) {
+      case 16:
+        final cell = reversiBotMove(reversi, 2, random, skill);
+        if (cell != null) move(cell, bot: true);
+      case 32:
+        move(dotsBotMove(dots, random, skill), bot: true);
+      case 33:
+        move(fleetBotShot(fleets[0], random, skill), bot: true);
+      case 34:
+        final code = solver.next(random, skill);
+        checkCode(forced: code);
+      case 35:
+        final cell = minesBotMove(mines, random, skill);
+        if (cell < 0) {
+          setState(mines.flags.clear);
+          scheduleBot();
+        } else {
+          move(cell, bot: true);
+        }
+    }
+  }
+
   void end([int? winner]) {
     if (done) return;
     done = true;
+    botTimer?.cancel();
     widget.onFinish(
       winner ??
           leadingPlayer(
@@ -87,7 +132,7 @@ class _StrategyGameState extends State<StrategyGame> {
       turn = (turn + 1) % widget.names.length;
     } while ((widget.id == 35 && lives[turn] <= 0) ||
         (widget.id == 34 && attempts[turn] >= 8));
-    pass = widget.id == 33 || widget.id == 34;
+    pass = (widget.id == 33 || widget.id == 34) && !vsComputer;
   }
 
   void auction() {
@@ -95,6 +140,17 @@ class _StrategyGameState extends State<StrategyGame> {
     setState(() {
       sealedBids.add(bid);
       bid = 0;
+      if (vsComputer && sealedBids.length == 1) {
+        sealedBids.add(
+          botBid(
+            value: value,
+            coins: coins[1],
+            round: round,
+            random: random,
+            skill: BotSkill.of(context),
+          ),
+        );
+      }
       if (sealedBids.length < widget.names.length) {
         turn++;
         pass = true;
@@ -122,8 +178,8 @@ class _StrategyGameState extends State<StrategyGame> {
     });
   }
 
-  void move(int cell) {
-    if (done || pass) return;
+  void move(int cell, {bool bot = false}) {
+    if (done || pass || (vsComputer && turn == 1 && !bot)) return;
     setState(() {
       switch (widget.id) {
         case 16:
@@ -165,7 +221,7 @@ class _StrategyGameState extends State<StrategyGame> {
           }
           break;
         case 35:
-          if (flagMode) {
+          if (flagMode && !bot) {
             if (mines.revealed.contains(cell)) return;
             if (mines.flags.contains(cell)) {
               mines.flags.remove(cell);
@@ -207,24 +263,30 @@ class _StrategyGameState extends State<StrategyGame> {
           break;
       }
     });
+    scheduleBot();
   }
 
-  void checkCode() {
-    if (guess.length != 4 || done) return;
+  void checkCode({List<int>? forced}) {
+    final attempt = forced ?? guess;
+    if (attempt.length != 4 || done) return;
+    if (forced == null && vsComputer && turn == 1) return;
     setState(() {
-      final feedback = evaluateCode(secrets[turn], guess);
+      final feedback = evaluateCode(secrets[turn], attempt);
+      if (turn == 1 && vsComputer) {
+        solver.learn(attempt, feedback.exact, feedback.misplaced);
+      }
       JoySounds.instance.play(
         feedback.exact == 4 ? SoundEffect.correct : SoundEffect.tap,
       );
       attempts[turn]++;
       history[turn].add(
-        _CodeAttempt(List<int>.of(guess), feedback.exact, feedback.misplaced),
+        CodeAttempt(List<int>.of(attempt), feedback.exact, feedback.misplaced),
       );
       score[turn] = max(score[turn], feedback.exact);
       if (feedback.exact == 4) {
         end(turn);
       } else {
-        guess.clear();
+        if (forced == null) guess.clear();
         if (attempts.every((n) => n >= 8)) {
           end();
         } else {
@@ -232,6 +294,7 @@ class _StrategyGameState extends State<StrategyGame> {
         }
       }
     });
+    scheduleBot();
   }
 
   Widget auctionView() => Column(
@@ -339,239 +402,27 @@ class _StrategyGameState extends State<StrategyGame> {
       },
     ),
   );
-  Widget codeView() => Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Container(
-        width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(16, 15, 16, 14),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF1C3159), Color(0xFF14213D)],
-          ),
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: const Color(0xFF507CFF).withValues(alpha: .38)),
-        ),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.lock_outline_rounded, color: Color(0xFF9DB7FF), size: 18),
-                const SizedBox(width: 8),
-                const Expanded(
-                  child: Text(
-                    'CRACK THE CODE',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.5),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF507CFF).withValues(alpha: .18),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '${attempts[turn]} / 8',
-                    style: const TextStyle(color: Color(0xFFB8CAFF), fontWeight: FontWeight.w800, fontSize: 12),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Find the 4 hidden colors. Repeats are allowed.',
-              style: TextStyle(color: JoyTheme.muted, fontSize: 12),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 15),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                for (var i = 0; i < 4; i++)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 7),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: i < guess.length ? colors[guess[i]] : const Color(0xFF0D1830),
-                        border: Border.all(
-                          color: i < guess.length ? Colors.white.withValues(alpha: .8) : const Color(0xFF526487),
-                          width: 2,
-                        ),
-                        boxShadow: i < guess.length
-                            ? [BoxShadow(color: colors[guess[i]].withValues(alpha: .35), blurRadius: 12, spreadRadius: 1)]
-                            : null,
-                      ),
-                      child: Center(
-                        child: Text(
-                          i < guess.length ? '${guess[i] + 1}' : '${i + 1}',
-                          style: TextStyle(
-                            color: i < guess.length ? Colors.white : const Color(0xFF7384A7),
-                            fontWeight: FontWeight.w900,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                const Expanded(
-                  child: Text('CHOOSE A COLOR', style: TextStyle(fontSize: 10, letterSpacing: 1.2, color: JoyTheme.muted, fontWeight: FontWeight.w800)),
-                ),
-                Text('${guess.length} of 4 selected', style: const TextStyle(fontSize: 10, color: Color(0xFF9DB7FF))),
-              ],
-            ),
-            const SizedBox(height: 9),
-            Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 11,
-              runSpacing: 10,
-              children: [
-                for (var i = 0; i < colors.length; i++)
-                  Semantics(
-                    button: true,
-                    label: 'Color ${i + 1}',
-                    child: InkWell(
-                      onTap: guess.length < 4
-                          ? () {
-                              JoySounds.instance.play(SoundEffect.tap);
-                              setState(() => guess.add(i));
-                            }
-                          : null,
-                      customBorder: const CircleBorder(),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 160),
-                        width: 39,
-                        height: 39,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: colors[i],
-                          border: Border.all(color: Colors.white.withValues(alpha: .85), width: 2),
-                          boxShadow: [BoxShadow(color: colors[i].withValues(alpha: .3), blurRadius: 9, offset: const Offset(0, 3))],
-                        ),
-                        child: Center(child: Text('${i + 1}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900))),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 13),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: guess.isEmpty
-                        ? null
-                        : () {
-                            JoySounds.instance.play(SoundEffect.tap);
-                            setState(() => guess.clear());
-                          },
-                    icon: const Icon(Icons.restart_alt_rounded, size: 17),
-                    label: const Text('Clear'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFFB8CAFF),
-                      side: const BorderSide(color: Color(0xFF526487)),
-                      padding: const EdgeInsets.symmetric(vertical: 11),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 9),
-                Expanded(
-                  flex: 2,
-                  child: FilledButton.icon(
-                    onPressed: guess.length == 4 ? checkCode : null,
-                    icon: const Icon(Icons.lock_open_rounded, size: 17),
-                    label: const Text('Check code'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF507CFF),
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: const Color(0xFF33415F),
-                      padding: const EdgeInsets.symmetric(vertical: 11),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-      const SizedBox(height: 13),
-      Row(
-        children: [
-          const Expanded(child: Text('YOUR ATTEMPTS', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.2))),
-          Text('${8 - attempts[turn]} remaining', style: const TextStyle(fontSize: 11, color: JoyTheme.muted)),
-        ],
-      ),
-      const SizedBox(height: 7),
-      if (history[turn].isEmpty)
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 12),
-          decoration: BoxDecoration(
-            color: const Color(0xFF17243E),
-            borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: Colors.white.withValues(alpha: .07)),
-          ),
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.lightbulb_outline_rounded, color: Color(0xFFFFC16D), size: 17),
-              SizedBox(width: 8),
-              Flexible(child: Text('Your feedback will appear here after each guess.', textAlign: TextAlign.center, style: TextStyle(color: JoyTheme.muted, fontSize: 11))),
-            ],
-          ),
-        )
-      else
-        for (var index = history[turn].length - 1; index >= 0; index--)
-          _codeAttemptRow(index + 1, history[turn][index]),
-      const SizedBox(height: 7),
-      const Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _FeedbackLegend(color: Colors.white, label: 'Exact position'),
-          SizedBox(width: 14),
-          _FeedbackLegend(color: Color(0xFF71809B), label: 'Right color'),
-        ],
-      ),
-    ],
-  );
-
-  Widget _codeAttemptRow(int number, _CodeAttempt attempt) => Container(
-    margin: const EdgeInsets.only(bottom: 6),
-    padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-    decoration: BoxDecoration(
-      color: const Color(0xFF17243E),
-      borderRadius: BorderRadius.circular(13),
-      border: Border.all(color: Colors.white.withValues(alpha: .07)),
-    ),
-    child: Row(
-      children: [
-        SizedBox(width: 25, child: Text('$number', style: const TextStyle(color: JoyTheme.muted, fontSize: 11, fontWeight: FontWeight.w800))),
-        for (final peg in attempt.pegs)
-          Container(
-            width: 17,
-            height: 17,
-            margin: const EdgeInsets.only(right: 5),
-            decoration: BoxDecoration(shape: BoxShape.circle, color: colors[peg], border: Border.all(color: Colors.white54, width: 1)),
-          ),
-        const Spacer(),
-        for (var i = 0; i < attempt.exact; i++)
-          const Padding(padding: EdgeInsets.only(left: 3), child: _FeedbackDot(color: Colors.white)),
-        for (var i = 0; i < attempt.misplaced; i++)
-          const Padding(padding: EdgeInsets.only(left: 3), child: _FeedbackDot(color: Color(0xFF71809B))),
-        const SizedBox(width: 8),
-        Text('${attempt.exact}+${attempt.misplaced}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Color(0xFFB8CAFF))),
-      ],
-    ),
+  Widget codeView() => CodeBreakerBoard(
+    guess: guess,
+    history: history[viewer],
+    maxAttempts: 8,
+    enabled: !(vsComputer && turn == 1) && !done,
+    onPick: (i) {
+      JoySounds.instance.play(SoundEffect.tap);
+      setState(() => guess.add(i));
+    },
+    onRemove: (i) {
+      JoySounds.instance.play(SoundEffect.tap);
+      setState(() => guess.removeAt(i));
+    },
+    onClear: () {
+      JoySounds.instance.play(SoundEffect.tap);
+      setState(guess.clear);
+    },
+    onCheck: checkCode,
+    rivalName: vsComputer ? widget.names[1] : null,
+    rivalHistory: history[1],
+    rivalThinking: vsComputer && turn == 1 && !done,
   );
 
   @override
@@ -585,10 +436,16 @@ class _StrategyGameState extends State<StrategyGame> {
       message = 'Join two dots. Close a box to score and play again.';
     }
     if (id == 33) {
-      message = '${widget.names[turn]}: fire at the enemy’s hidden fleet.';
+      message =
+          vsComputer && turn == 1
+              ? '${widget.names[1]} is aiming…'
+              : '${widget.names[turn]}: fire at the enemy’s hidden fleet.';
     }
     if (id == 34) {
-      message = '${widget.names[turn]}: solve your code before your rival.';
+      message =
+          vsComputer && turn == 1
+              ? '${widget.names[1]} is working on its code…'
+              : '${widget.names[turn]}: solve your code before your rival.';
     }
     if (id == 35) message = 'Shields ${lives.join(' / ')} • $notice';
     return GameStage(
@@ -663,7 +520,7 @@ class _StrategyGameState extends State<StrategyGame> {
                 33 => Column(
                   children: [
                     boardGrid(36, 6, (i) {
-                      final board = fleets[1 - turn],
+                      final board = fleets[1 - viewer],
                           hit = board.shots.contains(i);
                       return gameTile(
                         onTap: () => move(i),
@@ -685,7 +542,7 @@ class _StrategyGameState extends State<StrategyGame> {
                     }),
                     const SizedBox(height: 16),
                     Text(
-                      'Your fleet: ${fleets[turn].ships.length - fleets[turn].shots.where(fleets[turn].ships.contains).length} hull cells remaining',
+                      'Your fleet: ${fleets[viewer].ships.length - fleets[viewer].shots.where(fleets[viewer].ships.contains).length} hull cells remaining',
                     ),
                     const Text(
                       'Enemy ships: lengths 3, 2, 2 • One shot per turn',
@@ -738,7 +595,10 @@ class _StrategyGameState extends State<StrategyGame> {
                         'Mark suspected mines without ending your turn',
                       ),
                       value: flagMode,
-                      onChanged: (v) => setState(() => flagMode = v),
+                      onChanged:
+                          vsComputer && turn == 1
+                              ? null
+                              : (v) => setState(() => flagMode = v),
                     ),
                     const Text(
                       'First reveal is safe. Empty cells open their neighbors.\nMost safe cells wins, or survive your rival’s two mine hits.',
@@ -749,36 +609,4 @@ class _StrategyGameState extends State<StrategyGame> {
               },
     );
   }
-}
-
-class _FeedbackDot extends StatelessWidget {
-  final Color color;
-  const _FeedbackDot({required this.color});
-
-  @override
-  Widget build(BuildContext context) => Container(
-    width: 7,
-    height: 7,
-    decoration: BoxDecoration(
-      color: color,
-      shape: BoxShape.circle,
-      border: Border.all(color: Colors.white24, width: .5),
-    ),
-  );
-}
-
-class _FeedbackLegend extends StatelessWidget {
-  final Color color;
-  final String label;
-  const _FeedbackLegend({required this.color, required this.label});
-
-  @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      _FeedbackDot(color: color),
-      const SizedBox(width: 5),
-      Text(label, style: const TextStyle(color: JoyTheme.muted, fontSize: 9)),
-    ],
-  );
 }

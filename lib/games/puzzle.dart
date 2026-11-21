@@ -5,6 +5,7 @@ import '../practice_ai.dart';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'bot_skill.dart';
 import 'flip_card.dart';
 import 'game_stage.dart';
 import '../players.dart' show leadingPlayer;
@@ -35,6 +36,15 @@ class _PuzzleGameState extends State<PuzzleGame> {
   late int width;
   final pos = [0, 35];
   final walls = <int>{};
+
+  /// Cards the computer has seen face up, by position (Picture Pairs).
+  final seen = <int, int>{};
+
+  /// The second card of a pair the computer remembers and means to flip.
+  int? botSecond;
+
+  /// The board before the computer's previous slide, so it does not undo it.
+  List<int>? botPrevious;
   @override
   void initState() {
     super.initState();
@@ -84,25 +94,179 @@ class _PuzzleGameState extends State<PuzzleGame> {
     super.dispose();
   }
 
+  /// Whether it is the computer's turn in a match against the computer.
+  bool get botTurn => MatchOptions.read(context)?.computer == true && turn == 1;
+
   void scheduleComputer() {
     final options = MatchOptions.read(context);
     if (options?.computer != true ||
         turn != 1 ||
         over ||
-        ![18, 19].contains(widget.id)) {
+        ![15, 17, 18, 19, 20].contains(widget.id) ||
+        (widget.id == 20 && locked)) {
       return;
     }
+    final skill = BotSkill(options!.difficulty);
+    final classic = widget.id == 18 || widget.id == 19;
     botTimer?.cancel();
     botTimer = Timer(
-      Duration(
-        milliseconds: options!.difficulty == Difficulty.easy ? 1000 : 650,
-      ),
+      classic
+          ? Duration(
+            milliseconds: options.difficulty == Difficulty.easy ? 1000 : 650,
+          )
+          : skill.think(botRandom, seconds: widget.id == 20 ? .8 : 1.0),
       () {
         if (!mounted || over || turn != 1) return;
-        final move = computerMove(board, width, options.difficulty, botRandom);
+        if (widget.id == 20) {
+          if (!locked) pairsMove(skill);
+          return;
+        }
+        final move = switch (widget.id) {
+          15 => slidingMove(skill),
+          17 => mazeMove(skill),
+          _ => computerMove(board, width, options.difficulty, botRandom),
+        };
         if (move != null) play(move, bot: true);
       },
     );
+  }
+
+  /// Picture Pairs: flips one card per call, remembering what it has seen
+  /// with a chance that depends on the difficulty.
+  void pairsMove(BotSkill skill) {
+    bool free(int i) => !matched.contains(i) && !open.contains(i);
+    final cards = [
+      for (var i = 0; i < board.length; i++)
+        if (free(i)) i,
+    ];
+    if (cards.isEmpty) return;
+    int? pick;
+    if (open.isEmpty) {
+      for (final a in cards) {
+        final b = cards.where((c) => c != a && seen[c] == seen[a]);
+        if (seen[a] != null && b.isNotEmpty) {
+          if (skill.succeeds(botRandom)) {
+            pick = a;
+            botSecond = b.first;
+          }
+          break;
+        }
+      }
+    } else {
+      final second = botSecond;
+      botSecond = null;
+      if (second != null && free(second)) {
+        pick = second;
+      } else {
+        final value = board[open.first];
+        for (final c in cards) {
+          if (seen[c] == value && skill.succeeds(botRandom)) {
+            pick = c;
+            break;
+          }
+        }
+      }
+    }
+    if (pick == null) {
+      final fresh = [
+        for (final c in cards)
+          if (!seen.containsKey(c)) c,
+      ];
+      final pool = fresh.isEmpty ? cards : fresh;
+      pick = pool[botRandom.nextInt(pool.length)];
+    }
+    play(pick, bot: true);
+  }
+
+  bool _isSolved(List<int> b) {
+    for (var i = 0; i < 8; i++) {
+      if (b[i] != i + 1) return false;
+    }
+    return b[8] == 0;
+  }
+
+  int _manhattan(List<int> b) {
+    var total = 0;
+    for (var i = 0; i < 9; i++) {
+      if (b[i] == 0) continue;
+      final goal = b[i] - 1;
+      total += (i ~/ 3 - goal ~/ 3).abs() + (i % 3 - goal % 3).abs();
+    }
+    return total;
+  }
+
+  /// Sliding Puzzle: finishes the puzzle when it can, otherwise slides the
+  /// tile that leaves the board closest to solved without setting up a
+  /// one-move win for the human.
+  int? slidingMove(BotSkill skill) {
+    final gap = board.indexOf(0);
+    final moves = [
+      for (var j = 0; j < 9; j++)
+        if (_adj(gap, j, 3)) j,
+    ];
+    if (moves.isEmpty) return null;
+    List<int> after(List<int> b, int hole, int j) =>
+        List<int>.of(b)
+          ..[hole] = b[j]
+          ..[j] = 0;
+    final finishing = [
+      for (final j in moves)
+        if (_isSolved(after(board, gap, j))) j,
+    ];
+    if (finishing.isNotEmpty && skill.succeeds(botRandom)) {
+      return finishing.first;
+    }
+    if (!skill.succeeds(botRandom)) {
+      return moves[botRandom.nextInt(moves.length)];
+    }
+    var best = <int>[];
+    var bestScore = 1 << 30;
+    for (final j in moves) {
+      final next = after(board, gap, j);
+      if (botPrevious != null && listEquals(next, botPrevious)) continue;
+      var score = _manhattan(next);
+      for (var k = 0; k < 9; k++) {
+        if (_adj(j, k, 3) && _isSolved(after(next, j, k))) score += 100;
+      }
+      if (score < bestScore) {
+        bestScore = score;
+        best = [j];
+      } else if (score == bestScore) {
+        best.add(j);
+      }
+    }
+    final pool = best.isEmpty ? moves : best;
+    botPrevious = List<int>.of(board);
+    return pool[botRandom.nextInt(pool.length)];
+  }
+
+  /// Maze Race: steps along the shortest route to the far corner. It makes
+  /// the occasional wrong step, more often on Easy.
+  int? mazeMove(BotSkill skill) {
+    final steps = [
+      for (var j = 0; j < 36; j++)
+        if (_adj(pos[1], j, 6) && !walls.contains(j) && j != pos[0]) j,
+    ];
+    if (steps.isEmpty) return null;
+    if (!skill.succeeds(botRandom)) {
+      return steps[botRandom.nextInt(steps.length)];
+    }
+    final distance = List<int>.filled(36, -1)..[0] = 0;
+    final queue = <int>[0];
+    while (queue.isNotEmpty) {
+      final cell = queue.removeAt(0);
+      for (var n = 0; n < 36; n++) {
+        if (distance[n] < 0 && !walls.contains(n) && _adj(cell, n, 6)) {
+          distance[n] = distance[cell] + 1;
+          queue.add(n);
+        }
+      }
+    }
+    final reachable = steps.where((j) => distance[j] >= 0).toList();
+    if (reachable.isEmpty) return steps[botRandom.nextInt(steps.length)];
+    final shortest = reachable.map((j) => distance[j]).reduce(min);
+    final best = reachable.where((j) => distance[j] == shortest).toList();
+    return best[botRandom.nextInt(best.length)];
   }
 
   bool _adj(int a, int b, int w) =>
@@ -126,7 +290,9 @@ class _PuzzleGameState extends State<PuzzleGame> {
     if (widget.id == 20) {
       if (matched.contains(index) || open.contains(index)) return;
       JoySounds.instance.play(SoundEffect.flip);
+      seen[index] = board[index];
       setState(() => open.add(index));
+      if (open.length == 1) scheduleComputer();
       if (open.length == 2) {
         locked = true;
         await Future<void>.delayed(const Duration(milliseconds: 1100));
@@ -147,6 +313,8 @@ class _PuzzleGameState extends State<PuzzleGame> {
         setState(() => locked = false);
         if (matched.length == 16) {
           end(leadingPlayer(score));
+        } else {
+          scheduleComputer();
         }
       }
       return;
@@ -265,6 +433,7 @@ class _PuzzleGameState extends State<PuzzleGame> {
                 enabled:
                     !locked &&
                     !over &&
+                    !botTurn &&
                     !open.contains(i) &&
                     !matched.contains(i),
                 artId: const [0, 5, 8, 11, 12, 19, 22, 29][board[i] - 1],
@@ -273,10 +442,13 @@ class _PuzzleGameState extends State<PuzzleGame> {
               spacing: 12,
             ),
             const SizedBox(height: 24),
-            const Text(
-              'Match a pair to keep your turn.\nUnmatched cards turn back over.',
+            Text(
+              botTurn && !over
+                  ? '🤖 Computer is thinking…'
+                  : 'Match a pair to keep your turn.\n'
+                      'Unmatched cards turn back over.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white54),
+              style: const TextStyle(color: Colors.white54),
             ),
           ],
         ),
@@ -344,10 +516,12 @@ class _PuzzleGameState extends State<PuzzleGame> {
             );
           }),
           const SizedBox(height: 12),
-          const Text(
-            'Take turns on the same board',
+          Text(
+            botTurn && !over
+                ? '🤖 Computer is thinking…'
+                : 'Take turns on the same board',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white54),
+            style: const TextStyle(color: Colors.white54),
           ),
         ],
       ),

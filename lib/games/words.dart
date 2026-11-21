@@ -1,6 +1,8 @@
 import '../sound.dart';
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'bot_skill.dart';
 import 'game_stage.dart';
 import '../players.dart' show leadingPlayer;
 import 'word_models.dart';
@@ -29,6 +31,8 @@ class _WordsGameState extends State<WordsGame> {
   late final WordSearchBoard search;
   final entry = <int, String>{}, found = <String>{}, marked = <int>{};
   int? start;
+  Timer? botTimer;
+  int botWrongCell = -1;
   List<int> selection = [];
   String word = '';
   List<String> letters = [];
@@ -60,6 +64,134 @@ class _WordsGameState extends State<WordsGame> {
     );
     search = WordSearchBoard(random);
     newWord();
+  }
+
+  @override
+  void dispose() {
+    botTimer?.cancel();
+    super.dispose();
+  }
+
+  /// Whether the match is against the computer, which plays as player 2.
+  bool get vsComputer => BotSkill.isComputer(context);
+
+  /// Whether the computer is the one playing right now.
+  bool get botTurn => vsComputer && turn == 1 && !done;
+
+  /// Plans the computer's turn. Nothing is scheduled once the match is over.
+  void scheduleBot() {
+    botTimer?.cancel();
+    if (!botTurn) return;
+    final skill = BotSkill.of(context);
+    switch (widget.id) {
+      case 28:
+        botTimer = Timer(skill.think(random, seconds: 4), planScramble);
+      case 30:
+        botTimer = Timer(skill.think(random, seconds: 2.5), startCrossword);
+      case 31:
+        botTimer = Timer(skill.think(random, seconds: 3.5), startSearch);
+    }
+  }
+
+  /// Delay between two letters or cells, so the move can be followed.
+  Duration get botStep => BotSkill.of(context).think(random, seconds: .35);
+
+  void planScramble() {
+    if (!mounted || !botTurn) return;
+    final skill = BotSkill.of(context);
+    final answer = word.split('');
+    if (!skill.succeeds(random) && answer.length > 1) {
+      // A believable slip: two neighbouring letters swapped.
+      final i = random.nextInt(answer.length - 1);
+      final swap = answer[i];
+      answer[i] = answer[i + 1];
+      answer[i + 1] = swap;
+    }
+    final used = <int>{};
+    final plan = <int>[];
+    for (final ch in answer) {
+      final index = [
+        for (var i = 0; i < letters.length; i++)
+          if (letters[i] == ch && !used.contains(i)) i,
+      ];
+      if (index.isEmpty) continue;
+      used.add(index.first);
+      plan.add(index.first);
+    }
+    pickScramble(plan, 0);
+  }
+
+  void pickScramble(List<int> plan, int step) {
+    if (!mounted || !botTurn) return;
+    if (step < plan.length) {
+      JoySounds.instance.play(SoundEffect.tap);
+      setState(() => picked.add(plan[step]));
+      botTimer = Timer(botStep, () => pickScramble(plan, step + 1));
+      return;
+    }
+    botTimer = Timer(const Duration(milliseconds: 500), checkScramble);
+  }
+
+  void startCrossword() {
+    if (!mounted || !botTurn) return;
+    final open = [
+      for (var i = 0; i < crossword.clues.length; i++)
+        if (!crossword.solved.contains(i)) i,
+    ];
+    if (open.isEmpty) return;
+    chooseClue(open[random.nextInt(open.length)]);
+    final editable = [
+      for (final cell in crossword.clues[selected].cells)
+        if (!crossword.confirmed.containsKey(cell)) cell,
+    ];
+    botWrongCell =
+        editable.isEmpty || BotSkill.of(context).succeeds(random)
+            ? -1
+            : editable[random.nextInt(editable.length)];
+    botTimer = Timer(botStep, typeCrossword);
+  }
+
+  void typeCrossword() {
+    if (!mounted || !botTurn) return;
+    final cells = crossword.clues[selected].cells;
+    if (cursor >= cells.length) {
+      checkCrossword();
+      return;
+    }
+    final cell = cells[cursor];
+    var ch = crossword.solution[cell]!;
+    if (cell == botWrongCell) ch = ch == 'A' ? 'E' : 'A';
+    letter(ch);
+    botTimer = Timer(botStep, typeCrossword);
+  }
+
+  void startSearch() {
+    if (!mounted || !botTurn) return;
+    final open = [
+      for (final w in WordSearchBoard.words)
+        if (!found.contains(w)) w,
+    ];
+    if (open.isEmpty) return;
+    List<int> cells;
+    if (BotSkill.of(context).succeeds(random)) {
+      cells = search.placements[open[random.nextInt(open.length)]]!;
+    } else {
+      final from = random.nextInt(64);
+      cells = search.line(from, random.nextInt(64));
+      if (cells.length < 2) cells = [from];
+    }
+    start = cells.first;
+    dragSearch(cells, 1);
+  }
+
+  void dragSearch(List<int> cells, int count) {
+    if (!mounted || !botTurn) return;
+    setState(() => selection = cells.sublist(0, count));
+    if (count < cells.length) {
+      botTimer = Timer(botStep, () => dragSearch(cells, count + 1));
+    } else {
+      botTimer = Timer(const Duration(milliseconds: 450), finishSearch);
+    }
   }
 
   void newWord() {
@@ -133,6 +265,7 @@ class _WordsGameState extends State<WordsGame> {
       cursor = 0;
       skipConfirmed();
     });
+    scheduleBot();
   }
 
   void checkScramble() {
@@ -153,6 +286,7 @@ class _WordsGameState extends State<WordsGame> {
       turn = (turn + 1) % widget.names.length;
       newWord();
     });
+    scheduleBot();
   }
 
   int cellAt(Offset point, double size) =>
@@ -177,6 +311,7 @@ class _WordsGameState extends State<WordsGame> {
       turn = (turn + 1) % widget.names.length;
       if (found.length == WordSearchBoard.words.length) end();
     });
+    scheduleBot();
   }
 
   Widget crosswordView() {
@@ -506,11 +641,41 @@ class _WordsGameState extends State<WordsGame> {
     scores: scores,
     turn: turn,
     message: message.isEmpty ? '${widget.names[turn]}’s turn' : message,
-    child:
-        widget.id == 30
-            ? crosswordView()
-            : widget.id == 31
-            ? searchView()
-            : scrambleView(),
+    child: IgnorePointer(
+      ignoring: botTurn,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (botTurn) const _ComputerPill(),
+          widget.id == 30
+              ? crosswordView()
+              : widget.id == 31
+              ? searchView()
+              : scrambleView(),
+        ],
+      ),
+    ),
+  );
+}
+
+/// Shows that the computer, not a person, is playing this turn.
+class _ComputerPill extends StatelessWidget {
+  const _ComputerPill();
+  @override
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.only(bottom: 10),
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+    decoration: BoxDecoration(
+      color: Colors.white.withValues(alpha: .08),
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: const Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.smart_toy_rounded, size: 16),
+        SizedBox(width: 6),
+        Text('Computer is playing'),
+      ],
+    ),
   );
 }

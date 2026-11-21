@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'arrow_pad.dart';
+import 'bot_skill.dart';
 import 'sprites.dart';
 import 'tuning.dart';
 
@@ -167,6 +168,11 @@ class _ActionGameState extends State<ActionGame>
         players[1].dx + (aim - players[1].dx).clamp(-dt * speed, dt * speed),
         .13,
       );
+    }
+    vsBot = options?.computer == true;
+    if (vsBot) {
+      botSkill = BotSkill(options!.difficulty);
+      if (widget.id != 5) computerPlay(dt);
     }
     time += dt;
     clock += dt;
@@ -394,6 +400,7 @@ class _ActionGameState extends State<ActionGame>
       snakeClock += dt;
       if (snakeClock > .16) {
         snakeClock = 0;
+        if (vsBot) botSnake();
         for (var p = 0; p < 2; p++) {
           lastMoved[p] = dirs[p];
         }
@@ -456,6 +463,296 @@ class _ActionGameState extends State<ActionGame>
       shownScores[1] = score[1];
       setState(() {});
     }
+  }
+
+  /// Whether the top player is the computer (set every frame by [tick]).
+  bool vsBot = false;
+  BotSkill botSkill = const BotSkill(Difficulty.normal);
+
+  /// Seconds until the computer opponent acts again.
+  double botWait = 0;
+
+  /// The last Parking Duel bay the computer saw, to pause on a new one.
+  Offset botGoal = const Offset(.7, .3);
+
+  /// A random think time for the computer, around [base] seconds.
+  double thinkSeconds(double base) =>
+      botSkill.think(rng, seconds: base).inMilliseconds / 1000;
+
+  /// Drags player [p] toward [goal] at [follow] per second, like a finger.
+  void moveToward(int p, Offset goal, double follow, double dt) {
+    final delta = goal - players[p];
+    final step = min(delta.distance, dt * follow);
+    players[p] = clamp(players[p] + normal(delta) * step);
+  }
+
+  /// Keeps the computer in its own half in Parking Duel and Air Hockey.
+  void keepTopHalf() {
+    players[1] = Offset(players[1].dx, players[1].dy.clamp(.05, .45));
+  }
+
+  /// Plays the top side for the computer. It uses the same inputs a person
+  /// has (steering, a dragged piece, held arrows, shots) and never cheats.
+  void computerPlay(double dt) {
+    botWait = max(0.0, botWait - dt);
+    switch (widget.id) {
+      case 0:
+        botRally();
+      case 2:
+        botParking(dt);
+      case 6:
+        botHockey(dt);
+      case 8:
+        botBasket();
+      case 9:
+        botGolf();
+      case 10:
+        botSumo();
+      case 11:
+        botTank(dt);
+      case 13:
+        botBomber(dt);
+    }
+  }
+
+  /// Neon Rally: ride the gold line and sidestep oncoming traffic.
+  void botRally() {
+    final x = players[1].dx;
+    final gap = (.5 + sin(time * 1.3 + .2) * .28) - x;
+    var dir = gap.abs() < .02 ? 0.0 : (gap > 0 ? 1.0 : -1.0);
+    final lookAhead = switch (botSkill.level) {
+      Difficulty.easy => .18,
+      Difficulty.normal => .28,
+      Difficulty.hard => .38,
+    };
+    for (final s in shots) {
+      if (s.owner != 1) continue;
+      final ahead = s.p.dy - players[1].dy;
+      if (ahead < 0 || ahead > lookAhead) continue;
+      final side = s.p.dx - x;
+      if (side.abs() > .13) continue;
+      dir = side > 0 ? -1.0 : 1.0;
+      if (x + dir * .1 < .06 || x + dir * .1 > .94) dir = -dir;
+      break;
+    }
+    steer[1] = dir;
+  }
+
+  /// Parking Duel: drive to the bay, pausing briefly when a new one opens.
+  void botParking(double dt) {
+    if (targets[1] != botGoal) {
+      botGoal = targets[1];
+      botWait = thinkSeconds(.5);
+    }
+    if (botWait > 0) return;
+    final follow =
+        FieldTuning.defaultFollow * FieldTuning.botPace(botSkill.level);
+    moveToward(1, targets[1], follow, dt);
+    keepTopHalf();
+  }
+
+  /// Air Hockey: get above the puck and knock it down the table, or guard
+  /// the goal when the puck is in the other half.
+  void botHockey(double dt) {
+    final me = players[1];
+    var goal = Offset(.5 + (ball.dx - .5) * .5, .12);
+    if (ball.dy < .55) {
+      if (ball.dy < me.dy - .02) {
+        // The puck got behind the striker: swing round it from the side.
+        goal = Offset(ball.dx + (ball.dx < .5 ? .11 : -.11), ball.dy + .05);
+      } else {
+        goal = Offset(ball.dx, max(.05, ball.dy - .06));
+      }
+    }
+    final follow =
+        FieldTuning.hockeyFollow * FieldTuning.botPace(botSkill.level);
+    moveToward(1, goal, follow, dt);
+    keepTopHalf();
+  }
+
+  /// Basket Shots: tap when the sweeping ball lines up with the hoop.
+  void botBasket() {
+    if (cooldown[1] > 0 || botWait > 0) return;
+    final slack = switch (botSkill.level) {
+      Difficulty.easy => .14,
+      Difficulty.normal => .095,
+      Difficulty.hard => .07,
+    };
+    final gap = (players[1].dx - targets[1].dx).abs();
+    if (gap > slack) return;
+    if (!botSkill.succeeds(rng)) {
+      botWait = .5;
+      return;
+    }
+    cooldown[1] = .45;
+    botWait = thinkSeconds(.9);
+    if (gap < .10) {
+      point(1);
+    } else {
+      JoySounds.instance.play(SoundEffect.wrong);
+    }
+  }
+
+  /// Mini Golf: once the ball rests, putt it toward the cup with a little
+  /// aim and power error that shrinks on harder levels.
+  void botGolf() {
+    if (botWait > 0 || velocity[1].distance > .08) return;
+    final to = targets[1] - players[1];
+    if (to.distance < .02) return;
+    final error = 1 - botSkill.accuracy;
+    final angle = (rng.nextDouble() - .5) * error;
+    final power = 1 + (rng.nextDouble() - .5) * error * .8;
+    // The ball loses 1.5% of its speed per frame, so it rolls v / 0.9068
+    // before stopping: aim the launch speed to stop on the cup.
+    final speed = min(1.1, to.distance * .9068 * power);
+    final dir = normal(to);
+    velocity[1] =
+        Offset(
+          dir.dx * cos(angle) - dir.dy * sin(angle),
+          dir.dx * sin(angle) + dir.dy * cos(angle),
+        ) *
+        speed;
+    strokes[1]++;
+    JoySounds.instance.play(SoundEffect.hit);
+    botWait = thinkSeconds(1.0);
+  }
+
+  /// Sumo: come back to the middle near the edge, otherwise get between the
+  /// rival and the centre and push them outward.
+  void botSumo() {
+    if (botWait > 0) return;
+    botWait = thinkSeconds(.14);
+    const center = Offset(.5, .5);
+    final me = players[1], foe = players[0];
+    final radius = FieldTuning.sumoRadius(time);
+    var goal = center;
+    if ((me - center).distance <= radius - .09 && botSkill.succeeds(rng)) {
+      final out = normal(foe - center);
+      final close = (foe - me).distance < .16;
+      goal = close ? foe : foe - out * .08;
+    }
+    final dx = goal.dx - me.dx, dy = goal.dy - me.dy;
+    held[1].clear();
+    if (dx.abs() > .03) held[1].add(Point(dx > 0 ? 1 : -1, 0));
+    if (dy.abs() > .03) held[1].add(Point(0, dy > 0 ? 1 : -1));
+  }
+
+  /// Tank Battle: strafe along the top, sidestep incoming shells and fire.
+  void botTank(double dt) {
+    final me = players[1];
+    var goal = Offset(.5 + sin(time * 1.1) * .38, .16 + sin(time * .7) * .07);
+    final reach = switch (botSkill.level) {
+      Difficulty.easy => .15,
+      Difficulty.normal => .25,
+      Difficulty.hard => .35,
+    };
+    for (final s in shots) {
+      if (s.owner != 0) continue;
+      final heading = normal(s.v);
+      final rel = me - s.p;
+      final along = rel.dx * heading.dx + rel.dy * heading.dy;
+      if (along <= 0 || along > reach) continue;
+      final lateral = rel - heading * along;
+      if (lateral.distance > .09) continue;
+      final side = Offset(-heading.dy, heading.dx);
+      final sign = lateral.dx * side.dx + lateral.dy * side.dy < 0 ? -1.0 : 1.0;
+      goal = me + side * (.25 * sign);
+      break;
+    }
+    final follow =
+        FieldTuning.defaultFollow * FieldTuning.botPace(botSkill.level);
+    moveToward(1, goal, follow, dt);
+    if (botWait <= 0 && cooldown[1] <= 0) {
+      fire(1);
+      botWait = thinkSeconds(1.1);
+      if (shots.isNotEmpty && shots.last.owner == 1) {
+        final miss = (rng.nextDouble() - .5) * (1 - botSkill.accuracy);
+        final v = shots.last.v;
+        shots.last.v = Offset(
+          v.dx * cos(miss) - v.dy * sin(miss),
+          v.dx * sin(miss) + v.dy * cos(miss),
+        );
+      }
+    }
+  }
+
+  /// Bomber Arena: stalk the rival, drop a bomb up close, then run clear.
+  void botBomber(double dt) {
+    final me = players[1];
+    final follow =
+        FieldTuning.defaultFollow * FieldTuning.botPace(botSkill.level);
+    final threat = switch (botSkill.level) {
+      Difficulty.easy => .20,
+      Difficulty.normal => .25,
+      Difficulty.hard => .28,
+    };
+    Shot? nearest;
+    var best = threat;
+    for (final s in shots) {
+      final d = (s.p - me).distance;
+      if (d < best) {
+        best = d;
+        nearest = s;
+      }
+    }
+    if (nearest != null) {
+      var away = normal(me - nearest.p);
+      if (away == Offset.zero) away = normal(const Offset(.5, .5) - me);
+      var goal = clamp(me + away * .5);
+      if ((goal - me).distance < .1) {
+        goal = clamp(me + Offset(-away.dy, away.dx) * .5);
+      }
+      moveToward(1, goal, follow, dt);
+      return;
+    }
+    final foe = players[0];
+    if ((foe - me).distance > .13) {
+      moveToward(1, foe, follow, dt);
+    } else if (botWait <= 0 && cooldown[1] <= 0) {
+      fire(1);
+      botWait = thinkSeconds(1.2);
+    }
+  }
+
+  bool _snakeFree(Point<int> n) =>
+      n.x >= 0 &&
+      n.x < 20 &&
+      n.y >= 0 &&
+      n.y < 20 &&
+      !snakes.any((s) => s.contains(n));
+
+  /// Snake Duel: head for the fruit without boxing itself in or running
+  /// next to the rival's head. Easy sometimes picks any safe turn instead.
+  void botSnake() {
+    const moves = [Point(1, 0), Point(-1, 0), Point(0, 1), Point(0, -1)];
+    final head = snakes[1].first, foe = snakes[0].first;
+    final back = lastMoved[1];
+    final careful = botSkill.succeeds(rng);
+    Point<int>? pick;
+    var bestScore = -1e9;
+    for (final d in moves) {
+      if (d.x == -back.x && d.y == -back.y) continue;
+      final n = Point(head.x + d.x, head.y + d.y);
+      if (!_snakeFree(n)) continue;
+      var room = 0;
+      for (final e in moves) {
+        if (_snakeFree(Point(n.x + e.x, n.y + e.y))) room++;
+      }
+      var score = rng.nextDouble() * .5;
+      if (careful) {
+        score -= (n.x - food.x).abs() + (n.y - food.y).abs();
+        if (room == 0) score -= 50;
+        if (room == 1) score -= 6;
+        if ((n.x - foe.x).abs() + (n.y - foe.y).abs() <= 1) score -= 20;
+      } else if (room == 0) {
+        score -= 50;
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        pick = d;
+      }
+    }
+    if (pick != null) direction(1, pick);
   }
 
   Offset location(PointerEvent e) =>
@@ -592,6 +889,7 @@ class _ActionGameState extends State<ActionGame>
   KeyEventResult onKey(FocusNode node, KeyEvent e) {
     if (!arrows) return KeyEventResult.ignored;
     for (var p = 0; p < 2; p++) {
+      if (p == 1 && vsBot) continue;
       final d = (p == 0 ? _arrowKeys : _wasdKeys)[e.logicalKey];
       if (d == null) continue;
       if (e is KeyDownEvent) {
@@ -606,7 +904,8 @@ class _ActionGameState extends State<ActionGame>
 
   Widget controls(int p) {
     final color = playerColors[p];
-    if (arrows) {
+    final computer = p == 1 && MatchOptions.read(context)?.computer == true;
+    if (arrows && !computer) {
       return ArrowPad(
         player: p,
         color: color,
@@ -614,7 +913,7 @@ class _ActionGameState extends State<ActionGame>
         onRelease: (d) => release(p, screen(p, d)),
       );
     }
-    if (widget.id == 11 || widget.id == 13) {
+    if ((widget.id == 11 || widget.id == 13) && !computer) {
       return Center(
         child: FilledButton(
           style: FilledButton.styleFrom(
@@ -638,12 +937,25 @@ class _ActionGameState extends State<ActionGame>
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: color.withValues(alpha: .55)),
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: Color.lerp(color, Colors.white, .35),
-            fontWeight: FontWeight.w800,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (computer) ...[
+              Icon(
+                Icons.smart_toy_rounded,
+                size: 16,
+                color: Color.lerp(color, Colors.white, .35),
+              ),
+              const SizedBox(width: 6),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                color: Color.lerp(color, Colors.white, .35),
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
         ),
       ),
     );

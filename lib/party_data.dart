@@ -8,7 +8,8 @@ import 'players.dart';
 
 enum Difficulty { easy, normal, hard }
 
-const practiceGames = {5, 18, 19, 29};
+/// Every game can be played against the computer.
+final practiceGames = {for (var i = 0; i < games.length; i++) i};
 const adjustableGames = {5, 23, 24, 26};
 const timedGames = {0, 2, 5, 6, 8, 20, 21, 22, 25, 26, 27, 28, 30};
 const profileAvatars = ['⚡', '🚀', '⭐', '🎮', '🦊', '🐼', '👑', '🔥'];
