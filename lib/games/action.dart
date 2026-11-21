@@ -47,6 +47,13 @@ class _ActionGameState extends State<ActionGame>
   final steer = [0.0, 0.0];
   final pointers = <int, int>{};
   final paddleGrip = <int, double>{};
+
+  /// Ping Pong: where a paddle is gliding to after a tap far from it. A tap
+  /// is an alternative to dragging, so nobody has to slide a finger.
+  final tapTarget = <int, double>{};
+
+  /// Mini Golf: where each pointer first touched, to tell a tap from a pull.
+  final downAt = <int, Offset>{};
   final strokes = [0, 0];
   final progress = [0.0, 0.0];
   final aims = <int, Offset>{};
@@ -213,6 +220,19 @@ class _ActionGameState extends State<ActionGame>
     final options = MatchOptions.read(context);
     options?.onPause?.call(false);
     options?.onScores?.call(List.of(score));
+    if (widget.id == 5) {
+      for (final entry in tapTarget.entries.toList()) {
+        final p = entry.key, from = players[p].dx;
+        final step = (entry.value - from).clamp(
+          -dt * FieldTuning.paddleGlide,
+          dt * FieldTuning.paddleGlide,
+        );
+        players[p] = Offset(from + step, players[p].dy);
+        if ((entry.value - from).abs() < .004 && !pointers.containsValue(p)) {
+          tapTarget.remove(p);
+        }
+      }
+    }
     if (widget.id == 5 && options?.computer == true) {
       final level = options!.difficulty;
       final speed = FieldTuning.botSpeed(level);
@@ -837,7 +857,13 @@ class _ActionGameState extends State<ActionGame>
     }
     pointers[e.pointer] = p;
     if (widget.id == 5) {
-      paddleGrip[p] = players[p].dx - v.dx;
+      if ((v.dx - players[p].dx).abs() > .14) {
+        // Far from the paddle: glide to the finger (a tap or a drag).
+        tapTarget[p] = v.dx.clamp(.10, .90);
+      } else {
+        tapTarget.remove(p);
+        paddleGrip[p] = players[p].dx - v.dx;
+      }
       return;
     }
     if (widget.id == 8) {
@@ -853,6 +879,7 @@ class _ActionGameState extends State<ActionGame>
     if (widget.id == 9) {
       velocity[p] = Offset.zero;
       strokes[p]++;
+      downAt[e.pointer] = v;
     }
     move(e);
   }
@@ -862,6 +889,10 @@ class _ActionGameState extends State<ActionGame>
     if (p == null || paused || over || countdown > 0) return;
     final v = location(e);
     if (widget.id == 5) {
+      if (tapTarget.containsKey(p)) {
+        tapTarget[p] = v.dx.clamp(.10, .90);
+        return;
+      }
       players[p] = Offset(
         (v.dx + (paddleGrip[p] ?? 0)).clamp(.10, .90),
         p == 0 ? .87 : .13,
@@ -889,7 +920,19 @@ class _ActionGameState extends State<ActionGame>
     steer[p] = 0;
     aims.remove(p);
     paddleGrip.remove(p);
-    if (widget.id == 9 && !paused) {
+    final start = downAt.remove(e.pointer);
+    if (widget.id == 9 &&
+        !paused &&
+        start != null &&
+        (location(e) - start).distance < .02 &&
+        (start - players[p]).distance > .06) {
+      // A tap far from the ball putts toward it; no pull needed.
+      velocity[p] = (start - players[p]) * 2.0;
+      if (velocity[p].distance > 1.1) {
+        velocity[p] = normal(velocity[p]) * 1.1;
+      }
+      JoySounds.instance.play(SoundEffect.paddle);
+    } else if (widget.id == 9 && !paused) {
       velocity[p] = (players[p] - location(e)) * 2.5;
       final speed = velocity[p].distance;
       if (speed > .01) JoySounds.instance.play(SoundEffect.paddle);

@@ -358,7 +358,7 @@ class _WordsGameState extends State<WordsGame> {
                         child: Text(
                           '${numbers[i]}',
                           style: const TextStyle(
-                            fontSize: 9,
+                            fontSize: 12,
                             color: Colors.white60,
                           ),
                         ),

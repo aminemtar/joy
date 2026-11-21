@@ -26,6 +26,9 @@ abstract final class FieldTuning {
   /// How fast a held finger drags a striker or tank, per second.
   static const defaultFollow = .65;
 
+  /// How fast a Ping Pong paddle glides to a tapped spot, per second.
+  static const paddleGlide = 1.1;
+
   /// Air Hockey strikers follow faster: the puck moves at .7 per second.
   static const hockeyFollow = 1.2;
 

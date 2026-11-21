@@ -280,7 +280,7 @@ class _PlayerBadge extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: JoyTheme.ink,
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: winner ? FontWeight.w800 : FontWeight.w600,
               ),
             ),

@@ -679,7 +679,7 @@ class _LobbyState extends State<Lobby> {
                         children: [
                           const Text(
                             'THE LOCAL MULTIPLAYER ARCADE',
-                            style: TextStyle(letterSpacing: 2, fontSize: 11),
+                            style: TextStyle(letterSpacing: 2, fontSize: 13),
                           ),
                           const SizedBox(height: 10),
                           const Text(
@@ -792,7 +792,7 @@ class _LobbyState extends State<Lobby> {
                           '${filtered.length} games',
                           style: const TextStyle(
                             color: JoyTheme.muted,
-                            fontSize: 12,
+                            fontSize: 13,
                           ),
                         ),
                       ],
@@ -919,7 +919,7 @@ class _SettingsHeading extends StatelessWidget {
           label.toUpperCase(),
           style: const TextStyle(
             color: JoyTheme.muted,
-            fontSize: 12,
+            fontSize: 13,
             letterSpacing: 1.6,
             fontWeight: FontWeight.w800,
           ),
@@ -1361,7 +1361,7 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: JoyTheme.muted,
-                              fontSize: 12,
+                              fontSize: 13,
                             ),
                           ),
                         ),
@@ -1428,7 +1428,7 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
                                           'Choose how long the challenge lasts',
                                           style: TextStyle(
                                             color: JoyTheme.muted,
-                                            fontSize: 11,
+                                            fontSize: 13,
                                           ),
                                         ),
                                       ],
@@ -1542,7 +1542,7 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
                                                           overflow: TextOverflow.ellipsis,
                                                           style: TextStyle(
                                                             color: selected ? Colors.white.withValues(alpha: 0.78) : JoyTheme.muted,
-                                                            fontSize: 10,
+                                                            fontSize: 13,
                                                           ),
                                                         ),
                                                       ],

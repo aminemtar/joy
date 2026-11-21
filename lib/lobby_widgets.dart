@@ -131,7 +131,7 @@ class _Contender extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               '${setup.wins[index]} wins',
-              style: const TextStyle(color: JoyTheme.muted, fontSize: 12),
+              style: const TextStyle(color: JoyTheme.muted, fontSize: 13),
             ),
           ],
         ),
@@ -160,7 +160,7 @@ class InfoPill extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
-            fontSize: 11,
+            fontSize: 13,
             color: JoyTheme.ink,
             fontWeight: FontWeight.w600,
           ),
@@ -286,7 +286,7 @@ class GameCard extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 color: JoyTheme.muted,
-                                fontSize: 12,
+                                fontSize: 13,
                               ),
                             ),
                           ),
@@ -296,7 +296,7 @@ class GameCard extends StatelessWidget {
                             control,
                             style: const TextStyle(
                               color: JoyTheme.muted,
-                              fontSize: 11,
+                              fontSize: 13,
                             ),
                           ),
                         ],

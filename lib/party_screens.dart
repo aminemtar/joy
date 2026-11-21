@@ -143,7 +143,7 @@ class HistoryScreen extends StatelessWidget {
                   const SizedBox(height: 6),
                   Text(
                     '${r.names.join(' vs ')}\n${r.date.toLocal().toString().substring(0, 16)} • ${r.seconds}s${r.practice ? ' • Computer practice' : ''}',
-                    style: const TextStyle(color: JoyTheme.muted, fontSize: 12),
+                    style: const TextStyle(color: JoyTheme.muted, fontSize: 13),
                   ),
                 ],
               ),

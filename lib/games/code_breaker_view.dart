@@ -93,7 +93,7 @@ class CodeBreakerBoard extends StatelessWidget {
             child: Text(
               'LEDGER',
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 12,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1.6,
               ),
@@ -101,7 +101,7 @@ class CodeBreakerBoard extends StatelessWidget {
           ),
           Text(
             '${maxAttempts - history.length} left',
-            style: const TextStyle(fontSize: 11, color: JoyTheme.muted),
+            style: const TextStyle(fontSize: 12, color: JoyTheme.muted),
           ),
         ],
       ),
@@ -193,7 +193,7 @@ class _Vault extends StatelessWidget {
             alignment: AlignmentDirectional.centerStart,
             child: Text(
               '4 hidden colors • repeats allowed • 8 tries',
-              style: TextStyle(color: JoyTheme.muted, fontSize: 11),
+              style: TextStyle(color: JoyTheme.muted, fontSize: 12),
             ),
           ),
           const SizedBox(height: 16),
@@ -615,7 +615,7 @@ class _LegendDot extends StatelessWidget {
         ),
       ),
       const SizedBox(width: 5),
-      Text(label, style: const TextStyle(color: JoyTheme.muted, fontSize: 10)),
+      Text(label, style: const TextStyle(color: JoyTheme.muted, fontSize: 12)),
     ],
   );
 }
@@ -684,7 +684,7 @@ class _RivalStrip extends StatelessWidget {
                       Text(
                         'best $best/4',
                         style: const TextStyle(
-                          fontSize: 10,
+                          fontSize: 12,
                           color: JoyTheme.muted,
                         ),
                       ),
