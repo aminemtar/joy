@@ -2,6 +2,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joy/games/board_cells.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:joy/catalog.dart';
 import 'package:joy/main.dart';
@@ -68,7 +69,7 @@ void main() {
         ),
       ),
     );
-    final tiles = find.byType(InkWell);
+    final tiles = find.byType(MarkCell);
     for (final i in [0, 3, 1, 4, 2]) {
       await tester.tap(tiles.at(i));
       await tester.pump();
@@ -88,7 +89,7 @@ void main() {
         ),
       ),
     );
-    final tiles = find.byType(InkWell);
+    final tiles = find.byType(DiscCell);
     for (final i in [0, 6, 1, 6, 2, 5, 3]) {
       await tester.tap(tiles.at(i));
       await tester.pump();

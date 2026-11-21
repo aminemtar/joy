@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:joy/games/board_cells.dart';
 import 'package:joy/games/brain.dart';
 import 'package:joy/games/flip_card.dart';
 import 'package:joy/games/puzzle.dart';
@@ -54,11 +55,12 @@ void main() {
 
   testWidgets('Maze Race: the computer steps toward its goal', (tester) async {
     await tester.pumpWidget(host(puzzle(17)));
-    final before = tester.getCenter(find.text('🔴'));
-    await tester.tap(find.byType(InkWell).at(1));
+    final red = find.byWidgetPredicate((w) => w is MazeCell && w.runner == 2);
+    final before = tester.getCenter(red);
+    await tester.tap(find.byType(MazeCell).at(1));
     await tester.pump(const Duration(milliseconds: 100));
     await pumpUntil(tester, () => shown('Ana’s turn'));
-    expect(tester.getCenter(find.text('🔴')), isNot(before));
+    expect(tester.getCenter(red), isNot(before));
     expect(tester.takeException(), isNull);
     await leave(tester);
   });

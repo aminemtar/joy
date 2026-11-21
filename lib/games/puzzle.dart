@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'bot_skill.dart';
 import 'flip_card.dart';
+import 'board_cells.dart';
 import 'game_stage.dart';
 import '../players.dart' show leadingPlayer;
 
@@ -400,6 +401,27 @@ class _PuzzleGameState extends State<PuzzleGame> {
     scheduleComputer();
   }
 
+  /// What a screen reader says for square [i] of the board.
+  String _cellLabel(int i) {
+    final where = 'Row ${i ~/ width + 1}, column ${i % width + 1}';
+    if (widget.id == 15) {
+      return board[i] == 0 ? '$where, empty space' : '$where, tile ${board[i]}';
+    }
+    if (widget.id == 17) {
+      if (walls.contains(i)) return '$where, wall';
+      if (i == pos[0]) return '$where, ${widget.names[0]}';
+      if (i == pos[1]) return '$where, ${widget.names[1]}';
+      return '$where, open';
+    }
+    return board[i] == 0
+        ? '$where, empty'
+        : '$where, ${widget.names[board[i] - 1]}';
+  }
+
+  /// Connect Four sits in its blue frame; the other boards stand alone.
+  Widget _frame(Widget board) =>
+      widget.id == 18 ? ConnectFrame(child: board) : board;
+
   @override
   Widget build(BuildContext context) {
     if (widget.id == 20) {
@@ -464,60 +486,42 @@ class _PuzzleGameState extends State<PuzzleGame> {
       message: '${widget.names[turn]}’s turn',
       child: Column(
         children: [
-          boardGrid(board.length, width, (i) {
-            String label = '';
-            Color color = const Color(0xFF1C294A);
-            if (widget.id == 15) {
-              label = board[i] == 0 ? '' : '${board[i]}';
-            } else if (widget.id == 20) {
-              label = '?';
-              if (matched.contains(i)) color = const Color(0xFF334C79);
-            } else if (widget.id == 17) {
-              label =
-                  walls.contains(i)
-                      ? '▪'
-                      : i == pos[0]
-                      ? '🔵'
-                      : i == pos[1]
-                      ? '🔴'
-                      : i == 0 || i == 35
-                      ? '🏁'
-                      : '';
-              if (walls.contains(i)) color = Colors.black;
-            } else {
-              label =
-                  board[i] == 0
-                      ? ''
-                      : widget.id == 19
-                      ? (board[i] == 1 ? '✕' : '○')
-                      : PartyData.instance.colorSymbols
-                      ? (board[i] == 1 ? '▲' : '■')
-                      : '●';
-              if (board[i] != 0) {
-                color =
-                    board[i] == 1
-                        ? const Color(0xFF507CFF)
-                        : const Color(0xFFFF6F83);
-              }
-            }
-            return Material(
-              color: color,
-              borderRadius: BorderRadius.circular(12),
-              child: InkWell(
+          _frame(
+            boardGrid(
+              board.length,
+              width,
+              (i) => Semantics(
+                button: true,
+                label: _cellLabel(i),
+                excludeSemantics: true,
                 onTap: () => play(i),
-                borderRadius: BorderRadius.circular(12),
-                child: Center(
-                  child: Text(
-                    label,
-                    style: const TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                child: switch (widget.id) {
+                18 => DiscCell(
+                  owner: board[i],
+                  symbols: PartyData.instance.colorSymbols,
+                  onTap: () => play(i),
                 ),
+                19 => MarkCell(owner: board[i], onTap: () => play(i)),
+                15 => TileCell(
+                  number: board[i],
+                  inPlace: board[i] == i + 1,
+                  onTap: () => play(i),
+                ),
+                _ => MazeCell(
+                  wall: walls.contains(i),
+                  goal: i == 0 || i == 35,
+                  runner: i == pos[0]
+                      ? 1
+                      : i == pos[1]
+                      ? 2
+                      : 0,
+                  onTap: () => play(i),
+                ),
+                },
               ),
-            );
-          }),
+              spacing: widget.id == 18 ? 0 : 8,
+            ),
+          ),
           const SizedBox(height: 12),
           Text(
             botTurn && !over

@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:joy/games/board_cells.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:joy/catalog.dart';
@@ -199,14 +200,17 @@ void main() {
           ),
         ),
       );
-      await tester.tap(find.byType(InkWell).at(0));
+      await tester.tap(find.byType(MarkCell).at(0));
       await tester.pump();
-      await tester.tap(find.byType(InkWell).at(1));
+      await tester.tap(find.byType(MarkCell).at(1));
       await tester.pump();
-      expect(find.text('✕'), findsOneWidget);
+      expect(find.byWidgetPredicate((w) => w is MarkCell && w.owner == 1), findsOneWidget);
       await tester.pump(const Duration(milliseconds: 700));
-      expect(find.text('○'), findsOneWidget);
-      expect(find.text('✕'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate((w) => w is MarkCell && w.owner == 2),
+        findsOneWidget,
+      );
+      expect(find.byWidgetPredicate((w) => w is MarkCell && w.owner == 1), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
     },
   );
@@ -343,7 +347,7 @@ void main() {
       await tester.tap(find.text('Play again'));
       await tester.pumpAndSettle();
       expect(find.byType(PuzzleGame), findsOneWidget);
-      expect(find.text('✕'), findsNothing);
+      expect(find.byWidgetPredicate((w) => w is MarkCell && w.owner == 1), findsNothing);
       tester.widget<PuzzleGame>(find.byType(PuzzleGame)).onFinish(1);
       await tester.pumpAndSettle();
       expect(results.map((r) => r.winner), [0, 1]);
