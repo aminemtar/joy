@@ -12,6 +12,16 @@ class Spark {
   Spark(this.position, this.velocity, this.color, this.size, this.lifetime);
 }
 
+/// A short text that floats up from a spot and fades, such as "+1".
+class Pop {
+  Offset position;
+  final String text;
+  final Color color;
+  double age = 0;
+  static const lifetime = .9;
+  Pop(this.position, this.text, this.color);
+}
+
 /// Cheap "game feel": sparks where things collide and a short screen shake
 /// when something big happens (a goal, a blast, a crash).
 ///
@@ -25,6 +35,9 @@ class Juice {
   /// The sparks alive right now.
   final sparks = <Spark>[];
 
+  /// The floating texts alive right now.
+  final pops = <Pop>[];
+
   /// Current shake strength from 0 (still) to 1 (hard hit).
   double shake = 0;
 
@@ -33,7 +46,7 @@ class Juice {
 
   /// Whether anything is still moving, so a finished game keeps repainting
   /// until the last spark fades and the shake settles.
-  bool get active => sparks.isNotEmpty || shake > .01;
+  bool get active => sparks.isNotEmpty || pops.isNotEmpty || shake > .01;
 
   /// Throws [count] sparks of [color] outward from [at].
   void burst(
@@ -59,6 +72,14 @@ class Juice {
     }
   }
 
+  /// Floats [text] up from [at], kept inside the arena.
+  void pop(Offset at, String text, Color color) {
+    if (!enabled || pops.length >= 6) return;
+    pops.add(
+      Pop(Offset(at.dx.clamp(.1, .9), at.dy.clamp(.12, .88)), text, color),
+    );
+  }
+
   /// Shakes the screen; a stronger kick wins over a weaker one in progress.
   void kick(double amount) {
     if (enabled) shake = max(shake, amount.clamp(0.0, 1.0));
@@ -71,6 +92,11 @@ class Juice {
       s.position += s.velocity * dt;
     }
     sparks.removeWhere((s) => s.age >= s.lifetime);
+    for (final p in pops) {
+      p.age += dt;
+      p.position = p.position.translate(0, -.12 * dt);
+    }
+    pops.removeWhere((p) => p.age >= Pop.lifetime);
     shake = max(0.0, shake - dt * 3.2);
   }
 
@@ -101,6 +127,31 @@ class JuicePainter extends CustomPainter {
         s.size * (.4 + .6 * fade),
         _brush,
       );
+    }
+    for (final p in juice.pops) {
+      final t = p.age / Pop.lifetime;
+      // Pop in quickly, then fade out.
+      final scale = t < .15 ? .6 + t / .15 * .6 : 1.2 - (t - .15) * .2;
+      final text = TextPainter(
+        text: TextSpan(
+          text: p.text,
+          style: TextStyle(
+            fontSize: 26 * scale,
+            fontWeight: FontWeight.w900,
+            color: p.color.withValues(alpha: (1 - t * t).clamp(0.0, 1.0)),
+            shadows: const [Shadow(color: Colors.black54, blurRadius: 4)],
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      text.paint(
+        canvas,
+        Offset(
+          p.position.dx * size.width - text.width / 2,
+          p.position.dy * size.height - text.height / 2,
+        ),
+      );
+      text.dispose();
     }
   }
 

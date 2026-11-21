@@ -5,6 +5,7 @@ import 'package:flutter/scheduler.dart';
 import 'arcade_models.dart';
 import 'bot_skill.dart';
 import 'game_stage.dart';
+import 'juice.dart';
 import 'sprites.dart';
 
 class ArcadeGame extends StatefulWidget {
@@ -56,6 +57,22 @@ class _ArcadeGameState extends State<ArcadeGame>
   /// Whether player 1 is the computer for this match.
   bool get vsComputer => BotSkill.isComputer(context);
 
+  /// Sparks, floating texts and screen shake drawn over the whole game.
+  final juice = Juice();
+
+  /// Sparks and optional shake at [at] (0 to 1 across the whole screen).
+  void impact(
+    Offset at,
+    Color color, {
+    int count = 10,
+    double shake = 0,
+    String? text,
+  }) {
+    juice.burst(at, color, count: count);
+    if (shake > 0) juice.kick(shake);
+    if (text != null) juice.pop(at, text, color);
+  }
+
   /// Bumped every frame; only the game canvases listen to it.
   final repaint = ValueNotifier<int>(0);
 
@@ -106,6 +123,7 @@ class _ArcadeGameState extends State<ArcadeGame>
   void finish([int? winner]) {
     if (done) return;
     done = true;
+    if (widget.id == 14) juice.kick(.8);
     widget.onFinish(
       winner ??
           (score[0] == score[1]
@@ -124,6 +142,16 @@ class _ArcadeGameState extends State<ArcadeGame>
       JoySounds.instance.play(
         accuracy == 0 ? SoundEffect.crash : SoundEffect.land,
       );
+      if (accuracy == 0) {
+        impact(const Offset(.5, .5), Colors.white70, count: 16, shake: .8);
+      } else {
+        impact(
+          const Offset(.5, .5),
+          playerColors[turn],
+          count: 8,
+          shake: .15,
+        );
+      }
       if (accuracy == 0) {
         finish(1 - turn);
       } else {
@@ -148,6 +176,17 @@ class _ArcadeGameState extends State<ArcadeGame>
     JoySounds.instance.play(goal ? SoundEffect.swish : SoundEffect.wall);
     if (goal) score[turn]++;
     notice = goal ? 'GOAL!' : 'Saved / off target';
+    if (goal) {
+      impact(
+        const Offset(.5, .35),
+        playerColors[turn],
+        count: 18,
+        shake: .5,
+        text: 'GOAL!',
+      );
+    } else {
+      impact(const Offset(.5, .4), Colors.white70, count: 6);
+    }
     cooldown = 1.2;
     shots++;
   }
@@ -156,6 +195,9 @@ class _ArcadeGameState extends State<ArcadeGame>
     final now = elapsed.inMicroseconds / 1e6,
         dt = (now - previous).clamp(0.0, .033);
     previous = now;
+    juice.enabled = !(MediaQuery.maybeDisableAnimationsOf(context) ?? false);
+    juice.step(dt);
+    if ((done || paused) && juice.active) repaint.value++;
     if (done || paused) return;
     if (countdown > 0) {
       final before = countdown.ceil();
@@ -202,6 +244,7 @@ class _ArcadeGameState extends State<ArcadeGame>
       final dead = [for (var p = 0; p < 2; p++) trafficCollision(cars, p)];
       if (dead.any((d) => d)) {
         JoySounds.instance.play(SoundEffect.crash);
+        impact(const Offset(.5, .5), Colors.orange, count: 20, shake: 1);
         finish(
           dead.every((d) => d)
               ? -1
@@ -213,6 +256,11 @@ class _ArcadeGameState extends State<ArcadeGame>
       for (final car in cars.where((c) => c.progress > 1.05)) {
         score[car.player]++;
         JoySounds.instance.play(SoundEffect.correct);
+        juice.pop(
+          Offset(.5, car.player == 0 ? .75 : .25),
+          '+1',
+          playerColors[car.player],
+        );
       }
       cars.removeWhere((c) => c.progress > 1.05);
       if (score.any((s) => s >= 12) || time >= 60) finish();
@@ -666,7 +714,12 @@ class _ArcadeGameState extends State<ArcadeGame>
   @override
   Widget build(BuildContext context) => Stack(
     children: [
-      GameStage(
+      ListenableBuilder(
+        listenable: repaint,
+        builder:
+            (context, child) =>
+                Transform.translate(offset: juice.offset, child: child),
+        child: GameStage(
         names: widget.names,
         scores: score,
         turn: widget.id == 3 || widget.id == 14 ? -1 : turn,
@@ -688,6 +741,18 @@ class _ArcadeGameState extends State<ArcadeGame>
                 : widget.id == 7
                 ? penalty()
                 : runner(),
+        ),
+      ),
+      Positioned.fill(
+        child: IgnorePointer(
+          child: RepaintBoundary(
+            child: ListenableBuilder(
+              listenable: repaint,
+              builder:
+                  (context, _) => CustomPaint(painter: JuicePainter(juice)),
+            ),
+          ),
+        ),
       ),
       Positioned(
         right: 10,

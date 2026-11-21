@@ -66,6 +66,12 @@ class _ActionGameState extends State<ActionGame>
   /// Paddle hits in the current ping-pong rally (the ball speeds up with it).
   int rally = 0;
 
+  /// The last positions of the ball (ping pong, hockey), for its trail.
+  final trail = <Offset>[];
+
+  /// 1 right after the ball is hit, fading to 0: makes the ball swell.
+  double hitPulse = 0;
+
   /// Sparks and screen shake that make hits and goals feel solid.
   final juice = Juice();
 
@@ -73,6 +79,7 @@ class _ActionGameState extends State<ActionGame>
   void impact(Offset at, Color color, {int count = 8, double shake = 0}) {
     juice.burst(at, color, count: count);
     if (shake > 0) juice.kick(shake);
+    hitPulse = 1;
   }
 
   /// Bumped every frame; only the arena canvas listens to it.
@@ -165,6 +172,15 @@ class _ActionGameState extends State<ActionGame>
       playerColors[p],
       count: 16,
       shake: widget.id == 5 || widget.id == 6 || widget.id == 11 ? .6 : .3,
+    );
+    juice.pop(
+      switch (widget.id) {
+        5 || 6 => ball,
+        11 => players[1 - p],
+        _ => players[p],
+      },
+      '+1',
+      playerColors[p],
     );
     score[p]++;
     if (score[p] >= goal) finish(p);
@@ -504,6 +520,11 @@ class _ActionGameState extends State<ActionGame>
         }
       }
     }
+    if (widget.id == 5 || widget.id == 6) {
+      trail.add(ball);
+      if (trail.length > 9) trail.removeAt(0);
+    }
+    hitPulse = max(0.0, hitPulse - dt * 6);
     repaint.value++;
     if (score[0] != shownScores[0] || score[1] != shownScores[1]) {
       shownScores[0] = score[0];
@@ -1058,6 +1079,9 @@ class _ActionGameState extends State<ActionGame>
                                 targets: targets,
                                 snakes: snakes,
                                 food: food,
+                                trail: trail,
+                                pulse: hitPulse,
+                                serve: serve,
                               ),
                               foregroundPainter: JuicePainter(juice),
                             ),
@@ -1105,6 +1129,10 @@ class ArenaPainter extends CustomPainter {
   final List<Shot> shots;
   final List<List<Point<int>>> snakes;
   final Point<int> food;
+
+  /// Recent ball positions, hit swell (0 to 1) and seconds of serve delay.
+  final List<Offset> trail;
+  final double pulse, serve;
   ArenaPainter({
     required this.id,
     required this.time,
@@ -1114,6 +1142,9 @@ class ArenaPainter extends CustomPainter {
     required this.targets,
     required this.snakes,
     required this.food,
+    this.trail = const [],
+    this.pulse = 0,
+    this.serve = 0,
   });
   final brush = Paint();
 
@@ -1397,7 +1428,30 @@ class ArenaPainter extends CustomPainter {
       }
     }
     if ([5, 6].contains(id)) {
-      GameSprites.ball(c, at(ball), unit * .022, football: false);
+      for (var i = 0; i < trail.length; i++) {
+        final k = (i + 1) / (trail.length + 1);
+        c.drawCircle(
+          at(trail[i]),
+          unit * .02 * k,
+          brush..color = Colors.white.withValues(alpha: .22 * k),
+        );
+      }
+      if (serve > 0) {
+        c.drawCircle(
+          at(ball),
+          unit * (.05 + .015 * sin(time * 12)),
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2
+            ..color = Colors.white.withValues(alpha: .55),
+        );
+      }
+      GameSprites.ball(
+        c,
+        at(ball),
+        unit * .022 * (1 + .35 * pulse),
+        football: false,
+      );
       for (final y in [0.0, s.height - 5]) {
         c.drawRect(
           Rect.fromLTWH(s.width * .3, y, s.width * .4, 5),

@@ -261,6 +261,8 @@ class _LobbyState extends State<Lobby> {
   }
 
   void _settings() {
+    // The match screen can switch vibration too, so start from the live value.
+    haptics = JoyHaptics.enabled;
     bool testingSound = false, testFailed = false;
     String? soundTestResult;
     showModalBottomSheet<void>(
@@ -954,6 +956,11 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
   Widget? game;
   Difficulty difficulty = PartyData.instance.difficulty;
   int roundSeconds = PartyData.instance.roundSeconds;
+
+  /// How many games make a series (1, 3 or 5) and the rounds each player has
+  /// won in the series so far.
+  int bestOf = 1;
+  List<int> series = [0, 0];
   @override
   void initState() {
     super.initState();
@@ -1028,6 +1035,48 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
     if (done || !mounted) return;
     setState(() => done = true);
     roundTimer?.cancel();
+    final inSeries = bestOf > 1 && widget.allowRematch;
+    final need = bestOf ~/ 2 + 1;
+    if (inSeries && winner >= 0) series[winner]++;
+    final seriesOver = !inSeries || series.any((w) => w >= need);
+    if (!seriesOver) {
+      JoySounds.instance.play(winner < 0 ? SoundEffect.draw : SoundEffect.goal);
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder:
+            (c) => PopScope(
+              canPop: false,
+              child: AlertDialog(
+                title: Text(
+                  winner < 0
+                      ? 'Round drawn'
+                      : '${widget.names[winner]} takes the round',
+                ),
+                content: Text(
+                  '${widget.names[0]}  ${series[0]} – ${series[1]}  '
+                  '${widget.names[1]}\nFirst to $need wins the series.',
+                ),
+                actions: [
+                  FilledButton(
+                    onPressed: () {
+                      Navigator.pop(c);
+                      JoySounds.instance.stop();
+                      start();
+                    },
+                    child: const Text('Next round'),
+                  ),
+                ],
+              ),
+            ),
+      );
+      return;
+    }
+    final seriesNote =
+        inSeries
+            ? '${widget.names[winner]} wins the series ${series[0]} – ${series[1]}'
+            : null;
+    if (inSeries) series = [0, 0];
     JoySounds.instance.celebrate(winner);
     final record = MatchRecord(
       game: widget.id,
@@ -1044,7 +1093,7 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
     }
     if (!mounted) return;
     bool sharing = false;
-    String? status;
+    String? status = seriesNote;
     await showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -1137,6 +1186,31 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
           remaining > 0 && started ? '${g.name} • ${remaining}s' : g.name,
         ),
         actions: [
+          StatefulBuilder(
+            builder:
+                (context, setBuzz) => IconButton(
+                  tooltip:
+                      JoyHaptics.enabled
+                          ? 'Turn vibration off'
+                          : 'Turn vibration on',
+                  onPressed: () {
+                    final value = !JoyHaptics.enabled;
+                    JoyHaptics.enabled = value;
+                    if (value) JoyHaptics.buzz(Buzz.medium);
+                    setBuzz(() {});
+                    unawaited(
+                      SharedPreferences.getInstance().then(
+                        (p) => p.setBool('haptics', value),
+                      ),
+                    );
+                  },
+                  icon: Icon(
+                    JoyHaptics.enabled
+                        ? Icons.vibration_rounded
+                        : Icons.phone_android_rounded,
+                  ),
+                ),
+          ),
           ListenableBuilder(
             listenable: JoySounds.instance,
             builder:
@@ -1280,6 +1354,26 @@ class _MatchScreenState extends State<MatchScreen> with WidgetsBindingObserver {
                               color: JoyTheme.muted,
                               fontSize: 12,
                             ),
+                          ),
+                        ),
+                      if (widget.allowRematch)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16),
+                          child: Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: 8,
+                            children: [
+                              for (final n in const [1, 3, 5])
+                                ChoiceChip(
+                                  label: Text(n == 1 ? 'Single game' : 'Best of $n'),
+                                  selected: bestOf == n,
+                                  onSelected:
+                                      (_) => setState(() {
+                                        bestOf = n;
+                                        series = [0, 0];
+                                      }),
+                                ),
+                            ],
                           ),
                         ),
                       if (timedGames.contains(widget.id))
