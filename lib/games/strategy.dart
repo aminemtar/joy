@@ -159,7 +159,7 @@ class _StrategyGameState extends State<StrategyGame> {
       }
       final winner = leadingPlayer(sealedBids);
       JoySounds.instance.play(
-        winner < 0 ? SoundEffect.tap : SoundEffect.correct,
+        winner < 0 ? SoundEffect.tap : SoundEffect.coin,
       );
       if (winner >= 0) {
         score[winner] += value;
@@ -184,7 +184,7 @@ class _StrategyGameState extends State<StrategyGame> {
       switch (widget.id) {
         case 16:
           if (!reversi.play(cell, turn + 1)) return;
-          JoySounds.instance.play(SoundEffect.flip);
+          JoySounds.instance.play(SoundEffect.place);
           score[0] = reversi.cells.where((v) => v == 1).length;
           score[1] = reversi.cells.where((v) => v == 2).length;
           turn = 1 - turn;
@@ -198,7 +198,7 @@ class _StrategyGameState extends State<StrategyGame> {
           final gained = dots.play(cell, turn + 1);
           if (gained < 0) return;
           JoySounds.instance.play(
-            gained > 0 ? SoundEffect.correct : SoundEffect.tap,
+            gained > 0 ? SoundEffect.correct : SoundEffect.place,
           );
           score[turn] += gained;
           if (!dots.owners.contains(0)) {
@@ -211,7 +211,7 @@ class _StrategyGameState extends State<StrategyGame> {
           final enemy = fleets[1 - turn];
           if (enemy.shots.contains(cell)) return;
           final hit = enemy.fire(cell);
-          JoySounds.instance.play(hit ? SoundEffect.hit : SoundEffect.tap);
+          JoySounds.instance.play(hit ? SoundEffect.blast : SoundEffect.splash);
           if (hit) score[turn]++;
           notice = hit ? 'Hit!' : 'Splash — missed.';
           if (enemy.sunk) {
@@ -235,7 +235,7 @@ class _StrategyGameState extends State<StrategyGame> {
           }
           final result = mines.reveal(cell);
           JoySounds.instance.play(
-            result < 0 ? SoundEffect.wrong : SoundEffect.tap,
+            result < 0 ? SoundEffect.blast : SoundEffect.pop,
           );
           if (result < 0) {
             lives[turn]--;
@@ -276,7 +276,7 @@ class _StrategyGameState extends State<StrategyGame> {
         solver.learn(attempt, feedback.exact, feedback.misplaced);
       }
       JoySounds.instance.play(
-        feedback.exact == 4 ? SoundEffect.correct : SoundEffect.tap,
+        feedback.exact == 4 ? SoundEffect.unlock : SoundEffect.place,
       );
       attempts[turn]++;
       history[turn].add(

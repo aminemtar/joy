@@ -42,7 +42,7 @@ void main() {
   test(
     'Every bundled effect is a finite non-clipping offline PCM WAV',
     () async {
-      expect(SoundEffect.values.length, 15);
+      expect(SoundEffect.values.length, 31);
       final signatures = <String>{};
       for (final effect in SoundEffect.values) {
         final data = await rootBundle.load('assets/${effect.asset}');

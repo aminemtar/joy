@@ -125,14 +125,25 @@ class _ActionGameState extends State<ActionGame>
   void finish(int p) {
     if (over) return;
     over = true;
-    if (widget.haptics) HapticFeedback.mediumImpact();
+    final ending = switch (widget.id) {
+      0 => SoundEffect.crash,
+      10 => SoundEffect.splash,
+      12 => SoundEffect.crash,
+      13 => SoundEffect.blast,
+      _ => null,
+    };
+    if (ending != null) JoySounds.instance.play(ending);
     widget.onFinish(p);
   }
 
   void point(int p, [int goal = 5]) {
-    JoySounds.instance.play(SoundEffect.correct);
+    JoySounds.instance.play(switch (widget.id) {
+      5 || 6 => SoundEffect.goal,
+      8 => SoundEffect.swish,
+      11 => SoundEffect.blast,
+      _ => SoundEffect.correct,
+    });
     score[p]++;
-    if (widget.haptics) HapticFeedback.lightImpact();
     if (score[p] >= goal) finish(p);
   }
 
@@ -248,13 +259,14 @@ class _ActionGameState extends State<ActionGame>
       if (ball.dx < .025 || ball.dx > .975) {
         ballV = Offset(-ballV.dx, ballV.dy);
         ball = Offset(ball.dx.clamp(.025, .975), ball.dy);
+        JoySounds.instance.play(SoundEffect.wall);
       }
       for (var p = 0; p < 2; p++) {
         final d = ball - players[p];
         if (d.distance < (widget.id == 5 ? .1 : .075)) {
           if (widget.id == 5) {
             if ((p == 0 && ballV.dy > 0) || (p == 1 && ballV.dy < 0)) {
-              JoySounds.instance.play(SoundEffect.hit);
+              JoySounds.instance.play(SoundEffect.paddle);
               rally++;
               final hitSpeed =
                   FieldTuning.hitSpeed * FieldTuning.rallyBoost(rally);
@@ -265,7 +277,7 @@ class _ActionGameState extends State<ActionGame>
               ball = Offset(ball.dx, players[p].dy + (p == 0 ? -.06 : .06));
             }
           } else {
-            JoySounds.instance.play(SoundEffect.hit);
+            JoySounds.instance.play(SoundEffect.puck);
             ballV = normal(d) * .7;
             ball = players[p] + normal(d) * .08;
           }
@@ -282,6 +294,7 @@ class _ActionGameState extends State<ActionGame>
         } else {
           ball = Offset(ball.dx, top ? .01 : .99);
           ballV = Offset(ballV.dx, -ballV.dy);
+          JoySounds.instance.play(SoundEffect.wall);
         }
       }
     }
@@ -308,8 +321,7 @@ class _ActionGameState extends State<ActionGame>
       final d = players[1] - players[0];
       if (d.distance < .10) {
         if (!touching) {
-          JoySounds.instance.play(SoundEffect.hit);
-          if (widget.haptics) HapticFeedback.lightImpact();
+          JoySounds.instance.play(SoundEffect.bump);
         }
         touching = true;
         final n = normal(d.distance == 0 ? const Offset(1, 0) : d);
@@ -432,7 +444,7 @@ class _ActionGameState extends State<ActionGame>
             snakes[p].insert(0, heads[p]);
             if (heads[p] == food) {
               score[p]++;
-              JoySounds.instance.play(SoundEffect.correct);
+              JoySounds.instance.play(SoundEffect.eat);
               final available = [
                 for (var x = 0; x < 20; x++)
                   for (var y = 0; y < 20; y++)
@@ -589,7 +601,7 @@ class _ActionGameState extends State<ActionGame>
     if (gap < .10) {
       point(1);
     } else {
-      JoySounds.instance.play(SoundEffect.wrong);
+      JoySounds.instance.play(SoundEffect.wall);
     }
   }
 
@@ -613,7 +625,7 @@ class _ActionGameState extends State<ActionGame>
         ) *
         speed;
     strokes[1]++;
-    JoySounds.instance.play(SoundEffect.hit);
+    JoySounds.instance.play(SoundEffect.paddle);
     botWait = thinkSeconds(1.0);
   }
 
@@ -776,8 +788,7 @@ class _ActionGameState extends State<ActionGame>
       if ((players[p].dx - targets[p].dx).abs() < .10) {
         point(p);
       } else {
-        JoySounds.instance.play(SoundEffect.wrong);
-        if (widget.haptics) HapticFeedback.lightImpact();
+        JoySounds.instance.play(SoundEffect.wall);
       }
       return;
     }
@@ -823,7 +834,7 @@ class _ActionGameState extends State<ActionGame>
     if (widget.id == 9 && !paused) {
       velocity[p] = (players[p] - location(e)) * 2.5;
       final speed = velocity[p].distance;
-      if (speed > .01) JoySounds.instance.play(SoundEffect.hit);
+      if (speed > .01) JoySounds.instance.play(SoundEffect.paddle);
       if (speed > 1.1) velocity[p] = normal(velocity[p]) * 1.1;
     }
   }

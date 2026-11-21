@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'catalog.dart';
 import 'game_factory.dart';
 import 'game_art.dart';
+import 'haptics.dart';
 import 'sound.dart';
 import 'music.dart';
 import 'splash.dart';
@@ -110,6 +111,7 @@ class _LobbyState extends State<Lobby> {
         wins[i] = p.getInt('wins$i') ?? 0;
       }
       haptics = p.getBool('haptics') ?? true;
+      JoyHaptics.enabled = haptics;
     });
   }
 
@@ -534,7 +536,12 @@ class _LobbyState extends State<Lobby> {
                         SwitchListTile(
                           title: const Text('Vibration'),
                           value: haptics,
-                          onChanged: (v) => update(() => haptics = v),
+                          onChanged: (v) => update(() {
+                            haptics = v;
+                            JoyHaptics.enabled = v;
+                            // Let the player feel what they just switched on.
+                            JoyHaptics.buzz(Buzz.medium);
+                          }),
                         ),
                         FilledButton(
                           onPressed: () {
@@ -640,6 +647,7 @@ class _LobbyState extends State<Lobby> {
                     ),
                     const SizedBox(height: 24),
                     Container(
+                      width: double.infinity,
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
@@ -734,7 +742,7 @@ class _LobbyState extends State<Lobby> {
                         contentPadding: EdgeInsets.zero,
                         title: const Text('Computer practice'),
                         subtitle: const Text(
-                          'Ping Pong, Tic Tac Toe, Connect Four & RPS',
+                          'Play any game against the computer',
                         ),
                         value: practice,
                         onChanged:

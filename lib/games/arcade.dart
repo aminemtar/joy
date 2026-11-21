@@ -122,7 +122,7 @@ class _ArcadeGameState extends State<ArcadeGame>
     setState(() {
       final accuracy = tower.drop(movingLeft, turn);
       JoySounds.instance.play(
-        accuracy == 0 ? SoundEffect.wrong : SoundEffect.hit,
+        accuracy == 0 ? SoundEffect.crash : SoundEffect.land,
       );
       if (accuracy == 0) {
         finish(1 - turn);
@@ -145,7 +145,7 @@ class _ArcadeGameState extends State<ArcadeGame>
   void resolveShot(bool goal) {
     if (!flying) return;
     flying = false;
-    JoySounds.instance.play(goal ? SoundEffect.correct : SoundEffect.wrong);
+    JoySounds.instance.play(goal ? SoundEffect.swish : SoundEffect.wall);
     if (goal) score[turn]++;
     notice = goal ? 'GOAL!' : 'Saved / off target';
     cooldown = 1.2;
@@ -201,6 +201,7 @@ class _ArcadeGameState extends State<ArcadeGame>
       }
       final dead = [for (var p = 0; p < 2; p++) trafficCollision(cars, p)];
       if (dead.any((d) => d)) {
+        JoySounds.instance.play(SoundEffect.crash);
         finish(
           dead.every((d) => d)
               ? -1

@@ -4,6 +4,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'haptics.dart';
+
 enum SoundEffect {
   tap('tap'),
   flip('flip'),
@@ -19,7 +21,23 @@ enum SoundEffect {
   noteBlue('note_blue'),
   noteCoral('note_coral'),
   noteGold('note_gold'),
-  notePurple('note_purple');
+  notePurple('note_purple'),
+  paddle('paddle'),
+  wall('wall'),
+  puck('puck'),
+  place('place'),
+  land('land'),
+  bump('bump'),
+  crash('crash'),
+  blast('blast'),
+  swish('swish'),
+  splash('splash'),
+  goal('goal'),
+  whistle('whistle'),
+  coin('coin'),
+  unlock('unlock'),
+  eat('eat'),
+  pop('pop');
 
   final String file;
   const SoundEffect(this.file);
@@ -165,11 +183,20 @@ class JoySounds extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   void play(SoundEffect effect) {
+    final now = _now();
+    // Touch feedback is independent of the speaker: it still fires when the
+    // sound is muted, with its own throttle so a burst never turns to a buzz.
+    final lastBuzz = _lastBuzz;
+    if (JoyHaptics.enabled &&
+        !_celebrating &&
+        (lastBuzz == null || now.difference(lastBuzz).inMilliseconds >= 45)) {
+      _lastBuzz = now;
+      JoyHaptics.fire(effect);
+    }
     if (!canPlay || _celebrating) return;
-    final now = _now(), previous = _lastPlayed[effect];
-    final interval = effect == SoundEffect.hit ? 110 : effect == SoundEffect.tap ? 85 : 65;
+    final previous = _lastPlayed[effect];
     if (previous != null &&
-        now.difference(previous).inMilliseconds < interval) {
+        now.difference(previous).inMilliseconds < _interval(effect)) {
       return;
     }
     _lastPlayed[effect] = now;
@@ -177,8 +204,21 @@ class JoySounds extends ChangeNotifier with WidgetsBindingObserver {
     unawaited(_safely(() => _output.play(effect, effectVolume)));
   }
 
+  DateTime? _lastBuzz;
+
+  /// Shortest gap between two plays of [effect], in milliseconds. Fast ball
+  /// sports need tight gaps so every hit is heard; long cues are spaced out.
+  static int _interval(SoundEffect effect) => switch (effect) {
+    SoundEffect.paddle || SoundEffect.puck || SoundEffect.wall => 50,
+    SoundEffect.hit || SoundEffect.bump => 110,
+    SoundEffect.tap => 85,
+    SoundEffect.goal || SoundEffect.crash || SoundEffect.blast => 160,
+    _ => 65,
+  };
+
   /// The result fanfare replaces pending effects instead of layering on top.
   void celebrate(int winner) {
+    JoyHaptics.fire(winner < 0 ? SoundEffect.draw : SoundEffect.win);
     if (!canPlay) return;
     _generation++;
     _lastPlayed.clear();
