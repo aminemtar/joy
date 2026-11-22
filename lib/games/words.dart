@@ -481,13 +481,32 @@ class _WordsGameState extends State<WordsGame> {
         runSpacing: 6,
         children: [
           for (final word in WordSearchBoard.words)
-            Text(
-              word,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: found.contains(word) ? Colors.amber : Colors.white70,
-                decoration:
-                    found.contains(word) ? TextDecoration.lineThrough : null,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                color:
+                    found.contains(word)
+                        ? const Color(0xFFFFC16D)
+                        : Colors.white.withValues(alpha: .07),
+                border: Border.all(
+                  color:
+                      found.contains(word)
+                          ? const Color(0xFFFFC16D)
+                          : Colors.white24,
+                ),
+              ),
+              child: Text(
+                word,
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color:
+                      found.contains(word)
+                          ? const Color(0xFF3A2A08)
+                          : Colors.white70,
+                  decoration:
+                      found.contains(word) ? TextDecoration.lineThrough : null,
+                ),
               ),
             ),
         ],
@@ -531,7 +550,7 @@ class _WordsGameState extends State<WordsGame> {
                       selected: selection.contains(i),
                       color:
                           marked.contains(i)
-                              ? const Color(0xFF4C426B)
+                              ? const Color(0xFF6B5A22)
                               : const Color(0xFF1C294A),
                       child: Text(
                         search.letters[i],
@@ -574,14 +593,23 @@ class _WordsGameState extends State<WordsGame> {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
-                color: const Color(0xFF24355B),
-                border: Border.all(color: Colors.white24),
+                color:
+                    i < picked.length
+                        ? const Color(0xFFF1DFB6)
+                        : Colors.black.withValues(alpha: .25),
+                border: Border.all(
+                  color:
+                      i < picked.length
+                          ? const Color(0xFFB8935A)
+                          : Colors.white24,
+                ),
               ),
               child: Text(
                 i < picked.length ? letters[picked[i]] : '',
                 style: const TextStyle(
                   fontSize: 23,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF4A3414),
                 ),
               ),
             ),
@@ -598,7 +626,17 @@ class _WordsGameState extends State<WordsGame> {
               width: 48,
               height: 52,
               child: FilledButton.tonal(
-                style: FilledButton.styleFrom(padding: EdgeInsets.zero),
+                style: FilledButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  backgroundColor: const Color(0xFFF1DFB6),
+                  foregroundColor: const Color(0xFF4A3414),
+                  disabledBackgroundColor: Colors.white.withValues(alpha: .08),
+                  disabledForegroundColor: Colors.white24,
+                  elevation: 3,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
                 onPressed:
                     picked.contains(i)
                         ? null

@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../game_art.dart';
+import 'board_cells.dart';
 import 'game_stage.dart';
 import '../players.dart' show leadingPlayer;
 import 'bot_skill.dart';
@@ -253,27 +254,42 @@ class _ObservationGameState extends State<ObservationGame> {
     if (widget.id == 21) {
       content = Column(
         children: [
-          const Text(
-            'ORIGINAL',
-            style: TextStyle(letterSpacing: 3, color: Colors.white54),
+          ScenePanel(caption: 'ORIGINAL', child: pictures(left, false)),
+          const SizedBox(height: 14),
+          ScenePanel(
+            caption: 'FIND THE DIFFERENCE',
+            child: pictures(right, !botTurn),
           ),
-          const SizedBox(height: 8),
-          pictures(left, false),
-          const SizedBox(height: 20),
-          const Text(
-            'FIND THE DIFFERENCE',
-            style: TextStyle(letterSpacing: 2, color: Colors.white54),
-          ),
-          const SizedBox(height: 8),
-          pictures(right, !botTurn),
         ],
       );
     } else if (widget.id == 22) {
       content = Column(
         children: [
-          const Text('Find this object in the collection'),
-          GameArt(id: art[target], size: 100),
-          pictures(left, !botTurn),
+          ScenePanel(
+            caption: 'FIND THIS OBJECT',
+            child: Center(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFFFC16D).withValues(alpha: .35),
+                      blurRadius: 18,
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: GameArt(id: art[target], size: 100),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          ScenePanel(
+            caption: 'THE COLLECTION',
+            child: pictures(left, !botTurn),
+          ),
         ],
       );
     } else {

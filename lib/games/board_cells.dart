@@ -877,3 +877,51 @@ class AnswerLabel extends StatelessWidget {
     ],
   );
 }
+
+/// A framed panel with a small caption, used around a scene or a board so
+/// every game's playing area has the same card look.
+class ScenePanel extends StatelessWidget {
+  final String? caption;
+  final Widget child;
+  const ScenePanel({super.key, this.caption, required this.child});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(20),
+      gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFF1E2F5C), Color(0xFF15234A)],
+      ),
+      border: Border.all(color: Colors.white.withValues(alpha: .1)),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: .3),
+          blurRadius: 12,
+          offset: const Offset(0, 5),
+        ),
+      ],
+    ),
+    child: Column(
+      children: [
+        if (caption != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              caption!,
+              style: const TextStyle(
+                letterSpacing: 2.5,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFFB9C8F2),
+              ),
+            ),
+          ),
+        child,
+      ],
+    ),
+  );
+}
