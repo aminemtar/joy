@@ -683,3 +683,197 @@ class CoinButton extends StatelessWidget {
     ),
   );
 }
+
+/// The question or instruction of a brain game, on a card.
+class PromptCard extends StatelessWidget {
+  final String text;
+  final bool highlight;
+  final double fontSize;
+  const PromptCard({
+    super.key,
+    required this.text,
+    this.highlight = false,
+    this.fontSize = 24,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const gold = Color(0xFFFFC16D);
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF263B72), Color(0xFF1A294F)],
+        ),
+        border: Border.all(
+          color: highlight ? gold : Colors.white.withValues(alpha: .12),
+          width: highlight ? 2 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: (highlight ? gold : Colors.black).withValues(alpha: .25),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: fontSize,
+          fontWeight: FontWeight.w800,
+          color: highlight ? gold : Colors.white,
+        ),
+      ),
+    );
+  }
+}
+
+/// The traffic light of Reaction Duel: red while you must wait, green on NOW.
+class ReactionLight extends StatelessWidget {
+  final bool go;
+  final String text;
+  const ReactionLight({super.key, required this.go, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = go ? const Color(0xFF4CD08A) : const Color(0xFFFF6F83);
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 120),
+      width: 170,
+      height: 170,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          center: const Alignment(-.3, -.4),
+          colors: [
+            Color.lerp(color, Colors.white, .35)!,
+            color,
+            Color.lerp(color, Colors.black, .35)!,
+          ],
+          stops: const [0, .6, 1],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: go ? .7 : .3),
+            blurRadius: go ? 40 : 18,
+            spreadRadius: go ? 6 : 0,
+          ),
+        ],
+      ),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          fontSize: 26,
+          fontWeight: FontWeight.w900,
+          color: Colors.white,
+          shadows: [Shadow(color: Colors.black38, blurRadius: 4)],
+        ),
+      ),
+    );
+  }
+}
+
+/// A cup of Follow the Cup. It lifts to show what is underneath.
+class CupSprite extends StatelessWidget {
+  final bool lifted, hasDiamond;
+  const CupSprite({super.key, required this.lifted, required this.hasDiamond});
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: 96,
+    child: Stack(
+      alignment: Alignment.bottomCenter,
+      children: [
+        if (hasDiamond && lifted)
+          const Padding(
+            padding: EdgeInsets.only(bottom: 4),
+            child: Text('💎', style: TextStyle(fontSize: 34)),
+          ),
+        AnimatedSlide(
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeOutBack,
+          offset: Offset(0, lifted ? -.45 : 0),
+          child: const SizedBox(
+            width: 62,
+            height: 78,
+            child: CustomPaint(painter: _CupPainter()),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _CupPainter extends CustomPainter {
+  const _CupPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final body =
+        Path()
+          ..moveTo(size.width * .12, 0)
+          ..lineTo(size.width * .88, 0)
+          ..lineTo(size.width, size.height)
+          ..lineTo(0, size.height)
+          ..close();
+    canvas.drawShadow(body, Colors.black, 4, false);
+    canvas.drawPath(
+      body,
+      Paint()
+        ..shader = const LinearGradient(
+          colors: [Color(0xFFD8554A), Color(0xFFFF8A7A), Color(0xFFB83E36)],
+          stops: [0, .35, 1],
+        ).createShader(Offset.zero & size),
+    );
+    canvas.drawRect(
+      Rect.fromLTWH(size.width * .08, size.height * .18, size.width * .84, 5),
+      Paint()..color = Colors.white.withValues(alpha: .6),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _CupPainter old) => false;
+}
+
+/// An answer button with its letter, for the riddle and maths duels.
+class AnswerLabel extends StatelessWidget {
+  final String letter, text;
+  const AnswerLabel({super.key, required this.letter, required this.text});
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      Container(
+        width: 26,
+        height: 26,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white.withValues(alpha: .14),
+        ),
+        child: Text(
+          letter,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
+        ),
+      ),
+      const SizedBox(width: 10),
+      Flexible(
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 19),
+        ),
+      ),
+    ],
+  );
+}

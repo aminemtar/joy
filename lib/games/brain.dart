@@ -5,6 +5,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'bot_skill.dart';
+import 'board_cells.dart';
 import 'game_stage.dart';
 
 class BrainGame extends StatefulWidget {
@@ -331,15 +332,10 @@ class _BrainGameState extends State<BrainGame> {
     child: Column(
       children: [
         const SizedBox(height: 12),
-        Text(
-          prompt,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: widget.id == 27 ? 38 : 25,
-            fontWeight: FontWeight.w700,
-            color: ready ? Colors.amber : Colors.white,
-          ),
-        ),
+        if (widget.id == 27)
+          ReactionLight(go: ready, text: prompt)
+        else
+          PromptCard(text: prompt, highlight: ready),
         if (widget.id == 24)
           SizedBox(
             height: 120,
@@ -354,10 +350,9 @@ class _BrainGameState extends State<BrainGame> {
                           left: cups.indexOf(i) * size.maxWidth / 3,
                           top: 20,
                           width: size.maxWidth / 3,
-                          child: Text(
-                            cupRevealed && i == 0 ? '💎' : '🥤',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 48),
+                          child: CupSprite(
+                            lifted: cupRevealed,
+                            hasDiamond: i == 0,
                           ),
                         ),
                     ],
@@ -399,11 +394,17 @@ class _BrainGameState extends State<BrainGame> {
                         height: 76,
                         child: FilledButton.tonal(
                           onPressed: locked || botTurn ? null : () => choose(i),
-                          child: Text(
-                            options[i],
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 19),
-                          ),
+                          child:
+                              widget.id == 25 || widget.id == 26
+                                  ? AnswerLabel(
+                                    letter: 'ABCD'[i % 4],
+                                    text: options[i],
+                                  )
+                                  : Text(
+                                    options[i],
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(fontSize: 19),
+                                  ),
                         ),
                       ),
                   ],
